@@ -1,0 +1,50 @@
+{
+  "workAge": 12,
+  "childHelpAge": 10,
+  "childHelpStones": 1,
+  "focuses": [
+    { "id": "family", "name": "Семья", "payMul": 0.65, "hazardMul": 0.85, "birthMul": 1.45, "qiMul": 0.75, "text": "Дом, дети, живые. Камней меньше, рождается чаще, беда реже." },
+    { "id": "work", "name": "Работа", "payMul": 1.35, "hazardMul": 1.18, "birthMul": 0.7, "qiMul": 0.55, "text": "Ремесло кормит. Год тяжелее, ци почти не копится." },
+    { "id": "practice", "name": "Гунфу", "payMul": 0.45, "hazardMul": 1.08, "birthMul": 0.75, "qiMul": 1.45, "text": "Двор и даньтянь. Семья терпит, камней мало." },
+    { "id": "rest", "name": "Покой", "payMul": 0.25, "hazardMul": 0.7, "birthMul": 1.1, "qiMul": 0.95, "text": "Чай, сон, меньше риска. Год почти ничего не приносит." }
+  ],
+  "childTasks": [
+    { "id": "home", "name": "дом" },
+    { "id": "help", "name": "помощь" },
+    { "id": "letters", "name": "грамота" }
+  ],
+  "jobs": [
+    { "id": "home", "name": "Дом и двор", "stones": 0, "hazard": 0 },
+    { "id": "field", "name": "Поле", "stones": 2, "hazard": 0.0012, "region": ["huangfeng"] },
+    { "id": "mill", "name": "Мельница", "stones": 3, "hazard": 0.001, "region": ["huangfeng"] },
+    { "id": "porter", "name": "Носильщик", "stones": 2, "hazard": 0.0015 },
+    { "id": "fisher", "name": "Рыбак", "stones": 3, "hazard": 0.0018, "region": ["haiyun"] },
+    { "id": "ferry", "name": "Паромщик", "stones": 3, "hazard": 0.0016, "region": ["haiyun", "huangfeng"] },
+    { "id": "dock", "name": "Причал", "stones": 4, "hazard": 0.0014, "region": ["haiyun"] },
+    { "id": "salt", "name": "Соляные варницы", "stones": 5, "hazard": 0.0022, "region": ["haiyun"] },
+    { "id": "herder", "name": "Табунщик", "stones": 3, "hazard": 0.0016, "region": ["hanmu"] },
+    { "id": "hunter", "name": "Охотник", "stones": 4, "hazard": 0.0024, "region": ["hanmu", "qinglong"] },
+    { "id": "woodcutter", "name": "Дровосек", "stones": 2, "hazard": 0.0017, "region": ["qinglong"] },
+    { "id": "herb", "name": "Сбор трав", "stones": 3, "hazard": 0.0011, "region": ["qinglong", "penglai"] },
+    { "id": "penglai_keeper", "name": "Сторож тропы", "stones": 3, "hazard": 0.0006, "region": ["penglai"] },
+    { "id": "weaver", "name": "Ткач", "stones": 3, "hazard": 0.0005, "wealth": ["poor", "peasant", "craft"] },
+    { "id": "tailor", "name": "Портной", "stones": 4, "hazard": 0.0003, "wealth": ["craft", "peasant", "noble"] },
+    { "id": "smith", "name": "Кузница", "stones": 5, "hazard": 0.0013, "wealth": ["craft", "peasant"] },
+    { "id": "cook", "name": "Кухня постоялого", "stones": 3, "hazard": 0.0006 },
+    { "id": "inn", "name": "Постоялый двор", "stones": 5, "hazard": 0.0007, "wealth": ["craft", "peasant", "noble"] },
+    { "id": "tea", "name": "Чайная", "stones": 4, "hazard": 0.0003, "wealth": ["craft", "noble", "cultclan"] },
+    { "id": "stall", "name": "Лавка", "stones": 5, "hazard": 0.0004, "wealth": ["craft", "peasant", "noble"] },
+    { "id": "broker", "name": "Маклер", "stones": 7, "hazard": 0.0005, "wealth": ["craft", "noble"] },
+    { "id": "caravan", "name": "Караван", "stones": 8, "hazard": 0.0028 },
+    { "id": "escort", "name": "Эскортное бюро", "stones": 9, "hazard": 0.0032 },
+    { "id": "physician", "name": "Помощник лекаря", "stones": 5, "hazard": 0.0008 },
+    { "id": "teacher", "name": "Учитель грамоты", "stones": 4, "hazard": 0.0002, "wealth": ["craft", "noble", "cultclan"] },
+    { "id": "scribe", "name": "Писец", "stones": 4, "hazard": 0.0002, "wealth": ["craft", "noble", "cultclan"] },
+    { "id": "yamen", "name": "Ямынь", "stones": 6, "hazard": 0.0009, "wealth": ["craft", "noble", "cultclan"] },
+    { "id": "beggar", "name": "Союз нищих", "stones": 1, "hazard": 0.002, "wealth": ["poor", "peasant"] },
+    { "id": "monk_kitchen", "name": "Храмовая кухня", "stones": 2, "hazard": 0.0004, "region": ["qinglong"] },
+    { "id": "alchemist", "name": "Помощник алхимика", "stones": 6, "hazard": 0.0012, "awakened": true },
+    { "id": "outer_sect", "name": "Внешний двор секты", "stones": 6, "hazard": 0.001, "awakened": true },
+    { "id": "inner_sect", "name": "Внутренний двор", "stones": 10, "hazard": 0.0014, "awakened": true }
+  ]
+}

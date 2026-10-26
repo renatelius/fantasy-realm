@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Путь к бессмертию</title>
+<style>
+:root{
+  --bg:#0d1216;--paper:#141b21;--paper2:#1a232b;--line:#26323c;--ink:#e6ecef;--dim:#8a98a3;
+  --jade:#3ecf9f;--pink:#e8708f;--gold:#d9b45a;--hp:#5ad67a;--joy:#e0b84e;--mind:#4ec9b8;--bond:#e8708f;--red:#e06a6a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI","Noto Sans SC",system-ui,sans-serif}
+button{font:inherit;color:var(--ink);background:var(--paper2);border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--jade)} button:disabled{opacity:.4;cursor:default}
+button.on,button[aria-pressed="true"]{background:var(--ink);color:#0d1216;border-color:var(--ink)}
+button.pink{background:var(--pink);color:#fff;border:0;padding:10px 22px;font-weight:600}
+button.ghost{background:transparent}
+button.block{display:block;width:100%;text-align:left;margin-top:8px;padding:10px 12px}
+.serif{font-family:Georgia,"Noto Serif SC","Times New Roman",serif}
+.dim{color:var(--dim);font-size:.86rem}
+.small{font-size:.78rem}
+h2{margin:0 0 10px;font-size:1rem;font-weight:700}
+h2 small{float:right;font-weight:500;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+
+/* ── шапка ── */
+header{position:sticky;top:0;z-index:10;background:#0d1216f2;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 16px 8px}
+.top{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.brand{font-weight:700;font-size:1.05rem}.brand b{color:var(--pink)}
+.age-big{font-size:1.05rem}.age-big b{font-size:1.6rem;font-family:Georgia,serif;margin-left:4px}
+.agebar{height:3px;background:#222c34;margin:8px auto 0;max-width:1180px;border-radius:3px;overflow:hidden}
+.agebar i{display:block;height:100%;background:var(--pink);transition:width .3s}
+.speeds{display:flex;flex-wrap:wrap;gap:5px;margin:8px auto 0;max-width:1180px}
+.speeds .auto.on{background:var(--jade);border-color:var(--jade);color:#06231a}
+
+/* ── раскладка ── */
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr) 270px;gap:14px;padding:14px;max-width:1180px;margin:0 auto}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px}
+.card[hidden],[hidden]{display:none!important}
+
+/* паспорт */
+.pass{padding:0;overflow:hidden}
+.pass-h{background:var(--pink);color:#3a0f1c;font-size:.72rem;letter-spacing:.06em;padding:6px 12px;display:flex;justify-content:space-between}
+.pass-b{padding:12px;background:repeating-radial-gradient(circle at 80% 120%,#ffffff05 0 2px,transparent 2px 9px)}
+.pass-top{display:flex;gap:10px;align-items:flex-start}
+.ava{width:56px;height:68px;flex:none;border:1px solid var(--line);background:#1d2a30;image-rendering:pixelated}
+.pname{font-size:1.35rem;margin:0 0 6px;line-height:1.1}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.8rem;margin-top:8px}
+.kv span{color:var(--dim)} .kv b{font-weight:500}
+.dots{letter-spacing:2px;color:var(--ink)}
+.mrz{font:11px/1.4 Consolas,monospace;color:#9fb0ba;border-top:1px dashed var(--line);margin-top:10px;padding-top:8px;word-break:break-all}
+
+/* шкалы */
+.stat{display:grid;grid-template-columns:90px 1fr 26px;gap:8px;align-items:center;margin:7px 0;font-size:.86rem}
+.stat b{text-align:right;font-weight:500}
+.track{height:8px;background:#0d1318;border-radius:2px;overflow:hidden}
+.track i{display:block;height:100%;transition:width .4s}
+details summary{cursor:pointer;color:var(--dim);font-size:.82rem;margin-top:6px}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;border-top:1px solid var(--line);margin-top:10px;padding-top:10px;font-size:.78rem;color:var(--dim)}
+.mini b{display:block;color:var(--ink);font-weight:500;font-size:.9rem}
+
+/* путь */
+.realm{font-size:1.1rem;font-family:Georgia,serif}
+.realm small{color:var(--gold);font-size:.8rem;margin-left:6px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+
+/* сцена */
+.scene-card{padding:0;overflow:hidden}
+.scene{display:block;width:100%;height:auto;image-rendering:pixelated;background:#101826}
+.scene-cap{padding:10px 14px;font-size:.86rem}
+
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.chips button{border-radius:999px;font-size:.82rem;padding:4px 10px}
+.note{border-left:2px solid var(--jade);padding:6px 10px;background:#3ecf9f0f;font-size:.82rem;margin-top:8px}
+#event{border-color:var(--gold);box-shadow:0 0 0 1px #d9b45a33}
+#event h3{margin:0 0 6px;font-family:Georgia,serif}
+
+/* летопись */
+#chron{list-style:none;margin:0;padding:0;max-height:62vh;overflow:auto}
+#chron li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #222c35;font-size:.88rem}
+#chron .a{color:var(--dim);font:12px Consolas,monospace;padding-top:2px}
+.k-death{color:var(--red)} .k-awaken,.k-birth{color:var(--gold);font-weight:600}
+.k-family{color:#9fd8c4} .k-break{color:var(--jade);font-weight:600} .k-adv{color:#9fc2ff} .k-luck{color:#d6b4ff}
+
+/* семья, ровесники */
+.row2{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #222c35;font-size:.84rem}
+.row2:last-child{border-bottom:0}
+.row2 span{color:var(--dim)} .row2 b{font-weight:500;text-align:right}
+.row2 b small{display:block;color:var(--dim);font-weight:400}
+.peer{padding:7px 0;border-bottom:1px solid #222c35;font-size:.84rem}
+.peer:last-child{border-bottom:0}
+.peer b{font-weight:600} .peer div{color:var(--dim);font-size:.76rem}
+.peer i{color:var(--gold);font-style:normal}
+
+/* карта жизни */
+.lmap{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+.lmap i{aspect-ratio:1;background:#1f2a33;border-radius:1px}
+.lmap i.p{background:#2f4a40} .lmap i.ev{background:#7a3f52} .lmap i.aw{background:var(--gold)} .lmap i.br{background:var(--jade)}
+.lmap i.now{outline:2px solid var(--pink)} .lmap i.exp{outline:1px solid #ffffff88} .lmap i.dead{background:var(--red)}
+
+.tech{width:100%;margin-top:6px;text-align:left;font-size:.82rem}
+.tech small{display:block;color:var(--dim);margin-top:2px}
+.g-jue{border-color:var(--gold)} .g-shang{border-color:var(--jade)}
+.tree{list-style:none;padding:0;margin:8px 0 0} .tree li{border-left:2px solid var(--line);padding:2px 0 2px 8px;margin:2px 0;font-size:.82rem}
+.quote{margin:8px 0;padding-left:10px;border-left:2px solid var(--gold);color:#cfd8e0}
+.quote small{display:block;color:var(--dim)}
+
+/* ── экраны рождения ── */
+.screen{max-width:640px;margin:22px auto;padding:0 12px}
+.reg{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reg-h{background:var(--pink);color:#3a0f1c;padding:9px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.reg-h small{font:11px Consolas,monospace;font-weight:400}
+.reg-b{padding:16px}
+.lbl{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.big-name{font-size:2.1rem;margin:2px 0 8px;font-family:Georgia,"Noto Serif SC",serif}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 12px;margin:14px 0;border-top:1px solid var(--line);padding-top:14px}
+.grid3 div{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.grid3 b{display:block;text-transform:none;letter-spacing:0;color:var(--ink);font-size:.86rem;font-weight:600;margin-top:3px}
+.yanmap{display:block;width:100%;height:auto;margin:6px 0}
+.hl{background:#3ecf9f12;border:1px solid #3ecf9f33;border-radius:4px;padding:10px 12px;font-size:.86rem;margin:12px 0}
+.cmp{width:100%;border-collapse:collapse;font-size:.8rem;margin:10px 0;border:1px solid var(--line)}
+.cmp td,.cmp th{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;font-weight:400}
+.cmp th{color:var(--dim);font-size:.72rem} .cmp td:not(:first-child),.cmp th:not(:first-child){text-align:right}
+.cmp td:last-child{font-weight:700}
+.seal{float:right;width:62px;height:62px;border:2px solid #c0392b;color:#c0392b;border-radius:6px;display:grid;place-items:center;font:700 1.5rem "Noto Serif SC",serif;transform:rotate(-8deg);opacity:.75;margin:0 0 6px 10px}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+
+.wheel{height:156px;overflow:hidden;border:1px solid var(--line);border-radius:6px;position:relative;margin:14px 0;background:#0f151a}
+.wheel::before,.wheel::after{content:"";position:absolute;left:0;right:0;height:52px;z-index:2;pointer-events:none}
+.wheel::before{top:0;background:linear-gradient(#0f151a,#0f151a00)} .wheel::after{bottom:0;background:linear-gradient(#0f151a00,#0f151a)}
+.wheel .mark{position:absolute;top:52px;left:0;right:0;height:52px;border-top:1px solid var(--pink);border-bottom:1px solid var(--pink);z-index:1;pointer-events:none}
+.wheel ul{margin:0;padding:0;list-style:none;transition:transform 2.4s cubic-bezier(.12,.8,.18,1)}
+.wheel li{height:52px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-family:Georgia,serif}
+.wheel li small{color:var(--dim);margin-left:8px;font-size:.9rem}
+.res{min-height:60px}
+.res .big{font-size:1.3rem;font-family:Georgia,serif;color:var(--gold)}
+.steps{display:flex;gap:6px;margin-bottom:10px}.steps i{flex:1;height:3px;background:var(--line)}.steps i.on{background:var(--pink)}
+</style></head><body>
+<header id="hdr">
+  <div class="top">
+    <div class="brand" id="brand"></div>
+    <div class="age-big" id="agebig"></div>
+    <div class="dim" id="topline"></div>
+  </div>
+  <div class="agebar"><i id="topbar"></i></div>
+  <div class="speeds" id="speeds"></div>
+</header>
+
+<section id="spin" class="screen" hidden></section>
+<section id="cert" class="screen" hidden></section>
+
+<div id="app" hidden>
+<div class="layout">
+  <div>
+    <div class="card pass" id="pass"></div>
+    <div class="card" id="stats"></div>
+    <div class="card" id="cult"></div>
+  </div>
+  <div>
+    <div class="card scene-card"><div id="scene"></div><div class="scene-cap" id="scene-cap"></div></div>
+    <div class="card" id="event" hidden></div>
+    <div class="card" id="death" hidden></div>
+    <div class="card" id="focus"></div>
+    <div class="card"><h2>Летопись жизни <small>сначала новые</small></h2><div class="dim small" id="chron-sub" style="color:var(--jade);margin:-4px 0 6px"></div><ul id="chron"></ul></div>
+  </div>
+  <div>
+    <div class="card" id="family"></div>
+    <div class="card" id="peers"></div>
+    <div class="card"><h2>Карта жизни <small>1 клетка = 1 год</small></h2><div class="lmap" id="lmap"></div>
+      <div class="dim small" style="margin-top:8px">Зелень — прожитые годы, бордо — выборы, золото — проверка корней, нефрит — прорывы. Рамка — сколько живут в твоём краю.</div></div>
+    <details class="card"><summary>Техники · 内功 外功 招式 轻功 医术 暗器</summary><div id="techs"></div></details>
+    <details class="card"><summary>Родовое древо</summary><ul class="tree" id="tree"></ul></details>
+  </div>
+</div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body></html>

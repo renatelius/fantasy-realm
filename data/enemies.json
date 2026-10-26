@@ -1,0 +1,46 @@
+{
+  "adventure": {
+    "cooldownSec": 20,
+    "lossCooldownSec": 40,
+    "pillDropChance": 0.1,
+    "qiRewardShare": 0.15,
+    "maxRounds": 40
+  },
+  "player": {
+    "hpBase": 100,
+    "atkBase": 10,
+    "defBase": 5,
+    "growth": 1.25,
+    "critChance": 0.1,
+    "critMult": 1.5
+  },
+  "enemies": [
+    {
+      "id": "spirit_wolf",
+      "name": "Духовный волк",
+      "levelOffset": 0,
+      "hpMult": 1.15,
+      "atkMult": 0.95,
+      "defMult": 0.8,
+      "stones": 3
+    },
+    {
+      "id": "rogue_cultivator",
+      "name": "Бродячий заклинатель",
+      "levelOffset": 1,
+      "hpMult": 1.05,
+      "atkMult": 0.7,
+      "defMult": 0.7,
+      "stones": 6
+    },
+    {
+      "id": "mountain_wraith",
+      "name": "Горный призрак (элита)",
+      "levelOffset": 3,
+      "hpMult": 0.6,
+      "atkMult": 0.4,
+      "defMult": 0.9,
+      "stones": 18
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "grades": [
+    { "id": "fan", "name": "Мирская", "han": "凡功", "rank": 0 },
+    { "id": "xia", "name": "Нижняя колесница", "han": "下乘", "rank": 1 },
+    { "id": "zhong", "name": "Средняя колесница", "han": "中乘", "rank": 2 },
+    { "id": "shang", "name": "Верхняя колесница", "han": "上乘", "rank": 3 },
+    { "id": "jue", "name": "Цзюэсюэ", "han": "绝学", "rank": 4 }
+  ],
+  "types": [
+    { "id": "neigong", "name": "Внутренняя работа", "han": "内功" },
+    { "id": "body", "name": "Закал тела", "han": "外功·炼体" },
+    { "id": "martial", "name": "Приёмы", "han": "招式" },
+    { "id": "qinggong", "name": "Лёгкое тело", "han": "轻功" },
+    { "id": "yishu", "name": "Врачевание", "han": "医术" },
+    { "id": "anqi", "name": "Скрытое оружие", "han": "暗器" }
+  ],
+  "techniques": [
+    { "id": "breath_of_mist", "name": "Дыхание туманной горы", "type": "neigong", "grade": "xia", "cost": 0, "qiMultiplier": 1.25, "minRealm": 0, "text": "Уданский вход: дышать так, чтобы туман не замечал человека." },
+    { "id": "village_breath", "name": "Счёт рисовых зёрен", "type": "neigong", "grade": "fan", "cost": 16, "qiMultiplier": 1.1, "minRealm": 0, "text": "Крестьянский счёт на вдохе. Ци почти нет, привычка есть." },
+    { "id": "small_circle", "name": "Малый небесный круг", "type": "neigong", "grade": "xia", "cost": 110, "qiMultiplier": 1.32, "minRealm": 0, "text": "Ци гоняют по кругу, как воду в ковше." },
+    { "id": "jade_flow", "name": "Нефритовый поток", "type": "neigong", "grade": "zhong", "cost": 300, "qiMultiplier": 1.6, "minRealm": 0, "text": "Поток ровный, как нитка нефрита. Школы берегут его для внешних учеников." },
+    { "id": "wudang_still", "name": "Тишина Удан", "type": "neigong", "grade": "zhong", "cost": 360, "qiMultiplier": 1.55, "minRealm": 0, "text": "Чем меньше слов, тем ровнее даньтянь." },
+    { "id": "emei_compassion", "name": "Сердце Эмэй", "type": "neigong", "grade": "zhong", "cost": 340, "qiMultiplier": 1.5, "minRealm": 0, "text": "Дыхание под сострадание. Не быстрее, зато реже срывается." },
+    { "id": "hua_violet", "name": "Сиреневая искра Хуашань", "type": "neigong", "grade": "shang", "cost": 840, "qiMultiplier": 1.85, "minRealm": 1, "text": "Искра в даньтяне. Красиво и опасно, если торопиться." },
+    { "id": "kunlun_snow", "name": "Снежный затвор Куньлунь", "type": "neigong", "grade": "shang", "cost": 920, "qiMultiplier": 1.9, "minRealm": 1, "text": "Ци остывает и твердеет. Годы уходят в тишину." },
+    { "id": "first_scribe_breath", "name": "Дыхание Первого Писца", "type": "neigong", "grade": "jue", "cost": 1960, "qiMultiplier": 2.15, "minRealm": 2, "text": "Не обещает бессмертия. Учит не отдавать имя зря." },
+
+    { "id": "farm_hands", "name": "Мозолистая ладонь", "type": "body", "grade": "fan", "cost": 12, "hpMult": 1.08, "defMult": 1.05, "minRealm": 0, "text": "Тело пахаря. Удары жизни уже знакомы." },
+    { "id": "iron_cloth", "name": "Железная рубаха", "type": "body", "grade": "xia", "cost": 140, "hpMult": 1.2, "defMult": 1.18, "minRealm": 0, "text": "Внешняя работа: держать удар, не хвастаясь." },
+    { "id": "yijin", "name": "Перемена сухожилий", "type": "body", "grade": "zhong", "cost": 400, "hpMult": 1.35, "defMult": 1.22, "minRealm": 0, "text": "Шаолиньская закалка жил. Медленно, честно." },
+    { "id": "arhat_body", "name": "Тело архата", "type": "body", "grade": "zhong", "cost": 440, "hpMult": 1.4, "defMult": 1.28, "minRealm": 0, "text": "Стойка как колокол. Шаг тяжёлый." },
+    { "id": "golden_bell", "name": "Золотой колокол", "type": "body", "grade": "shang", "cost": 800, "hpMult": 1.55, "defMult": 1.4, "minRealm": 1, "text": "Удар встречают рёбрами, как стенкой храма." },
+    { "id": "cotton_body", "name": "Хлопковое тело Эмэй", "type": "body", "grade": "shang", "cost": 760, "hpMult": 1.45, "defMult": 1.5, "minRealm": 1, "text": "Мягкость принимает силу и возвращает её в землю." },
+    { "id": "seal_bone", "name": "Кость печати", "type": "body", "grade": "jue", "cost": 1800, "hpMult": 1.75, "defMult": 1.6, "minRealm": 2, "text": "Тело помнит обет. Не путать с бессмертием." },
+
+    { "id": "stick_form", "name": "Шесть палок двора", "type": "martial", "grade": "fan", "cost": 10, "atkMult": 1.08, "minRealm": 0, "text": "Палка дровосека. Хватает на собак и сборщиков." },
+    { "id": "beggar_dog", "name": "Пёс Союза нищих", "type": "martial", "grade": "xia", "cost": 120, "atkMult": 1.22, "minRealm": 0, "text": "Удар снизу, откуда не ждут господа." },
+    { "id": "shaolin_fist", "name": "Кулак архата", "type": "martial", "grade": "xia", "cost": 150, "atkMult": 1.28, "minRealm": 0, "text": "Прямой кулак. Мало украшений." },
+    { "id": "wudang_sword", "name": "Меч Удан", "type": "martial", "grade": "zhong", "cost": 380, "atkMult": 1.42, "minRealm": 0, "text": "Клинок как дыхание: не рубят воздух зря." },
+    { "id": "emei_needle", "name": "Игла Эмэй", "type": "martial", "grade": "zhong", "cost": 370, "atkMult": 1.38, "critAdd": 0.05, "minRealm": 0, "text": "Тонкая точка вместо широкого замаха." },
+    { "id": "hua_sword", "name": "Девятнадцать мечей Хуашань", "type": "martial", "grade": "shang", "cost": 860, "atkMult": 1.65, "minRealm": 1, "text": "Школа спорит о форме. Удар не спорит." },
+    { "id": "kunlun_palm", "name": "Ладонь снегов", "type": "martial", "grade": "shang", "cost": 820, "atkMult": 1.6, "minRealm": 1, "text": "Холодный толчок, после которого кулак кажется грубым." },
+    { "id": "kuntong_blade", "name": "Сабля Кунтун", "type": "martial", "grade": "zhong", "cost": 400, "atkMult": 1.48, "minRealm": 0, "text": "Резко, с границы. Не для пира." },
+    { "id": "sun_moon", "name": "Круг солнца и луны", "type": "martial", "grade": "jue", "cost": 1900, "atkMult": 1.85, "minRealm": 2, "text": "Приём тех, кто помнит Чжао. Двор зовёт это ересью." },
+
+    { "id": "cat_step", "name": "Шаг кошки по крыше", "type": "qinggong", "grade": "fan", "cost": 14, "critAdd": 0.03, "minRealm": 0, "text": "Не упасть с забора. Уже хорошо." },
+    { "id": "swallow", "name": "Ласточкино оперение", "type": "qinggong", "grade": "xia", "cost": 130, "critAdd": 0.06, "minRealm": 0, "text": "Ступня легче, чем думает земля." },
+    { "id": "cloud_ladder", "name": "Лестница в облака", "type": "qinggong", "grade": "zhong", "cost": 350, "critAdd": 0.09, "minRealm": 0, "text": "Не полёт. Просто крыша становится дорогой." },
+    { "id": "wave_step", "name": "Шаг по волне", "type": "qinggong", "grade": "zhong", "cost": 360, "critAdd": 0.08, "minRealm": 0, "text": "Хайюнь учит не спорить с палубой." },
+    { "id": "ghost_trace", "name": "След призрака", "type": "qinggong", "grade": "shang", "cost": 780, "critAdd": 0.13, "minRealm": 1, "text": "Удар приходит оттуда, где тебя уже нет." },
+    { "id": "penglai_mist", "name": "Туман Пэнлай", "type": "qinggong", "grade": "jue", "cost": 1760, "critAdd": 0.18, "minRealm": 2, "text": "Кажется, что человека нет. Печать это любит — осторожнее." },
+
+    { "id": "beggar_breath", "name": "Дыхание нищего", "type": "neigong", "grade": "xia", "cost": 80, "qiMultiplier": 1.18, "minRealm": 0, "text": "Спят где придётся. Ци всё равно идёт." },
+    { "id": "inn_breath", "name": "Счёт постояльцев", "type": "neigong", "grade": "fan", "cost": 24, "qiMultiplier": 1.08, "minRealm": 0, "text": "Вдох на каждого гостя. Школа чайных, не сект." },
+    { "id": "nine_turns", "name": "Девять оборотов даньтяня", "type": "neigong", "grade": "zhong", "cost": 420, "qiMultiplier": 1.58, "minRealm": 0, "text": "Долго и скучно. Зато редко срывается." },
+    { "id": "xiantian", "name": "Врождённое дыхание", "type": "neigong", "grade": "shang", "cost": 1000, "qiMultiplier": 2.0, "minRealm": 1, "text": "Классика уся: ци старше ученика. Не путать с бессмертием." },
+    { "id": "star_absorb", "name": "Тихий заём звёзд", "type": "neigong", "grade": "jue", "cost": 2200, "qiMultiplier": 2.3, "minRealm": 2, "text": "Берут чужое дыхание. Удан это запрещает. Канцелярия — записывает." },
+
+    { "id": "sandbag", "name": "Мешок с песком", "type": "body", "grade": "fan", "cost": 16, "hpMult": 1.06, "defMult": 1.04, "minRealm": 0, "text": "Двор, забор, сто ударов в день." },
+    { "id": "drunk_mill", "name": "Пьяный жёрнов", "type": "body", "grade": "xia", "cost": 160, "hpMult": 1.18, "defMult": 1.12, "minRealm": 0, "text": "Качаться, чтобы удар прошёл мимо." },
+    { "id": "copper_bone", "name": "Медные кости", "type": "body", "grade": "zhong", "cost": 420, "hpMult": 1.32, "defMult": 1.25, "minRealm": 0, "text": "Степная закалка. Ломаются реже, чем кажется." },
+    { "id": "toad", "name": "Жабья стойка", "type": "body", "grade": "zhong", "cost": 460, "hpMult": 1.38, "atkMult": 1.1, "minRealm": 0, "text": "Некрасиво. Держит. Секты морщатся." },
+    { "id": "thirteen_guards", "name": "Тринадцать стражей", "type": "body", "grade": "shang", "cost": 820, "hpMult": 1.5, "defMult": 1.38, "minRealm": 1, "text": "Внешняя работа ямыня: тело как дверь." },
+    { "id": "marrow_wash", "name": "Промывка мозга костей", "type": "body", "grade": "jue", "cost": 1840, "hpMult": 1.7, "defMult": 1.55, "minRealm": 2, "text": "Шаолиньская вершина внешней работы. Годы, не вспышка." },
+
+    { "id": "taiji_sword", "name": "Меч Великого предела", "type": "martial", "grade": "zhong", "cost": 400, "atkMult": 1.4, "defMult": 1.1, "minRealm": 0, "text": "Круг вместо точки. Удан не спешит." },
+    { "id": "dog_staff", "name": "Палки, что бьют псов", "type": "martial", "grade": "shang", "cost": 800, "atkMult": 1.58, "minRealm": 1, "text": "Союз нищих. Господ бьёт так же, как псов." },
+    { "id": "dragon_palm", "name": "Восемнадцать ладоней", "type": "martial", "grade": "shang", "cost": 900, "atkMult": 1.72, "minRealm": 1, "text": "Тяжёлый толчок. Земля помнит." },
+    { "id": "spear_yan", "name": "Копьё Янь", "type": "martial", "grade": "xia", "cost": 140, "atkMult": 1.25, "minRealm": 0, "text": "Дворовое копьё. Длиннее, чем кулак." },
+    { "id": "whip_steppe", "name": "Степной бич", "type": "martial", "grade": "xia", "cost": 136, "atkMult": 1.24, "minRealm": 0, "text": "Сначала для коня. Потом для людей." },
+    { "id": "lonely_sword", "name": "Девять мечей одиночки", "type": "martial", "grade": "jue", "cost": 1980, "atkMult": 2.0, "minRealm": 2, "text": "Ломает чужой приём, не строит свой. Цзюэсюэ без секты." },
+
+    { "id": "wall_run", "name": "Бег по стене", "type": "qinggong", "grade": "xia", "cost": 100, "critAdd": 0.04, "minRealm": 0, "text": "Два шага по штукатурке. Третий — уже падение." },
+    { "id": "reed", "name": "Тростник на воде", "type": "qinggong", "grade": "zhong", "cost": 330, "critAdd": 0.07, "minRealm": 0, "text": "Не идти по воде — не тонуть сразу." },
+    { "id": "night_walk", "name": "Ночной ход", "type": "qinggong", "grade": "xia", "cost": 116, "critAdd": 0.05, "minRealm": 0, "text": "Союз нищих учит не скрипеть двором." },
+    { "id": "lingbo", "name": "Микрошаг по волнам", "type": "qinggong", "grade": "shang", "cost": 840, "critAdd": 0.14, "minRealm": 1, "text": "Классика: след на воде, которого нет." },
+
+    { "id": "stop_bleed", "name": "Присыпка на рану", "type": "yishu", "grade": "fan", "cost": 20, "hazardCut": 0.04, "pillMul": 0.95, "minRealm": 0, "text": "Трава, тряпка, не паниковать." },
+    { "id": "gourd", "name": "Тыква на поясе", "type": "yishu", "grade": "xia", "cost": 120, "hazardCut": 0.08, "pillMul": 0.9, "minRealm": 0, "text": "Бродячий лекарь. Ци не лечит, руки — да." },
+    { "id": "cold_damage", "name": "Трактат о холоде", "type": "yishu", "grade": "zhong", "cost": 340, "hazardCut": 0.12, "pillMul": 0.85, "minRealm": 0, "text": "Читать пульс важнее, чем гнать ци в рану." },
+    { "id": "spring_return", "name": "Весна возвращается", "type": "yishu", "grade": "shang", "cost": 780, "hazardCut": 0.18, "pillMul": 0.75, "minRealm": 1, "text": "Редкие руки. Двор зовёт во дворец, секты — в горы." },
+    { "id": "seal_pulse", "name": "Пульс печати", "type": "yishu", "grade": "jue", "cost": 1720, "hazardCut": 0.25, "pillMul": 0.65, "minRealm": 2, "text": "Слышит, когда имя хочет уйти. Лечит не бессмертие — срок." },
+
+    { "id": "pebble", "name": "Горох из рукава", "type": "anqi", "grade": "fan", "cost": 12, "atkMult": 1.05, "critAdd": 0.02, "minRealm": 0, "text": "Камешек. Для собак и сборщиков." },
+    { "id": "sleeve_arrow", "name": "Стрела из рукава", "type": "anqi", "grade": "xia", "cost": 144, "atkMult": 1.18, "critAdd": 0.06, "minRealm": 0, "text": "Коротко, под чаем." },
+    { "id": "poison_sand", "name": "Ядовитый песок", "type": "anqi", "grade": "zhong", "cost": 380, "atkMult": 1.3, "critAdd": 0.08, "minRealm": 0, "text": "Кунтун. Честно предупреждают — редко." },
+    { "id": "flower_needle", "name": "Игла в цветке", "type": "anqi", "grade": "zhong", "cost": 370, "atkMult": 1.22, "critAdd": 0.1, "minRealm": 0, "text": "Эмэй не любит широкий жест." },
+    { "id": "rain_needles", "name": "Дождь игл", "type": "anqi", "grade": "shang", "cost": 800, "atkMult": 1.4, "critAdd": 0.12, "minRealm": 1, "text": "Много точек вместо одной славы." },
+    { "id": "seal_pin", "name": "Булавки писца", "type": "anqi", "grade": "jue", "cost": 1740, "atkMult": 1.55, "critAdd": 0.16, "minRealm": 2, "text": "Ими сшивали свитки. Ими же можно зашить чужой обет." }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "realms": [
+    {
+      "id": "qi_condensation",
+      "name": "Конденсация ци",
+      "layers": 9,
+      "baseQi": 100,
+      "growth": 1.35,
+      "baseBreakthroughChance": 0.9,
+      "maxAge": 100
+    },
+    {
+      "id": "foundation",
+      "name": "Основание",
+      "layers": 9,
+      "baseQi": 5000,
+      "growth": 1.4,
+      "baseBreakthroughChance": 0.7,
+      "maxAge": 200
+    },
+    {
+      "id": "golden_core",
+      "name": "Золотое ядро",
+      "layers": 9,
+      "baseQi": 400000,
+      "growth": 1.45,
+      "baseBreakthroughChance": 0.5,
+      "maxAge": 500
+    }
+  ],
+  "meditation": {
+    "qiPerSecondBase": 1,
+    "qiPerSecondPerRealm": 4
+  },
+  "breakthrough": {
+    "failChancePenaltyPerLayer": 0.03,
+    "minChance": 0.1,
+    "failQiLoss": 0.3,
+    "pillBonus": 0.15
+  }
+}
