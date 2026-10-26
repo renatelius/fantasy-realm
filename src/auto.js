@@ -58,7 +58,7 @@ function pickTechniques(data, s, say) {
     const curV = cur ? val(cur) : -1;
     const cands = data.techniques.techniques
       .filter(t => t.type === type.id && (t.minRealm || 0) <= s.realmIndex && val(t) > curV + 1e-9)
-      .filter(t => s.ownedTechniques.includes(t.id) || s.spiritStones - t.cost >= reserve)
+      .filter(t => s.ownedTechniques.includes(t.id) || s.spiritStones - G.techCost(data, s, t) >= reserve)
       .sort((a, b) => val(b) - val(a));
     if (!cands.length) continue;
     const t = cands[0];

@@ -16,9 +16,9 @@ export function playerStats(data, s) {
   const sl = slottedTechs(data, s);
   const body = s.life && data.world.physiques?.find(x => x.id === s.life.physiqueId);
   const hp = p.hpBase * g * (sl.body?.hpMult || 1) * (body?.hpMult || 1);
-  const atk = p.atkBase * g * (sl.martial?.atkMult || 1) * (sl.body?.atkMult || 1) * (sl.anqi?.atkMult || 1);
-  const def = p.defBase * g * (sl.body?.defMult || 1) * (sl.martial?.defMult || 1);
-  const crit = p.critChance + (sl.qinggong?.critAdd || 0) + (sl.martial?.critAdd || 0) + (sl.anqi?.critAdd || 0);
+  const atk = p.atkBase * g * (sl.martial?.atkMult || 1) * (sl.body?.atkMult || 1) * (sl.anqi?.atkMult || 1) * (body?.atkMult || 1);
+  const def = p.defBase * g * (sl.body?.defMult || 1) * (sl.martial?.defMult || 1) * (body?.defMult || 1);
+  const crit = p.critChance + (sl.qinggong?.critAdd || 0) + (sl.martial?.critAdd || 0) + (sl.anqi?.critAdd || 0) + (body?.critAdd || 0);
   return { hp, atk, def, crit };
 }
 

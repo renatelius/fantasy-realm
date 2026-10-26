@@ -24,6 +24,11 @@ let s = load();
 if ((s.settings?.uiVersion || 0) < UI_VERSION) { s = reset(); L.startLife(data, s, "new"); }
 s.settings.uiVersion = UI_VERSION;
 if (!s.life) L.startLife(data, s, "new");
+// Телосложения переименованы: старый сейв с удалённым id не должен ломать интерфейс.
+const PHY_ALIAS = { iron: "tiger" };
+const fixPhy = id => by(W.physiques, id) ? id : (PHY_ALIAS[id] && by(W.physiques, PHY_ALIAS[id]) ? PHY_ALIAS[id] : "plain");
+if (s.life) { s.life.physiqueId = fixPhy(s.life.physiqueId); s.life.children?.forEach(c => { if (c.physiqueId) c.physiqueId = fixPhy(c.physiqueId); }); }
+s.lineage?.forEach(e => e.children?.forEach(c => { if (c.physiqueId) c.physiqueId = fixPhy(c.physiqueId); }));
 if (!s.techniqueSlots) s.techniqueSlots = { neigong: s.techniqueId, body: null, martial: null, qinggong: null, yishu: null, anqi: null };
 if (s.life && !s.life.focusId) s.life.focusId = "family";
 if (s.life?.phase === "birth") s.life.phase = "cert";
@@ -46,7 +51,8 @@ function birthFacts(l) {
   const avgLife = W.regions.reduce((t, r) => t + r.expectLife * share(W.regions, r), 0);
   const avgInf = W.regions.reduce((t, r) => t + r.infantDeath * share(W.regions, r), 0);
   const avgQi = W.regions.reduce((t, r) => t + r.qiMult * share(W.regions, r), 0);
-  const expect = Math.round(region.expectLife + wealth.lifeBonus + (phy.lifeBonus || 0));
+  let expect = Math.round(region.expectLife + wealth.lifeBonus + (phy.lifeBonus || 0));
+  if (phy.capAge) expect = Math.min(expect, phy.capAge);
   const inf = region.infantDeath * (phy.hazard || 1) * (wealth.hazard / 0.0045) ** 0.5;
   const wIdx = W.wealth.findIndex(w => w.id === wealth.id);
   return { region, wealth, phy, era, avgLife, avgInf, avgQi, expect, inf, wIdx,
@@ -60,6 +66,8 @@ function mrz(l) {
   return a + "<br>" + b;
 }
 const docNo = l => `№ ЯНЬ-${l.eraId.toUpperCase().slice(0, 3)}-${String(hash(l.name + l.regionId) % 1e6).padStart(6, "0")}`;
+const fxChips = p => L.physiqueEffects(p).map(e => `<span class="fx ${e.good ? "" : "bad"}">${e.t}</span>`).join("");
+const oneIn = (arr, x) => { const v = 1 / share(arr, x); return v < 10 ? `${(share(arr, x) * 100).toFixed(0)}%` : `1 из ${Math.round(v)}`; };
 const dots = i => "●".repeat(i + 1) + "○".repeat(Math.max(0, 4 - i));
 
 // ───────── рулетки ─────────
@@ -68,8 +76,8 @@ const SPIN = {
     label: r => `${r.name}<small>${r.han}</small>`, after: "spinPhysique",
     result: r => `<div class="big">${r.name}（${r.han}）</div><div class="dim">${r.kind}. Здесь рождается ${Math.round(share(W.regions, r) * 100)}% младенцев Янь. ${jpick(J.region[r.id] || J.region.any, s.life.name)}</div>` },
   physique: { title: "Телосложение", sub: "Повитуха щупает кости. Мастера скажут потом, что видели всё сразу.", list: () => W.physiques, cur: l => l.physiqueId,
-    label: p => `${p.name}<small>${p.han}</small>`, after: "cert",
-    result: p => `<div class="big">${p.name}（${p.han}）</div><div class="dim">${p.text} Выпадает 1 из ${Math.round(1 / share(W.physiques, p))}.</div>` },
+    label: p => `<span class="${p.bad ? "bad-n" : share(W.physiques, p) < 0.04 ? "rare-n" : ""}">${p.name}</span><small>${p.han}</small>`, after: "cert",
+    result: p => `<div class="big ${p.bad ? "bad-n" : ""}">${p.name}（${p.han}）</div><div class="dim">${L.gtext(p.text, s.life.gender)} ${p.bad ? "Тяжёлое тело." : ""} Выпадает ${oneIn(W.physiques, p)}.</div><div style="margin-top:6px">${fxChips(p) || `<span class="fx">без особенностей</span>`}</div>` },
   root: { title: "Пробуждение корней", sub: "Шестнадцать лет. Старейшина кладёт твою ладонь на камень проверки. Вся деревня делает вид, что не смотрит.", list: () => W.roots, cur: l => l.rootId,
     label: r => r.name, after: "play",
     result: () => { const l = s.life, r = by(W.roots, l.rootId); return `<div class="big">${L.rootText(data, l)}</div><div class="dim">Множитель ци ×${r.qiMult}. Такая жила выпадает 1 из ${l.rootOdds}. ${jpick(J.root[r.id] || [], l.name + l.age)}</div>`; } },
@@ -92,7 +100,7 @@ function renderSpin(kind) {
     <div class="lbl">${kind === "root" ? l.name + " · " + l.age + " лет" : "Рулетка судьбы"}</div>
     <div class="big-name">${S.title}</div><div class="dim">${S.sub}</div>
     <div class="wheel"><div class="mark"></div><ul id="wheel" style="transform:translateY(${-(spinState.stage === "done" ? target - 1 : 0) * 52}px)">${tape.map(x => `<li>${S.label(x)}</li>`).join("")}</ul></div>
-    <div class="dim small">${list.map(x => `${x.name.split(" (")[0]} ${Math.round(share(list, x) * 100)}%`).join(" · ")}</div>
+    <div class="dim small">${list.map(x => `${x.name.split(" (")[0]} ${oneIn(list, x)}`).join(" · ")}</div>
     <div class="res" id="spin-res">${spinState.stage === "done" ? S.result(list.find(x => x.id === curId)) : ""}</div>
     <div class="actions">${spinState.stage === "idle" ? `<button class="pink" data-spin="go">Крутить</button>` : spinState.stage === "done" ? `<button class="pink" data-spin="next">${kind === "root" ? "Вступить на Путь" : "Дальше"}</button>` : `<button class="pink" disabled>Небо думает…</button>`}</div>
   </div></div>`);
@@ -135,7 +143,7 @@ function renderCert() {
       <div>Дом<b>${h?.house || "—"}</b></div>
       <div>Вера дома<b>${jpick(W.creeds, l.name)}</b></div>
       <div>Ожидаемый срок<b>${f.expect} лет</b></div>
-      <div>Телосложение<b>${f.phy.name}（${f.phy.han}）</b></div>
+      <div>Телосложение<b>${f.phy.name}（${f.phy.han}）</b><span style="text-transform:none;letter-spacing:0">${fxChips(f.phy)}</span></div>
       <div>Риск умереть до 5 лет<b>${(f.inf * 100).toFixed(1)}%</b></div>
       <div>Эпоха<b>${f.era.name}</b></div>
     </div>
@@ -192,7 +200,7 @@ function renderPass() {
     <div class="dim small">${stage(l)}${l.awakened ? " · " + data.realms.realms[s.realmIndex].name : ""}</div></div></div>
     <div class="kv"><span>Пол</span><b>${g("мужской", "женский")}</b>
       <span>Край</span><b>${f.region.name}</b>
-      <span>Тело</span><b>${f.phy.name} ${f.phy.han}</b>
+      <span>Тело</span><b title="${L.physiqueEffects(f.phy).map(e => e.t).join(", ")}" class="${f.phy.bad ? "bad-n" : ""}">${f.phy.name} ${f.phy.han}<br>${fxChips(f.phy)}</b>
       <span>Род</span><b><span class="dots">${dots(f.wIdx)}</span> ${f.wealth.name.toLowerCase()}</b>
       <span>Корни</span><b>${l.rootRevealed ? L.rootText(data, l) : `спят до ${W.time.awakeningAge} лет`}</b>
       <span>Ремесло</span><b>${L.jobById(data, l.jobId)?.name || (l.age < 6 ? "ещё не учится" : "пока нет")}</b>
@@ -345,7 +353,7 @@ function techLine(t) {
   const gr = GRADE[t.grade], own = s.ownedTechniques.includes(t.id), act = s.techniqueSlots?.[t.type] === t.id;
   const bits = [t.qiMultiplier ? `ци ×${t.qiMultiplier}` : "", t.hpMult ? `тело ×${t.hpMult}` : "", t.atkMult ? `удар ×${t.atkMult}` : "", t.defMult ? `защита ×${t.defMult}` : "", t.critAdd ? `крит +${Math.round(t.critAdd * 100)}%` : "", t.hazardCut ? `риск −${Math.round(t.hazardCut * 100)}%` : "", t.pillMul ? `пилюля ×${t.pillMul}` : ""].filter(Boolean).join(" · ");
   const needRealm = !own && (t.minRealm || 0) > s.realmIndex;
-  const st = own ? (act ? "в работе" : "изучена") : `${t.cost} камней`;
+  const st = own ? (act ? "в работе" : "изучена") : `${G.techCost(data, s, t)} камней`;
   const dis = !s.life.alive || !!s.life.pending || act || needRealm || !s.life.awakened;
   return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.han} · ${st}${needRealm ? ` · с ${data.realms.realms[t.minRealm].name}` : ""}<small>${bits}. ${t.text}</small></button>`;
 }

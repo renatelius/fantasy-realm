@@ -111,6 +111,8 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
     L.peers = makePeers(data, s, rng);
     L.phase = "spinRegion";
   }
+  const phyS = by(W.physiques, L.physiqueId);
+  if (phyS?.start) for (const [k, v] of Object.entries(phyS.start)) L.stats[k] = (L.stats[k] || 0) + v;
   const odds = L.odds ? ` Такая судьба выпадает 1 из ${L.odds.toLocaleString("ru-RU")}.` : "";
   if (child) {
     logLine(s, `Продолжение рода: ${L.name}, ${L.age} лет — не с пелёнок. Дом после ${prev.name}. ${by(W.regions, L.regionId).name}, ${wealth.name}.${L.awakened ? " Корни уже открыты: " + rootText(data, L) + "." : ""}`, "birth");
@@ -218,6 +220,7 @@ export function finishRoot(data, s, rng = Math.random) {
   L.qiMult = r.root.qiMult * era.qiMult * region.qiMult * (phy?.qiMult || 1);
   const p = r.root.weight / sum(W.roots);
   L.rootOdds = Math.round(1 / p);
+  if (phy?.capAge) logLine(s, `Старейшина нащупал холод в жилах: «${phy.han}». Без ${phy.capLayer}-го слоя Конденсации дольше ${phy.capAge} лет не прожить. Путь — единственное лекарство.`, "death");
   logLine(s, `Проверка корней в ${L.age} лет: ${rootText(data, L)}. Такая жила выпадает 1 из ${L.rootOdds}. Путь открыт.`, "awaken");
   return L;
 }
@@ -235,10 +238,39 @@ export function autoCultivate(data, s, rng = Math.random) {
   logLine(s, "Авто: " + r.msg, "cult");
 }
 
+// «Девять тёмных жил»: потолок срока снимается, когда общий слой (ступень*9 + слой) дорос до capLayer.
+function capLifted(data, s, phy) {
+  return s.realmIndex * 9 + s.layer >= (phy.capLayer ?? 10);
+}
 export function lifespan(data, s) {
   const L = s.life;
   const base = L.awakened ? Math.max(L.baseLife, data.realms.realms[s.realmIndex].maxAge) : L.baseLife;
+  const phy = by(data.world.physiques, L.physiqueId);
+  if (phy?.capAge && !capLifted(data, s, phy)) return Math.min(base, phy.capAge) + L.ageShift;
   return base + L.ageShift;
+}
+// Эффекты телосложения человеческим языком: [{t, good}]
+export function physiqueEffects(p) {
+  if (!p) return [];
+  const out = [], pc = v => `${v > 0 ? "+" : "−"}${Math.round(Math.abs(v) * 100)}%`, x = v => `×${+v.toFixed(2)}`;
+  const add = (t, good) => out.push({ t, good });
+  if (p.qiMult && p.qiMult !== 1) add(`ци ${x(p.qiMult)}`, p.qiMult > 1);
+  if (p.breakAdd) add(`прорыв ${pc(p.breakAdd)}`, p.breakAdd > 0);
+  if (p.lifeBonus) add(`срок ${p.lifeBonus > 0 ? "+" : "−"}${Math.abs(p.lifeBonus)} лет`, p.lifeBonus > 0);
+  if (p.hazard && p.hazard !== 1) add(`беды ${pc(p.hazard - 1)}`, p.hazard < 1);
+  if (p.hpMult && p.hpMult !== 1) add(`тело ${x(p.hpMult)}`, p.hpMult > 1);
+  if (p.atkMult && p.atkMult !== 1) add(`удар ${x(p.atkMult)}`, p.atkMult > 1);
+  if (p.defMult && p.defMult !== 1) add(`защита ${x(p.defMult)}`, p.defMult > 1);
+  if (p.critAdd) add(`крит ${pc(p.critAdd)}`, p.critAdd > 0);
+  if (p.pillMul && p.pillMul !== 1) add(`пилюли ${pc(p.pillMul - 1)}`, p.pillMul < 1);
+  if (p.techCostMul && p.techCostMul !== 1) add(`техники ${pc(p.techCostMul - 1)}`, p.techCostMul < 1);
+  if (p.payMul && p.payMul !== 1) add(`заработок ${pc(p.payMul - 1)}`, p.payMul > 1);
+  if (p.spouseHazardMul && p.spouseHazardMul !== 1) add(`близкие гибнут ×${p.spouseHazardMul}`, false);
+  if (p.birthMul && p.birthMul !== 1) add(`дети ${pc(p.birthMul - 1)}`, p.birthMul > 1);
+  if (p.capAge) add(`без ${p.capLayer}-го слоя — не дольше ${p.capAge} лет`, false);
+  const ST = { daoHeart: "дао-сердце", connections: "связи", karma: "карма" };
+  for (const [k, v] of Object.entries(p.start || {})) add(`${ST[k] || k} ${v > 0 ? "+" : "−"}${Math.abs(v)}`, v > 0);
+  return out;
 }
 export function rootText(data, L) { return `${by(data.world.roots, L.rootId).name} (${L.elements.join(", ")})`; }
 export const childAge = (s, c) => s.life.age - c.born;
@@ -576,11 +608,12 @@ function yearPass(data, s, rng) {
     if (d) { L.jobId = d.id; logLine(s, `В ${L.age} лет ты встал(а) к делу: ${d.name}.`, "family"); }
   }
   const focus = (J?.focuses || []).find(x => x.id === L.focusId) || J?.focuses?.[0];
+  const phyY = by(W.physiques, L.physiqueId);
   if (J && L.age >= J.workAge) {
     const own = jobById(data, L.jobId), sp = L.spouse && jobById(data, L.spouse.jobId);
     let pay = (own?.stones || 0) + (sp?.stones || 0);
     pay += L.children.filter(c => c.alive && childAge(s, c) >= J.childHelpAge && c.task === "help").length * (J.childHelpStones || 0);
-    pay = Math.round(pay * (focus?.payMul ?? 1));
+    pay = Math.round(pay * (focus?.payMul ?? 1) * (phyY?.payMul ?? 1));
     if (pay) s.spiritStones += pay;
     if (pay && L.age % 5 === 0) logLine(s, `Год работы (${focus?.name || "дом"}): ${pay} камней.`, "family");
   }
@@ -590,13 +623,13 @@ function yearPass(data, s, rng) {
       logLine(s, `${c.name} вывел(а) новый иероглиф. В доме стало тише и светлее.`, "family");
     }
   }
-  if (L.spouse && rng() < wl.spouseDeathHazard + (L.age > 80 ? 0.02 : 0)) {
+  if (L.spouse && rng() < (wl.spouseDeathHazard + (L.age > 80 ? 0.02 : 0)) * (phyY?.spouseHazardMul ?? 1)) {
     const sp = L.spouse;
     logLine(s, `${sp.gender === "m" ? "Умер твой супруг" : "Умерла твоя супруга"} ${sp.name}. ${L.gender === "m" ? "Ты остался один." : "Ты осталась одна."}`, "family");
     L.spouse = null;
   }
   const [b0, b1] = wl.childBirthAges ?? [20, 50];
-  if (L.spouse && L.age >= b0 && L.age <= b1 && L.children.length < wl.childMax && rng() < wl.childBirthChance * (focus?.birthMul ?? 1)) {
+  if (L.spouse && L.age >= b0 && L.age <= b1 && L.children.length < wl.childMax && rng() < wl.childBirthChance * (focus?.birthMul ?? 1) * (phyY?.birthMul ?? 1)) {
     const kid = makeChild(data, s, rng); L.children.push(kid);
     logLine(s, `В семье ${kid.gender === "m" ? "родился сын" : "родилась дочь"} — ${kid.name}.`, "family");
   }
@@ -636,6 +669,11 @@ export function setYearHook(fn) { yearHook = fn; }
 function afterYear(data, s, rng) {
   const L = s.life;
   if (yearHook && L.alive && !L.pending && !L.pendingRoot) yearHook(data, s, rng);
+  const phy = by(data.world.physiques, L.physiqueId);
+  if (L.alive && phy?.capAge && !L.capLifted && capLifted(data, s, phy)) {
+    L.capLifted = true;
+    logLine(s, `Своя ци впервые прогрела тёмные жилы. Холод отступил: срок больше не меряют лекари.`, "luck");
+  }
 }
 function consumeYear(data, s, rng) {
   const T = data.world.time, L = s.life;

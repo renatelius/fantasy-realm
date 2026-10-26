@@ -9,6 +9,14 @@ export function qiRequired(data, s) {
   return Math.floor(r.baseQi * Math.pow(r.growth, s.layer - 1));
 }
 
+// Телосложение даёт свои множители: breakAdd (прорыв), pillMul (цена пилюли), techCostMul (цена техник).
+export function physiqueOf(data, s) {
+  return s.life ? data.world.physiques?.find(x => x.id === s.life.physiqueId) : null;
+}
+export function techCost(data, s, t) {
+  return Math.round((t.cost || 0) * (physiqueOf(data, s)?.techCostMul ?? 1));
+}
+
 export function techById(data, id) {
   return data.techniques.techniques.find(x => x.id === id);
 }
@@ -31,7 +39,8 @@ export function qiPerSecond(data, s) {
 export function breakthroughChance(data, s, usePill = false) {
   const r = data.realms.realms[s.realmIndex], b = data.realms.breakthrough;
   const c = r.baseBreakthroughChance - b.failChancePenaltyPerLayer * (s.layer - 1) + (usePill ? b.pillBonus : 0)
-    + (s.life ? Math.min(0.15, 0.01 * Math.max(0, s.life.stats.daoHeart)) : 0);
+    + (s.life ? Math.min(0.15, 0.01 * Math.max(0, s.life.stats.daoHeart)) : 0)
+    + (physiqueOf(data, s)?.breakAdd || 0);
   return Math.min(0.99, Math.max(b.minChance, c));
 }
 
@@ -66,7 +75,7 @@ export function pillPrice(data, s) {
   let L = s.layer - 1;
   for (let i = 0; i < s.realmIndex; i++) L += data.realms.realms[i].layers;
   const y = slottedTechs(data, s).yishu;
-  return Math.max(1, Math.round(20 * Math.pow(1.15, L) * (y?.pillMul ?? 1)));
+  return Math.max(1, Math.round(20 * Math.pow(1.15, L) * (y?.pillMul ?? 1) * (physiqueOf(data, s)?.pillMul ?? 1)));
 }
 
 export function buyPill(data, s) {
@@ -88,9 +97,10 @@ export function learnTechnique(data, s, id) {
   const t = techById(data, id);
   if (!t) return { ok: false, msg: "Нет такой техники." };
   if (s.ownedTechniques.includes(id)) return equipTechnique(data, s, id);
-  if (s.spiritStones < t.cost) return { ok: false, msg: "Не хватает камней." };
+  const cost = techCost(data, s, t);
+  if (s.spiritStones < cost) return { ok: false, msg: "Не хватает камней." };
   if ((t.minRealm || 0) > s.realmIndex) return { ok: false, msg: "Ступень слишком низка." };
-  s.spiritStones -= t.cost;
+  s.spiritStones -= cost;
   s.ownedTechniques.push(id);
   return equipTechnique(data, s, id);
 }
