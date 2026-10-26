@@ -17,7 +17,12 @@ const by = (arr, id) => arr.find(x => x.id === id);
 const GRADE = Object.fromEntries(data.techniques.grades.map(g => [g.id, g]));
 const W = data.world, J = data.jokes;
 
+// Версия интерфейса. Сейв, сделанный до рулеток рождения, начинается заново с рождения
+// (иначе загружается старая жизнь — например, наследник 23 лет — и рулеток не видно).
+const UI_VERSION = 2;
 let s = load();
+if ((s.settings?.uiVersion || 0) < UI_VERSION) { s = reset(); L.startLife(data, s, "new"); }
+s.settings.uiVersion = UI_VERSION;
 if (!s.life) L.startLife(data, s, "new");
 if (!s.techniqueSlots) s.techniqueSlots = { neigong: s.techniqueId, body: null, martial: null, qinggong: null, yishu: null, anqi: null };
 if (s.life && !s.life.focusId) s.life.focusId = "family";
@@ -169,14 +174,15 @@ function lifeStats() {
 
 function renderHeader() {
   const l = s.life, span = L.lifespan(data, s);
-  setHTML($("brand"), `<b>1</b> из ${(l.odds || 1).toLocaleString("ru-RU")}`);
+  setHTML($("brand"), l.odds ? `<b>1</b> из ${l.odds.toLocaleString("ru-RU")}` : `Род <b>${l.surname}</b> · ${l.generation}-е поколение`);
   setHTML($("agebig"), `Возраст<b>${l.age}</b>`);
   setHTML($("topline"), `${l.name} · ${by(W.eras, l.eraId).name}${l.awakened ? " · " + data.realms.realms[s.realmIndex].name + ", слой " + s.layer : ""}`);
   $("topbar").style.width = `${Math.min(100, pct(l.age, span))}%`;
   const sp = Object.entries(W.time.speeds).map(([k, v]) =>
     `<button class="${s.settings.speed === k ? "on" : ""}" data-speed="${k}">${k === "pause" ? "❚❚ Пауза" : k === "next" ? "До следующего выбора »" : v.label}</button>`).join("");
   setHTML($("speeds"), sp + `<button class="auto ${s.settings.autoPlay ? "on" : ""}" data-act="auto" title="Персонаж сам выбирает выгодное: карточки, ремесло, фокус, техники, пилюли, прорывы, приключения">⚙ Авторежим${s.settings.autoPlay ? ": вкл" : ""}</button>
-    <button data-act="reset">Выйти</button>`);
+    <button data-act="newlife" title="Бросить эту жизнь и родиться заново: рулетки края и тела. Родовое древо сохранится">↻ Новая судьба</button>
+    <button data-act="reset" title="Стереть всё, включая родовое древо">Выйти</button>`);
 }
 
 function renderPass() {
@@ -211,7 +217,7 @@ function renderCult() {
   const r = data.realms.realms[s.realmIndex], need = G.qiRequired(data, s), locked = !!l.pending, sp = speedSpec();
   const ch = G.breakthroughChance(data, s), chp = G.breakthroughChance(data, s, true);
   const leftSec = Math.max(0, s.adventureReadyAt - s.clockMs) / 1000;
-  setHTML(el, `<h2>Путь <small>${s.wins}П · ${s.losses}П</small></h2>
+  setHTML(el, `<h2>Путь <small>побед ${s.wins} · поражений ${s.losses}</small></h2>
     <div class="realm">${r.name}<small>слой ${s.layer}/${r.layers}</small></div>
     <div class="track" style="margin:8px 0 4px"><i style="width:${Math.min(100, pct(s.qi, need))}%;background:var(--jade)"></i></div>
     <div class="dim small">${Math.floor(s.qi)} / ${need} ци · ${sp.untilEvent ? "прокрутка" : `+${(G.qiPerSecond(data, s) * factor()).toFixed(1)}/с`}</div>
@@ -380,6 +386,7 @@ document.body.addEventListener("click", e => {
   if (d.cert === "copy") { navigator.clipboard?.writeText($("cert").innerText.slice(0, 1200)); b.textContent = "Скопировано"; return; }
   if (d.speed) { s.settings.speed = d.speed; return done(); }
   if (d.act === "auto") { s.settings.autoPlay = !s.settings.autoPlay; s.settings.auto = s.settings.autoPlay ? "best" : "off"; autoAt = null; log(s.settings.autoPlay ? "Авторежим включён: судьба сама ищет выгоду." : "Авторежим выключен.", "info"); return done(); }
+  if (d.act === "newlife") { if (confirm("Оставить эту жизнь и родиться заново? Родовое древо сохранится.")) { L.startLife(data, s, "new"); spinState = null; done(); } return; }
   if (d.act === "reset") { if (confirm("Сбросить всё, включая родовое древо?")) { s = reset(); L.startLife(data, s, "new"); spinState = null; done(); } return; }
   if (d.c === "break") { log(G.breakthrough(data, s, false).msg, "break"); return done(); }
   if (d.c === "breakp") { log(G.breakthrough(data, s, true).msg, "break"); return done(); }
