@@ -1,46 +1,126 @@
 {
-  "adventure": {
-    "cooldownSec": 20,
-    "lossCooldownSec": 40,
-    "pillDropChance": 0.1,
-    "qiRewardShare": 0.15,
-    "maxRounds": 40
-  },
-  "player": {
-    "hpBase": 100,
-    "atkBase": 10,
-    "defBase": 5,
-    "growth": 1.25,
-    "critChance": 0.1,
-    "critMult": 1.5
-  },
-  "enemies": [
+ "adventure": {
+  "cooldownSec": 20,
+  "lossCooldownSec": 40,
+  "pillDropChance": 0.1,
+  "qiRewardShare": 0.1,
+  "maxRounds": 40,
+  "woundYears": 1,
+  "deathOnLoss": 0.03
+ },
+ "player": {
+  "hpBase": 100,
+  "atkBase": 10,
+  "defBase": 5,
+  "growth": 1.25,
+  "critChance": 0.1,
+  "critMult": 1.5
+ },
+ "enemies": [
+  {
+   "id": "spirit_wolf",
+   "name": "Духовный волк",
+   "levelOffset": 0,
+   "hpMult": 1.15,
+   "atkMult": 0.95,
+   "defMult": 0.8,
+   "stones": 3,
+   "techniques": [
     {
-      "id": "spirit_wolf",
-      "name": "Духовный волк",
-      "levelOffset": 0,
-      "hpMult": 1.15,
-      "atkMult": 0.95,
-      "defMult": 0.8,
-      "stones": 3
+     "name": "Клык лунного голода",
+     "han": "月牙噬",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.025
     },
     {
-      "id": "rogue_cultivator",
-      "name": "Бродячий заклинатель",
-      "levelOffset": 1,
-      "hpMult": 1.05,
-      "atkMult": 0.7,
-      "defMult": 0.7,
-      "stones": 6
+     "name": "Стая теней",
+     "han": "影群",
+     "fromLevel": 9,
+     "atkMult": 1.225,
+     "hpMult": 1.175,
+     "defMult": 1.1
     },
     {
-      "id": "mountain_wraith",
-      "name": "Горный призрак (элита)",
-      "levelOffset": 3,
-      "hpMult": 0.6,
-      "atkMult": 0.4,
-      "defMult": 0.9,
-      "stones": 18
+     "name": "Вой над Бездонью",
+     "han": "无间嚎",
+     "fromLevel": 18,
+     "atkMult": 1.375,
+     "hpMult": 1.3,
+     "defMult": 1.2
     }
-  ]
+   ]
+  },
+  {
+   "id": "rogue_cultivator",
+   "name": "Бродячий заклинатель",
+   "levelOffset": 1,
+   "hpMult": 1.05,
+   "atkMult": 0.7,
+   "defMult": 0.7,
+   "stones": 6,
+   "techniques": [
+    {
+     "name": "Ладонь чёрного песка",
+     "han": "黑沙掌",
+     "fromLevel": 3,
+     "atkMult": 1.11,
+     "hpMult": 1.04,
+     "defMult": 1.05
+    },
+    {
+     "name": "Меч без ножен",
+     "han": "无鞘剑",
+     "fromLevel": 9,
+     "atkMult": 1.25,
+     "hpMult": 1.15,
+     "defMult": 1.125
+    },
+    {
+     "name": "Стёртая печать",
+     "han": "残印诀",
+     "fromLevel": 18,
+     "atkMult": 1.4,
+     "hpMult": 1.275,
+     "defMult": 1.225
+    }
+   ]
+  },
+  {
+   "id": "mountain_wraith",
+   "name": "Горный призрак (элита)",
+   "levelOffset": 3,
+   "hpMult": 0.6,
+   "atkMult": 0.4,
+   "defMult": 0.9,
+   "stones": 18,
+   "techniques": [
+    {
+     "name": "Холод горной тени",
+     "han": "山阴寒",
+     "fromLevel": 3,
+     "atkMult": 1.09,
+     "hpMult": 1.075,
+     "defMult": 1.05
+    },
+    {
+     "name": "Тысяча шёпотов",
+     "han": "千语",
+     "fromLevel": 9,
+     "atkMult": 1.2,
+     "hpMult": 1.2,
+     "defMult": 1.15
+    },
+    {
+     "name": "Плач стёртого царства",
+     "han": "赵亡泣",
+     "fromLevel": 18,
+     "atkMult": 1.35,
+     "hpMult": 1.35,
+     "defMult": 1.25
+    }
+   ]
+  }
+ ]
 }

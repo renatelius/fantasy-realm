@@ -219,6 +219,23 @@ function renderStats() {
       <div>Дао-сердце<b>${st.daoHeart}</b></div><div>Карма<b>${st.karma > 0 ? "+" : ""}${st.karma}</b></div></div>`);
 }
 
+let oddsKey = "", oddsVal = null;
+function advOdds() {
+  const key = [s.realmIndex, s.layer, JSON.stringify(s.techniqueSlots), s.life.physiqueId, s.spiritStones > 0].join("|");
+  if (key !== oddsKey) { oddsKey = key; oddsVal = C.adventureOdds(data, s); }
+  return oddsVal;
+}
+// Подсказка новичку: шанс победы низкий → какие техники есть у врагов и что выучить.
+function newbieHint(o) {
+  if (s.settings.autoPlay || o.win >= 0.6) return "";
+  const techs = [...new Set(data.enemies.enemies.map(e => C.enemyTech(data, s, e)).filter(Boolean).map(t => `«${t.name}»`))];
+  const h = C.combatHint(data, s, t => G.techCost(data, s, t));
+  const type = h.tech && data.techniques.types.find(x => x.id === h.tech.type);
+  const what = h.tech ? `Выучи «${h.tech.name}» (${type.han}) за ${h.cost} камней${s.spiritStones < h.cost ? ` — не хватает ${h.cost - s.spiritStones}: поработай год-другой` : " — хватает уже сейчас"}.` : "Подходящих техник на этой ступени нет: копи камни на пилюлю и прорвись.";
+  const why = techs.length ? `Враги здесь бьют техниками: ${techs.join(", ")}. ` : "";
+  const slots = h.empty ? ` Пустых боевых слотов: ${h.empty} из 2 (招式, 外功).` : "";
+  return `<div class="note" style="border-color:var(--gold);background:#d9b45a12">Шанс победы ниже 60%. ${why}${what}${slots} Список — «Техники» справа.</div>`;
+}
 function renderCult() {
   const l = s.life, el = $("cult");
   if (!l.awakened || !l.alive) { setHTML(el, `<h2>Путь <small>закрыт</small></h2><div class="dim">${l.alive ? `Корни спят. Проверка в ${W.time.awakeningAge} лет — до неё ${Math.max(0, W.time.awakeningAge - l.age)} г.` : "Путь окончен."}</div>`); return; }
@@ -230,6 +247,7 @@ function renderCult() {
     <div class="track" style="margin:8px 0 4px"><i style="width:${Math.min(100, pct(s.qi, need))}%;background:var(--jade)"></i></div>
     <div class="dim small">${Math.floor(s.qi)} / ${need} ци · ${sp.untilEvent ? "прокрутка" : `+${(G.qiPerSecond(data, s) * factor()).toFixed(1)}/с`}</div>
     <div class="dim small">Прорыв: ${Math.round(ch * 100)}% · с пилюлей ${Math.round(chp * 100)}% · пилюля ${G.pillPrice(data, s)} камней</div>
+    ${(() => { const o = advOdds(); return `<div class="dim small">Приключение: победа ~${Math.round(o.win * 100)}% · <span style="color:${o.death > 0.01 ? "var(--red)" : "inherit"}">гибель ~${(o.death * 100).toFixed(1)}%</span> · поражение = рана (срок −${data.enemies.adventure.woundYears || 0})</div>${newbieHint(o)}`; })()}
     ${s.settings.autoPlay ? `<div class="note">Авторежим сам прорывается, покупает пилюли, когда они выгодны, и учит лучшие техники.</div>` : ""}
     <div class="btns">
       <button data-c="break" ${locked || !G.canBreakthrough(data, s) ? "disabled" : ""}>Прорыв</button>
@@ -399,7 +417,7 @@ document.body.addEventListener("click", e => {
   if (d.c === "break") { log(G.breakthrough(data, s, false).msg, "break"); return done(); }
   if (d.c === "breakp") { log(G.breakthrough(data, s, true).msg, "break"); return done(); }
   if (d.c === "pill") { log(G.buyPill(data, s) ? "Куплена пилюля." : "Не хватает камней."); return done(); }
-  if (d.c === "adv") { const r = C.adventure(data, s, s.clockMs); log(r.msg, r.win ? "adv" : "cult"); return done(); }
+  if (d.c === "adv") { const r = C.adventure(data, s, s.clockMs); log(r.msg, r.win ? "adv" : r.fatal ? "death" : "cult"); return done(); }
   if (d.i !== undefined && b.closest("#event")) { const r = L.chooseOption(data, s, +d.i); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.heir !== undefined) { L.startLife(data, s, "heir", Math.random, +d.heir); return done(); }
   if (d.new) { L.startLife(data, s, "new"); spinState = null; return done(); }

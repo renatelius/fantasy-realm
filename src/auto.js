@@ -5,7 +5,8 @@
 //   3) фокус — до пробуждения «семья» (меньше риск), после — «гунфу», но «семья», если есть супруг и детей < 2;
 //   4) техники — в каждый слот лучшая доступная по ценности, с запасом камней на пилюлю;
 //   5) прорывы — пока хватает ци: пилюля, если она даёт ≥ +8% или шанс < 60%; до 12 попыток за вызов;
-//   6) приключение — если готово и победа вероятна (сравнение боевой силы ≥ 1.1).
+//   6) приключение — если шанс победы ≥ 55% (поражение ранит и может убить; враги бьют техниками).
+//      Пока проигрываем (< 70%), техники 招式/外功/暗器 покупаются первыми и без запаса на пилюлю.
 import * as G from "./game.js";
 import * as C from "./combat.js";
 import * as L from "./life.js";
@@ -50,9 +51,20 @@ function pickChildren(data, s) {
   });
 }
 
+// Шанс победы кэшируется по ступени, слою, слотам и телу (оценка — 36 пробных боёв).
+let oddsKey = "", oddsWin = 1;
+function winChance(data, s) {
+  const k = [s.realmIndex, s.layer, JSON.stringify(s.techniqueSlots), s.life?.physiqueId].join("|");
+  if (k !== oddsKey) { oddsKey = k; oddsWin = C.adventureOdds(data, s, 12).win; }
+  return oddsWin;
+}
+const COMBAT_FIRST = ["martial", "body", "anqi", "neigong", "qinggong", "yishu"];
 function pickTechniques(data, s, say) {
-  const reserve = G.pillPrice(data, s);
-  for (const type of data.techniques.types) {
+  // Враги бьют техниками: если проигрываем — сначала 招式/外功/暗器 и без запаса на пилюлю.
+  const losing = winChance(data, s) < 0.7;
+  const reserve = losing ? 0 : G.pillPrice(data, s);
+  const order = losing ? COMBAT_FIRST.map(id => data.techniques.types.find(t => t.id === id)).filter(Boolean) : data.techniques.types;
+  for (const type of order) {
     const cur = G.slottedTechs(data, s)[type.id];
     const val = TYPE_VALUE[type.id] || (() => 0);
     const curV = cur ? val(cur) : -1;
@@ -83,11 +95,10 @@ function doBreakthroughs(data, s, say, rng) {
 
 function doAdventure(data, s, say, rng) {
   if (!C.adventureReady(s, s.clockMs)) return;
-  const P = power(C.playerStats(data, s));
-  const avg = data.enemies.enemies.reduce((t, e) => t + power(C.enemyStats(data, s, e)), 0) / data.enemies.enemies.length;
-  if (P < avg * 1.1) return;
+  // Приключения опасны (рана, шанс гибели), враги с техниками. Авто идёт, когда победа вероятнее 55%.
+  if (winChance(data, s) < 0.55) return;
   const r = C.adventure(data, s, s.clockMs, rng);
-  say(r.msg, r.win ? "adv" : "cult");
+  say(r.msg, r.win ? "adv" : r.fatal ? "death" : "cult");
 }
 
 export function autoYear(data, s, rng = Math.random) {
