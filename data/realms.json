@@ -1,41 +1,220 @@
 {
-  "realms": [
+ "_note": "Три пути. Ступени (realms) у каждого пути свои; realmIndex/layer общие. Верхние две ступени — легенды (legend): в мире Печати их достигают единицы.",
+ "paths": [
+  {
+   "id": "qi",
+   "name": "Путь ци",
+   "han": "炼气之道",
+   "res": "ци",
+   "requires": "root",
+   "hazardMul": 1,
+   "combat": {},
+   "text": "Корни пьют ци неба и земли. Самый старый и ровный путь: даос сидит, мир течёт сквозь него.",
+   "realms": [
     {
-      "id": "qi_condensation",
-      "name": "Конденсация ци",
-      "layers": 9,
-      "baseQi": 100,
-      "growth": 1.35,
-      "baseBreakthroughChance": 0.9,
-      "maxAge": 100
+     "id": "qi_condensation",
+     "name": "Конденсация ци",
+     "han": "炼气",
+     "layers": 9,
+     "baseQi": 100,
+     "growth": 1.35,
+     "baseBreakthroughChance": 0.9,
+     "maxAge": 100
     },
     {
-      "id": "foundation",
-      "name": "Основание",
-      "layers": 9,
-      "baseQi": 5000,
-      "growth": 1.4,
-      "baseBreakthroughChance": 0.7,
-      "maxAge": 200
+     "id": "foundation",
+     "name": "Основание",
+     "han": "筑基",
+     "layers": 9,
+     "baseQi": 5000,
+     "growth": 1.4,
+     "baseBreakthroughChance": 0.7,
+     "maxAge": 200
     },
     {
-      "id": "golden_core",
-      "name": "Золотое ядро",
-      "layers": 9,
-      "baseQi": 400000,
-      "growth": 1.45,
-      "baseBreakthroughChance": 0.5,
-      "maxAge": 500
+     "id": "golden_core",
+     "name": "Золотое ядро",
+     "han": "金丹",
+     "layers": 9,
+     "baseQi": 400000,
+     "growth": 1.45,
+     "baseBreakthroughChance": 0.5,
+     "maxAge": 500
+    },
+    {
+     "id": "nascent_soul",
+     "name": "Зарождение души",
+     "han": "元婴",
+     "layers": 9,
+     "baseQi": 32000000,
+     "growth": 1.5,
+     "baseBreakthroughChance": 0.35,
+     "maxAge": 1000,
+     "legend": true
+    },
+    {
+     "id": "spirit_transform",
+     "name": "Преображение духа",
+     "han": "化神",
+     "layers": 9,
+     "baseQi": 3000000000,
+     "growth": 1.55,
+     "baseBreakthroughChance": 0.22,
+     "maxAge": 2000,
+     "legend": true
     }
-  ],
-  "meditation": {
-    "qiPerSecondBase": 1,
-    "qiPerSecondPerRealm": 4
+   ]
   },
-  "breakthrough": {
-    "failChancePenaltyPerLayer": 0.03,
-    "minChance": 0.1,
-    "failQiLoss": 0.3,
-    "pillBonus": 0.15
+  {
+   "id": "body",
+   "name": "Путь тела",
+   "han": "炼体之道",
+   "res": "закалка",
+   "requires": null,
+   "hazardMul": 0.85,
+   "combat": {
+    "hp": 1.4,
+    "atk": 1.12,
+    "def": 1.3
+   },
+   "text": "Нет корней — есть кости. Кто не может пить ци неба, вбивает силу в себя ударами, холодом и жаром. Лет меньше, зато кулак не врёт.",
+   "realms": [
+    {
+     "id": "skin",
+     "name": "Закалка кожи",
+     "han": "炼皮",
+     "layers": 9,
+     "baseQi": 100,
+     "growth": 1.35,
+     "baseBreakthroughChance": 0.9,
+     "maxAge": 95
+    },
+    {
+     "id": "bronze_bone",
+     "name": "Медные жилы, железные кости",
+     "han": "铜筋铁骨",
+     "layers": 9,
+     "baseQi": 5000,
+     "growth": 1.4,
+     "baseBreakthroughChance": 0.68,
+     "maxAge": 190
+    },
+    {
+     "id": "marrow",
+     "name": "Очищение мозга костей",
+     "han": "洗髓",
+     "layers": 9,
+     "baseQi": 400000,
+     "growth": 1.45,
+     "baseBreakthroughChance": 0.48,
+     "maxAge": 420
+    },
+    {
+     "id": "golden_body",
+     "name": "Золотое тело",
+     "han": "金身",
+     "layers": 9,
+     "baseQi": 32000000,
+     "growth": 1.5,
+     "baseBreakthroughChance": 0.33,
+     "maxAge": 850,
+     "legend": true
+    },
+    {
+     "id": "vajra",
+     "name": "Нетленный алмаз",
+     "han": "金刚不坏",
+     "layers": 9,
+     "baseQi": 3000000000,
+     "growth": 1.55,
+     "baseBreakthroughChance": 0.2,
+     "maxAge": 1600,
+     "legend": true
+    }
+   ]
+  },
+  {
+   "id": "spirit",
+   "name": "Путь духа",
+   "han": "炼神之道",
+   "res": "сила души",
+   "requires": "soul",
+   "hazardMul": 1.05,
+   "daoHeartMul": 1.3,
+   "combat": {
+    "hp": 0.85,
+    "atk": 1.1,
+    "def": 0.92,
+    "crit": 0.04
+   },
+   "text": "Корни решают, сколько ци ты выпьешь. Душа решает, что ты из неё сделаешь. Мастер духа видит сквозь стены и ложь, но тело у него — как у учёного.",
+   "realms": [
+    {
+     "id": "spirit_sense",
+     "name": "Духовное чувство",
+     "han": "灵觉",
+     "layers": 9,
+     "baseQi": 100,
+     "growth": 1.35,
+     "baseBreakthroughChance": 0.88,
+     "maxAge": 100
+    },
+    {
+     "id": "soul_condense",
+     "name": "Сгущение души",
+     "han": "凝魂",
+     "layers": 9,
+     "baseQi": 5000,
+     "growth": 1.4,
+     "baseBreakthroughChance": 0.68,
+     "maxAge": 200
+    },
+    {
+     "id": "spirit_roam",
+     "name": "Странствие духа",
+     "han": "神游",
+     "layers": 9,
+     "baseQi": 400000,
+     "growth": 1.45,
+     "baseBreakthroughChance": 0.48,
+     "maxAge": 450
+    },
+    {
+     "id": "soul_out",
+     "name": "Выход души из тела",
+     "han": "出窍",
+     "layers": 9,
+     "baseQi": 32000000,
+     "growth": 1.5,
+     "baseBreakthroughChance": 0.34,
+     "maxAge": 900,
+     "legend": true
+    },
+    {
+     "id": "heaven_man",
+     "name": "Единство неба и человека",
+     "han": "天人合一",
+     "layers": 9,
+     "baseQi": 3000000000,
+     "growth": 1.55,
+     "baseBreakthroughChance": 0.22,
+     "maxAge": 1800,
+     "legend": true
+    }
+   ]
   }
+ ],
+ "meditation": {
+  "qiPerSecondBase": 1,
+  "qiPerSecondPerRealm": 4
+ },
+ "breakthrough": {
+  "failChancePenaltyPerLayer": 0.03,
+  "minChance": 0.1,
+  "failQiLoss": 0.3,
+  "pillBonus": 0.15,
+  "legendChanceMul": 0.15,
+  "legendDeathChance": 0.1,
+  "legendCooldownYears": 15
+ }
 }

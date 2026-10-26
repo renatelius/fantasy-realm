@@ -5,6 +5,7 @@
 //   3) фокус — до пробуждения «семья» (меньше риск), после — «гунфу», но «семья», если есть супруг и детей < 2;
 //   4) техники — в каждый слот лучшая доступная по ценности, с запасом камней на пилюлю;
 //   5) прорывы — пока хватает ци: пилюля, если она даёт ≥ +8% или шанс < 60%; до 12 попыток за вызов;
+//      порог легенды — только на закате жизни (≥ 85% срока) и с пилюлей;
 //   6) приключение — если шанс победы ≥ 55% (поражение ранит и может убить; враги бьют техниками).
 //      Пока проигрываем (< 70%), техники 招式/外功/暗器 покупаются первыми и без запаса на пилюлю.
 import * as G from "./game.js";
@@ -65,6 +66,7 @@ function pickTechniques(data, s, say) {
   const reserve = losing ? 0 : G.pillPrice(data, s);
   const order = losing ? COMBAT_FIRST.map(id => data.techniques.types.find(t => t.id === id)).filter(Boolean) : data.techniques.types;
   for (const type of order) {
+    if (type.id === "neigong" && s.pathId === "body") continue; // телу 内功 не помогает копить закалку
     const cur = G.slottedTechs(data, s)[type.id];
     const val = TYPE_VALUE[type.id] || (() => 0);
     const curV = cur ? val(cur) : -1;
@@ -82,12 +84,15 @@ function pickTechniques(data, s, say) {
 function doBreakthroughs(data, s, say, rng) {
   for (let i = 0; i < 12 && G.canBreakthrough(data, s); i++) {
     const raw = G.breakthroughChance(data, s, false), withPill = G.breakthroughChance(data, s, true);
-    const wantPill = withPill - raw >= 0.08 || raw < 0.6;
+    // Порог легенды: только на закате (≥ 85% срока — терять нечего), с пилюлей и шансом ≥ 4%.
+    if (G.legendGate(data, s) && (s.life.age < 0.85 * L.lifespan(data, s) || withPill < 0.04 || (s.pills < 1 && s.spiritStones < G.pillPrice(data, s)))) break;
+    const wantPill = withPill - raw >= 0.08 || raw < 0.6 || G.legendGate(data, s);
     if (wantPill && s.pills < 1) G.buyPill(data, s);
     const use = wantPill && s.pills >= 1;
-    const before = `${data.realms.realms[s.realmIndex].name} ${s.layer}`;
+    const before = `${G.realmsOf(data, s)[s.realmIndex].name} ${s.layer}`;
     const r = G.breakthrough(data, s, use, rng);
-    say(r.ok ? `Автопрорыв${use ? " с пилюлей" : ""}: ${before} → ${data.realms.realms[s.realmIndex].name}, слой ${s.layer}.` : `Прорыв сорвался${use ? " даже с пилюлей" : ""}: ци рассеялась.`, r.ok ? "break" : "cult");
+    say(r.ok ? `Автопрорыв${use ? " с пилюлей" : ""}: ${before} → ${G.realmsOf(data, s)[s.realmIndex].name}, слой ${s.layer}.` : `Прорыв сорвался${use ? " даже с пилюлей" : ""}: ци рассеялась.`, r.ok ? "break" : "cult");
+    if (r.fatal) { say(r.msg, "death"); break; }
     if (!r.ok) break;
   }
   if (!G.canBreakthrough(data, s) && s.pills < 1 && s.spiritStones >= G.pillPrice(data, s) * 2) G.buyPill(data, s);

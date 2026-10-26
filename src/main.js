@@ -80,10 +80,13 @@ const SPIN = {
     result: p => `<div class="big ${p.bad ? "bad-n" : ""}">${p.name}（${p.han}）</div><div class="dim">${L.gtext(p.text, s.life.gender)} ${p.bad ? "Тяжёлое тело." : ""} Выпадает ${oneIn(W.physiques, p)}.</div><div style="margin-top:6px">${fxChips(p) || `<span class="fx">без особенностей</span>`}</div>` },
   root: { title: "Пробуждение корней", sub: "Шестнадцать лет. Старейшина кладёт твою ладонь на камень проверки. Вся деревня делает вид, что не смотрит.", list: () => W.roots, cur: l => l.rootId,
     label: r => r.name, after: "play",
-    result: () => { const l = s.life, r = by(W.roots, l.rootId); return `<div class="big">${L.rootText(data, l)}</div><div class="dim">Множитель ци ×${r.qiMult}. Такая жила выпадает 1 из ${l.rootOdds}. ${jpick(J.root[r.id] || [], l.name + l.age)}</div>`; } },
+    result: () => { const l = s.life, r = by(W.roots, l.rootId), soul = W.souls?.find(x => x.id === l.soulId);
+      return `<div class="big ${r.qiMult ? "" : "bad-n"}">${L.rootText(data, l)}</div><div class="dim">${r.qiMult ? `Множитель ци ×${r.qiMult}.` : "Путь ци закрыт. Так рождается большинство — и большинство не знает, что есть другие пути."} Такая жила выпадает 1 из ${l.rootOdds}. ${jpick(J.root[r.id] || [], l.name + l.age)}</div>
+      ${soul ? `<div style="margin-top:8px"><span class="lbl">Душа</span> <b class="${soul.mult ? "rare-n" : ""}">${soul.name}（${soul.han}）</b><div class="dim small">${soul.text}${soul.mult ? " Путь духа открыт." : ""}</div></div>` : ""}`; } },
 };
 
 function renderSpin(kind) {
+  $("spin").style.maxWidth = "";
   const S = SPIN[kind], l = s.life, list = S.list();
   if (!spinState || spinState.kind !== kind) spinState = { kind, stage: "idle" };
   if (spinState.stage === "rolling" && spinState.drawn) return;
@@ -118,9 +121,37 @@ function startSpin() {
 }
 function nextSpin() {
   const kind = spinState.kind; spinState = null;
-  if (kind === "root") { s.life.phase = "play"; s.lastReal = null; }
+  if (kind === "root") { s.life.phase = "path"; pathAutoAt = null; }
   else s.life.phase = SPIN[kind].after;
   done();
+}
+
+// ───────── выбор пути ─────────
+let pathAutoAt = null;
+function renderPath() {
+  $("spin").style.maxWidth = "1000px";
+  const l = s.life, opts = L.pathOptions(data, s), best = L.bestPath(data, s);
+  const root = by(W.roots, l.rootId), soul = W.souls?.find(x => x.id === l.soulId);
+  const cards = opts.map(o => {
+    const p = o.path, cb = p.combat || {};
+    const fx = [[cb.hp, `тело ×${cb.hp}`, cb.hp > 1], [cb.atk, `удар ×${cb.atk}`, cb.atk > 1], [cb.def, `защита ×${cb.def}`, cb.def > 1],
+      [cb.crit, `крит +${Math.round((cb.crit || 0) * 100)}%`, true], [p.hazardMul !== 1, `беды ${p.hazardMul < 1 ? "−" : "+"}${Math.round(Math.abs(1 - p.hazardMul) * 100)}%`, p.hazardMul < 1],
+      [p.daoHeartMul, "дао-сердце ×2 к прорыву", true], [p.id === "body", "лет меньше", false]]
+      .filter(x => x[0]).map(([, t, good]) => `<span class="fx ${good ? "" : "bad"}">${t}</span>`).join("");
+    return `<div class="pcard ${o.ok ? "" : "off"} ${o.path.id === best ? "best" : ""}">
+      <div class="lbl">${p.han}</div><div class="pname serif">${p.name}</div>
+      <div class="dim small">${p.text}</div>
+      <div class="small" style="margin:8px 0 4px">Скорость: <b>×${o.mult.toFixed(2)}</b>${o.path.id === best ? ` · <b style="color:var(--jade)">лучший для тебя</b>` : ""}</div>
+      <div>${fx}</div>
+      <ol class="rl">${p.realms.map(r => `<li class="${r.legend ? "leg" : ""}">${r.name} <small>${r.han} · до ${r.maxAge} лет</small></li>`).join("")}</ol>
+      ${o.ok ? `<button class="pink" data-path="${p.id}">Вступить</button>` : `<span class="fx bad">закрыт: ${o.why}</span>`}
+    </div>`;
+  }).join("");
+  setHTML($("spin"), `<div class="reg" style="max-width:none"><div class="reg-h">Выбор пути<small>${l.name} · ${l.age} лет</small></div><div class="reg-b">
+    <div class="dim">Корни: <b>${L.rootText(data, l)}</b>${soul ? ` · Душа: <b>${soul.name}</b>` : ""} · Тело: <b>${by(W.physiques, l.physiqueId)?.name}</b>. Путь выбирают один раз. Золотом — легенды: в мире Печати до них доходят единицы.</div>
+    <div class="pcards">${cards}</div>
+    ${s.settings.autoPlay ? `<div class="dim small" style="margin-top:8px">Авторежим выберет лучший путь через пару секунд…</div>` : ""}
+  </div></div>`);
 }
 
 // ───────── свидетельство о рождении ─────────
@@ -184,7 +215,7 @@ function renderHeader() {
   const l = s.life, span = L.lifespan(data, s);
   setHTML($("brand"), l.odds ? `<b>1</b> из ${l.odds.toLocaleString("ru-RU")}` : `Род <b>${l.surname}</b> · ${l.generation}-е поколение`);
   setHTML($("agebig"), `Возраст<b>${l.age}</b>`);
-  setHTML($("topline"), `${l.name} · ${by(W.eras, l.eraId).name}${l.awakened ? " · " + data.realms.realms[s.realmIndex].name + ", слой " + s.layer : ""}`);
+  setHTML($("topline"), `${l.name} · ${by(W.eras, l.eraId).name}${l.awakened ? " · " + G.realmsOf(data, s)[s.realmIndex].name + ", слой " + s.layer : ""}`);
   $("topbar").style.width = `${Math.min(100, pct(l.age, span))}%`;
   const sp = Object.entries(W.time.speeds).map(([k, v]) =>
     `<button class="${s.settings.speed === k ? "on" : ""}" data-speed="${k}">${k === "pause" ? "❚❚ Пауза" : k === "next" ? "До следующего выбора »" : v.label}</button>`).join("");
@@ -197,12 +228,14 @@ function renderPass() {
   const l = s.life, f = birthFacts(l);
   setHTML($("pass"), `<div class="pass-h"><span>Личные данные · ЯНЬ</span><span>${l.generation} пок.</span></div><div class="pass-b">
     <div class="pass-top"><canvas class="ava" id="ava" width="14" height="17"></canvas><div><div class="pname serif">${l.name}</div>
-    <div class="dim small">${stage(l)}${l.awakened ? " · " + data.realms.realms[s.realmIndex].name : ""}</div></div></div>
+    <div class="dim small">${stage(l)}${l.awakened ? " · " + G.realmsOf(data, s)[s.realmIndex].name : ""}</div></div></div>
     <div class="kv"><span>Пол</span><b>${g("мужской", "женский")}</b>
       <span>Край</span><b>${f.region.name}</b>
       <span>Тело</span><b title="${L.physiqueEffects(f.phy).map(e => e.t).join(", ")}" class="${f.phy.bad ? "bad-n" : ""}">${f.phy.name} ${f.phy.han}<br>${fxChips(f.phy)}</b>
       <span>Род</span><b><span class="dots">${dots(f.wIdx)}</span> ${f.wealth.name.toLowerCase()}</b>
       <span>Корни</span><b>${l.rootRevealed ? L.rootText(data, l) : `спят до ${W.time.awakeningAge} лет`}</b>
+      ${l.soulId ? `<span>Душа</span><b>${W.souls?.find(x => x.id === l.soulId)?.name || "—"}</b>` : ""}
+      ${l.awakened ? `<span>Путь</span><b style="color:var(--jade)">${G.pathOf(data, s).name} ${G.pathOf(data, s).han}</b>` : ""}
       <span>Ремесло</span><b>${L.jobById(data, l.jobId)?.name || (l.age < 6 ? "ещё не учится" : "пока нет")}</b>
     </div>
     <div class="mrz">${mrz(l)}</div></div>`);
@@ -239,13 +272,14 @@ function newbieHint(o) {
 function renderCult() {
   const l = s.life, el = $("cult");
   if (!l.awakened || !l.alive) { setHTML(el, `<h2>Путь <small>закрыт</small></h2><div class="dim">${l.alive ? `Корни спят. Проверка в ${W.time.awakeningAge} лет — до неё ${Math.max(0, W.time.awakeningAge - l.age)} г.` : "Путь окончен."}</div>`); return; }
-  const r = data.realms.realms[s.realmIndex], need = G.qiRequired(data, s), locked = !!l.pending, sp = speedSpec();
+  const r = G.realmsOf(data, s)[s.realmIndex], need = G.qiRequired(data, s), locked = !!l.pending, sp = speedSpec();
   const ch = G.breakthroughChance(data, s), chp = G.breakthroughChance(data, s, true);
   const leftSec = Math.max(0, s.adventureReadyAt - s.clockMs) / 1000;
   setHTML(el, `<h2>Путь <small>побед ${s.wins} · поражений ${s.losses}</small></h2>
     <div class="realm">${r.name}<small>слой ${s.layer}/${r.layers}</small></div>
     <div class="track" style="margin:8px 0 4px"><i style="width:${Math.min(100, pct(s.qi, need))}%;background:var(--jade)"></i></div>
     <div class="dim small">${Math.floor(s.qi)} / ${need} ци · ${sp.untilEvent ? "прокрутка" : `+${(G.qiPerSecond(data, s) * factor()).toFixed(1)}/с`}</div>
+    ${G.legendGate(data, s) ? `<div class="note" style="border-color:var(--red);background:#e06a6a14">Порог легенды: «${G.realmsOf(data, s)[s.realmIndex + 1].name}». Шанс урезан ×${data.realms.breakthrough.legendChanceMul}, при неудаче ${Math.round((data.realms.breakthrough.legendDeathChance || 0) * 100)}% погибнуть — Печать замечает тех, кто растёт слишком высоко. Пилюля обязательна.${G.gateWaitYears(data, s) ? ` Жилы заживают ещё ${G.gateWaitYears(data, s)} г.` : ""}</div>` : ""}
     <div class="dim small">Прорыв: ${Math.round(ch * 100)}% · с пилюлей ${Math.round(chp * 100)}% · пилюля ${G.pillPrice(data, s)} камней</div>
     ${(() => { const o = advOdds(); return `<div class="dim small">Приключение: победа ~${Math.round(o.win * 100)}% · <span style="color:${o.death > 0.01 ? "var(--red)" : "inherit"}">гибель ~${(o.death * 100).toFixed(1)}%</span> · поражение = рана (срок −${data.enemies.adventure.woundYears || 0})</div>${newbieHint(o)}`; })()}
     ${s.settings.autoPlay ? `<div class="note">Авторежим сам прорывается, покупает пилюли, когда они выгодны, и учит лучшие техники.</div>` : ""}
@@ -363,7 +397,7 @@ function renderDeath() {
     ${heirs}<button class="block" data-new="1">Новая судьба (случайное рождение)</button><button class="block" data-copy="1">Копировать итог</button>`);
 }
 function renderTree() {
-  const rows = s.lineage.map(x => `<li style="margin-left:${Math.min(x.generation - 1, 8) * 12}px">${x.name} · ${x.ageAtDeath} лет · ${x.awakened ? x.realmName + ", слой " + x.layer : "не ступил(а) на Путь"}</li>`);
+  const rows = s.lineage.map(x => `<li style="margin-left:${Math.min(x.generation - 1, 8) * 12}px">${x.name} · ${x.ageAtDeath} лет · ${x.awakened ? (x.pathName && x.pathName !== "—" ? x.pathName + ": " : "") + x.realmName + ", слой " + x.layer : "не ступил(а) на Путь"}</li>`);
   if (s.life.alive) rows.push(`<li style="margin-left:${Math.min(s.life.generation - 1, 8) * 12}px;color:var(--jade)">${s.life.name} · ${s.life.age} лет · живёт</li>`);
   setHTML($("tree"), rows.join(""));
 }
@@ -373,7 +407,7 @@ function techLine(t) {
   const needRealm = !own && (t.minRealm || 0) > s.realmIndex;
   const st = own ? (act ? "в работе" : "изучена") : `${G.techCost(data, s, t)} камней`;
   const dis = !s.life.alive || !!s.life.pending || act || needRealm || !s.life.awakened;
-  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.han} · ${st}${needRealm ? ` · с ${data.realms.realms[t.minRealm].name}` : ""}<small>${bits}. ${t.text}</small></button>`;
+  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.han} · ${st}${needRealm ? ` · с ${G.realmsOf(data, s)[t.minRealm].name}` : ""}<small>${bits}. ${t.text}</small></button>`;
 }
 function renderTechs() {
   const det = $("techs").closest("details"); if (!det.open) return;
@@ -387,10 +421,12 @@ let lastSceneKey = "";
 function render() {
   const l = s.life;
   const phase = l.phase === "birth" ? "cert" : l.phase;
-  const spin = phase === "spinRegion" ? "region" : phase === "spinPhysique" ? "physique" : (l.pendingRoot || spinState?.kind === "root") && l.alive ? "root" : null;
+  let spin = phase === "spinRegion" ? "region" : phase === "spinPhysique" ? "physique" : (l.pendingRoot || spinState?.kind === "root") && l.alive ? "root" : null;
+  if (!spin && phase === "path" && l.alive) spin = "path";
   setHidden($("hdr"), !!spin || phase === "cert");
   setHidden($("spin"), !spin); setHidden($("cert"), phase !== "cert" || !!spin);
   setHidden($("app"), !!spin || phase === "cert");
+  if (spin === "path") { renderPath(); return; }
   if (spin) { renderSpin(spin); return; }
   if (phase === "cert") { renderCert(); return; }
   renderHeader(); renderPass(); renderStats(); renderCult(); renderFocus(); renderFamily(); renderPeers(); renderMap();
@@ -406,6 +442,7 @@ function render() {
 document.body.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   const d = b.dataset;
+  if (d.path) { const r = L.choosePath(data, s, d.path); if (r.ok) { s.life.phase = "play"; s.lastReal = null; } else log(r.msg, "info"); return done(); }
   if (d.spin === "go") return startSpin();
   if (d.spin === "next") return nextSpin();
   if (d.cert === "go") { L.acceptBirth(s); s.life.phase = "play"; s.lastReal = null; L.logLine(s, L.birthBlurb(data, s), "birth"); return done(); }
@@ -414,8 +451,8 @@ document.body.addEventListener("click", e => {
   if (d.act === "auto") { s.settings.autoPlay = !s.settings.autoPlay; s.settings.auto = s.settings.autoPlay ? "best" : "off"; autoAt = null; log(s.settings.autoPlay ? "Авторежим включён: судьба сама ищет выгоду." : "Авторежим выключен.", "info"); return done(); }
   if (d.act === "newlife") { if (confirm("Оставить эту жизнь и родиться заново? Родовое древо сохранится.")) { L.startLife(data, s, "new"); spinState = null; done(); } return; }
   if (d.act === "reset") { if (confirm("Сбросить всё, включая родовое древо?")) { s = reset(); L.startLife(data, s, "new"); spinState = null; done(); } return; }
-  if (d.c === "break") { log(G.breakthrough(data, s, false).msg, "break"); return done(); }
-  if (d.c === "breakp") { log(G.breakthrough(data, s, true).msg, "break"); return done(); }
+  if (d.c === "break") { const r = G.breakthrough(data, s, false); log(r.msg, r.fatal ? "death" : "break"); return done(); }
+  if (d.c === "breakp") { const r = G.breakthrough(data, s, true); log(r.msg, r.fatal ? "death" : "break"); return done(); }
   if (d.c === "pill") { log(G.buyPill(data, s) ? "Куплена пилюля." : "Не хватает камней."); return done(); }
   if (d.c === "adv") { const r = C.adventure(data, s, s.clockMs); log(r.msg, r.win ? "adv" : r.fatal ? "death" : "cult"); return done(); }
   if (d.i !== undefined && b.closest("#event")) { const r = L.chooseOption(data, s, +d.i); if (!r.ok) log(r.msg, "info"); return done(); }
@@ -440,6 +477,14 @@ setInterval(() => {
     if (spinState.stage === "done") { spinState.doneAt ??= Date.now() + 2200; if (Date.now() >= spinState.doneAt) nextSpin(); }
   }
   if (spinState) { s.lastReal = null; return; }
+  if (l.phase === "path") {
+    s.lastReal = null;
+    if (s.settings.autoPlay) {
+      pathAutoAt ??= Date.now() + 2000;
+      if (Date.now() >= pathAutoAt) { L.choosePath(data, s, L.bestPath(data, s)); l.phase = "play"; pathAutoAt = null; done(); }
+    }
+    return;
+  }
   L.lifeTick(data, s);
   A.autoTick(data, s);
   if (l.pending && (s.settings.autoPlay || s.settings.auto !== "off")) {

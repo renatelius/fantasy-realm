@@ -48,13 +48,13 @@ console.log(`Лотерея рождения (${B} бросков), доли:`);
 for (const [k, o] of Object.entries(cnt)) console.log(`  ${k}: ` + Object.entries(o).map(([id, n]) => `${id} ${(n / B * 100).toFixed(1)}%`).join(", "));
 
 // 2) полные жизни
-const res = [], causes = tally(), reached = [0, 0, 0], diedChild = [];
+const res = [], causes = tally(), reached = [0, 0, 0, 0, 0], diedChild = [], pathT = tally();
 for (let i = 0; i < N; i++) {
   const { s, minutes, events } = playLife(100 + i, "new");
   const l = s.life; res.push({ age: l.age, minutes, events, awakened: l.awakened, realm: s.realmIndex, layer: s.layer, cause: l.legacy.cause, married: !!l.spouse || l.children.length > 0, kids: l.children.length, heirs: l.legacy.children.length });
   { const all = [...data.world.deathCauses.child, ...data.world.deathCauses.adult, "Дожил(а) отведённый срок", "Ушёл(ла) от старости", "Погиб(ла) в шторме", "Сорвался(лась) с горной тропы"];
     inc(causes, all.find(c => L.gtext(c, "m") === l.legacy.cause || L.gtext(c, "f") === l.legacy.cause) || l.legacy.cause); }
-  if (l.awakened) for (let r = 0; r <= s.realmIndex; r++) reached[r]++;
+  if (l.awakened) { inc(pathT, s.pathId); for (let r = 0; r <= s.realmIndex; r++) reached[r]++; }
 }
 const aw = res.filter(r => r.awakened);
 console.log(`\nЖизни (${N}, скорость ${speed}):`);
@@ -62,7 +62,8 @@ console.log(`  умерли до пробуждения (до 16 лет): ${((1 
 console.log(`  медианный возраст смерти: ${med(res.map(r => r.age))} (из пробудившихся: ${med(aw.map(r => r.age))})`);
 console.log(`  медианная длительность жизни: ${med(res.map(r => r.minutes)).toFixed(1)} мин; пробудившихся: ${med(aw.map(r => r.minutes)).toFixed(1)} мин`);
 console.log(`  медиана карточек за жизнь: ${med(res.map(r => r.events))}`);
-console.log(`  достигли ступени (доля от всех жизней): ` + data.realms.realms.map((r, i) => `${r.name} ${(reached[i] / N * 100).toFixed(0)}%`).join(", "));
+console.log(`  достигли ступени (доля от всех жизней): ` + reached.map((n, i) => `ступень ${i + 1} ${(n / N * 100).toFixed(0)}%`).join(", "));
+console.log("  пути пробудившихся: " + Object.entries(pathT).map(([k, n]) => `${k} ${(n / Math.max(1, aw.length) * 100).toFixed(0)}%`).join(", "));
 console.log(`  медианный итоговый слой пробудившихся: ${med(aw.map(r => r.realm * 9 + r.layer))} (глобально, 1–27)`);
 console.log(`  семья: женились/вышли замуж ${(aw.filter(r => r.married).length / Math.max(1, aw.length) * 100).toFixed(0)}% пробудившихся, медиана детей ${med(aw.map(r => r.kids))}, оставили живого наследника ${(aw.filter(r => r.heirs > 0).length / Math.max(1, aw.length) * 100).toFixed(0)}%`);
 console.log("  причины смерти: " + Object.entries(causes).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${L.gtext(c, "m")} ${(n / N * 100).toFixed(0)}%`).join("; "));
@@ -70,7 +71,7 @@ console.log("  причины смерти: " + Object.entries(causes).sort((a, 
 // 3) цепочка наследников
 const chain = [], base = newState();
 let st = base; // первая жизнь рода идёт под защитой неба
-for (let g = 0; g < 4; g++) { const r = playLife(500 + g, g === 0 ? "new" : "heir", g === 0 ? undefined : st, g === 0); st = r.s; chain.push(`${r.s.life.name}: ${r.s.life.age} лет, ${data.realms.realms[r.s.realmIndex].name} ${r.s.layer}`); }
+for (let g = 0; g < 4; g++) { const r = playLife(500 + g, g === 0 ? "new" : "heir", g === 0 ? undefined : st, g === 0); st = r.s; chain.push(`${r.s.life.name}: ${r.s.life.age} лет, ${G.pathOf(data, r.s).name}: ${G.realmsOf(data, r.s)[r.s.realmIndex].name} ${r.s.layer}`); }
 console.log("\nПример цепочки рода (4 поколения):\n  " + chain.join("\n  "));
 
 // 4) наследник против новой судьбы: насколько сильно наследие меняет исход

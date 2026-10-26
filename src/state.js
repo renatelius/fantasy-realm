@@ -8,7 +8,7 @@ export function emptySlots() {
 export function newState() {
   return {
     version: SAVE_VERSION,
-    realmIndex: 0, layer: 1, qi: 0, spiritStones: 0, pills: 0,
+    pathId: "qi", realmIndex: 0, layer: 1, qi: 0, spiritStones: 0, pills: 0,
     techniqueId: "breath_of_mist",
     techniqueSlots: emptySlots(),
     ownedTechniques: ["breath_of_mist"],
