@@ -22,8 +22,10 @@
  "life": {
   "mortalBase": 55,
   "mortalSpread": 8,
-  "oldAgeStart": 0.9,
-  "oldAgeHazard": 0.06,
+  "oldAgeStart": 0.78,
+  "oldAgeBase": 0.01,
+  "oldAgeHazard": 0.3,
+  "realmHazardDecay": 0.7,
   "awakenedHazardMult": 0.4,
   "infantHazardMult": 2,
   "heirStoneShare": 0.15,

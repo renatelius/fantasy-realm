@@ -12,6 +12,7 @@ export function newState() {
     techniqueId: "breath_of_mist",
     techniqueSlots: emptySlots(),
     ownedTechniques: ["breath_of_mist"],
+    familyTechs: [], // родовая библиотека: всё, что знали предки, — бесплатно потомкам
     adventureReadyAt: 0, wins: 0, losses: 0,
     life: null, lineage: [],
     settings: { speed: "normal", auto: "off", autoPlay: false },

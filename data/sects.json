@@ -1,0 +1,97 @@
+{
+ "_note": "Секты держат 中乘 и выше в тайне. Внешний ученик — 中乘, внутренний (2-я ступень) — 上乘, личный (3-я) — 绝学. paths — каким путям секта берёт детей членов.",
+ "sects": [
+  {
+   "id": "wudang",
+   "name": "Удан",
+   "han": "武当",
+   "paths": [
+    "qi",
+    "spirit"
+   ]
+  },
+  {
+   "id": "shaolin",
+   "name": "Шаолинь",
+   "han": "少林",
+   "paths": [
+    "body",
+    "qi"
+   ]
+  },
+  {
+   "id": "emei",
+   "name": "Эмэй",
+   "han": "峨眉",
+   "paths": [
+    "qi",
+    "body",
+    "spirit"
+   ]
+  },
+  {
+   "id": "huashan",
+   "name": "Хуашань",
+   "han": "华山",
+   "paths": [
+    "qi"
+   ]
+  },
+  {
+   "id": "kunlun",
+   "name": "Куньлунь",
+   "han": "昆仑",
+   "paths": [
+    "qi",
+    "spirit"
+   ]
+  },
+  {
+   "id": "kongtong",
+   "name": "Кунтун",
+   "han": "崆峒",
+   "paths": [
+    "body",
+    "qi"
+   ]
+  },
+  {
+   "id": "beggars",
+   "name": "Союз нищих",
+   "han": "丐帮",
+   "paths": [
+    "body",
+    "qi",
+    "spirit"
+   ]
+  },
+  {
+   "id": "qinglong",
+   "name": "Секта Цинлун",
+   "han": "青龙门",
+   "paths": [
+    "qi"
+   ]
+  },
+  {
+   "id": "crane",
+   "name": "Лазурный Журавль",
+   "han": "青鹤门",
+   "paths": [
+    "qi",
+    "spirit",
+    "body"
+   ]
+  },
+  {
+   "id": "sunmoon",
+   "name": "Солнце и Луна",
+   "han": "日月神教",
+   "paths": [
+    "body",
+    "qi",
+    "spirit"
+   ]
+  }
+ ]
+}

@@ -6,7 +6,7 @@
 //   техника врага: лучшая из enemy.techniques с fromLevel ≤ L; множит hp/atk/def врага.
 //     Враги растут техниками так же, как игрок: кто не учит 招式/外功, тот отстаёт.
 //   поражение: рана (срок −woundYears) и шанс гибели = deathOnLoss * (1/hpMult тела)^2 * (0.7 с 轻功 — успел уйти)
-import { qiRequired, slottedTechs, realmsOf, pathOf } from "./game.js";
+import { qiRequired, slottedTechs, realmsOf, pathOf, techUsable, techAccess, luckyScroll } from "./game.js";
 import { die } from "./life.js";
 
 export function globalLevel(data, s) {
@@ -66,7 +66,7 @@ export function adventureOdds(data, s, n = 30, rng = Math.random) {
 export function combatHint(data, s, cost) {
   const sl = slottedTechs(data, s), val = t => (t.atkMult || 1) * (t.hpMult || 1) * (t.defMult || 1) * (1 + (t.critAdd || 0));
   const cands = data.techniques.techniques
-    .filter(t => ["martial", "body", "anqi"].includes(t.type) && (t.minRealm || 0) <= s.realmIndex && !s.ownedTechniques.includes(t.id))
+    .filter(t => ["martial", "body", "anqi"].includes(t.type) && techUsable(data, s, t) && techAccess(data, s, t).ok && (t.minRealm || 0) <= s.realmIndex && !s.ownedTechniques.includes(t.id))
     .filter(t => val(t) > (sl[t.type] ? val(sl[t.type]) : 1) + 1e-9)
     .map(t => ({ t, c: cost(t) })).sort((a, b) => a.c - b.c);
   const empty = ["martial", "body"].filter(k => !sl[k]).length;
@@ -99,6 +99,8 @@ export function adventure(data, s, now = Date.now(), rng = Math.random) {
   const pill = rng() < cfg.pillDropChance;
   s.wins += 1; s.spiritStones += stones; s.qi = Math.min(qiRequired(data, s), s.qi + qi);
   if (pill) s.pills += 1;
+  // Удача: в тайнике врага — свиток тайной техники своего пути.
+  const scroll = s.life?.awakened && rng() < (cfg.scrollChance || 0) ? luckyScroll(data, s, rng) : null;
   s.adventureReadyAt = now + cfg.cooldownSec * 1000;
-  return { ok: true, enemy: e.id, win: true, msg: `Победа над «${e.name}»${with_}: +${stones} камней, +${qi} ци${pill ? ", найдена пилюля" : ""}.` };
+  return { ok: true, enemy: e.id, win: true, scroll, msg: `Победа над «${e.name}»${with_}: +${stones} камней, +${qi} ци${pill ? ", найдена пилюля" : ""}${scroll ? `, в тайнике — свиток «${scroll.name}»` : ""}.` };
 }

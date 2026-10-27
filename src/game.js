@@ -39,8 +39,48 @@ export function qiRequired(data, s) {
 export function physiqueOf(data, s) {
   return s.life ? data.world.physiques?.find(x => x.id === s.life.physiqueId) : null;
 }
+// ───── Доступ к техникам ─────
+// Рынок продаёт только 凡功/下乘 и втридорога (×1.5). 中乘 и выше — тайна: секта (по рангу), родовая библиотека, удача, друзья.
+const MARKET_RANK = 1, MARKET_MUL = 1.5, RANK_NAMES = ["внешний ученик", "внутренний ученик", "личный ученик"];
+export function sectById(data, id) { return data.sects?.sects?.find(x => x.id === id) || null; }
+export function sectRank(s) { const r = s.realmIndex || 0; return r >= 2 ? 2 : r >= 1 ? 1 : 0; }
+export function sectRankName(s) { return RANK_NAMES[sectRank(s)]; }
+export function gradeRank(data, t) { return data.techniques.grades.find(g => g.id === t.grade)?.rank ?? 0; }
+export function techAccess(data, s, t) {
+  if (!t) return { ok: false, src: "none", why: "нет такой техники" };
+  if (s.ownedTechniques?.includes(t.id)) return { ok: true, src: "own" };
+  if (!s.life) return { ok: true, src: "market" }; // балансные тулзы без жизни
+  if (s.familyTechs?.includes(t.id)) return { ok: true, src: "family" };
+  const gr = gradeRank(data, t);
+  if (gr <= MARKET_RANK) return { ok: true, src: "market" };
+  const my = s.life.sect && sectById(data, s.life.sect.id);
+  if (my && t.owner === my.id) {
+    const need = gr - 2; // 中乘 → внешний, 上乘 → внутренний, 绝学 → личный
+    if (sectRank(s) >= need) return { ok: true, src: "sect" };
+    return { ok: false, src: "sect", why: `«${my.name}» учит этому с ранга «${RANK_NAMES[need]}»` };
+  }
+  const other = sectById(data, t.owner);
+  if (other) return { ok: false, src: "secret", why: `тайна «${other.name}»` };
+  if (t.owner === "luck") return { ok: false, src: "secret", why: "не учат — только находят" };
+  return { ok: false, src: "secret", why: "тайна кланов: род, друзья или удача" };
+}
 export function techCost(data, s, t) {
-  return Math.round((t.cost || 0) * (physiqueOf(data, s)?.techCostMul ?? 1));
+  const a = techAccess(data, s, t);
+  if (a.src === "own" || a.src === "family") return 0;
+  const mul = a.src === "market" && s.life ? MARKET_MUL : 1;
+  return Math.round((t.cost || 0) * mul * (physiqueOf(data, s)?.techCostMul ?? 1));
+}
+// Находка/подарок: случайная тайная техника своего пути. 中乘 всегда, 上乘 с 2-й ступени, 绝学 с 3-й (редко).
+export function luckyScroll(data, s, rng = Math.random, ownerFilter = null) {
+  const r = s.realmIndex || 0, w = { 2: 1, 3: r >= 1 ? 0.35 : 0, 4: r >= 2 ? 0.08 : 0 };
+  const pool = data.techniques.techniques.filter(t => !s.ownedTechniques.includes(t.id) && techUsable(data, s, t)
+    && (w[gradeRank(data, t)] || 0) > 0 && (!ownerFilter || t.owner === ownerFilter));
+  if (!pool.length) return null;
+  let x = rng() * pool.reduce((a, t) => a + w[gradeRank(data, t)], 0), pickT = pool[pool.length - 1];
+  for (const t of pool) { x -= w[gradeRank(data, t)]; if (x < 0) { pickT = t; break; } }
+  s.ownedTechniques.push(pickT.id);
+  if (!s.techniqueSlots?.[pickT.type] && (pickT.minRealm || 0) <= r) equipTechnique(data, s, pickT.id);
+  return pickT;
 }
 
 export function techById(data, id) {
@@ -55,12 +95,27 @@ export function focusOf(data, s) {
   return data.jobs?.focuses?.find(x => x.id === s.life?.focusId) || data.jobs?.focuses?.[0];
 }
 
+// Техника своего пути: t.path пусто — общая; иначе только для этого пути.
+export function techUsable(data, s, t) { return !t?.path || t.path === (s.pathId || "qi"); }
+// Сила 内功 с учётом пути: общие на пути духа — вполсилы, на пути тела — ноль (закалка идёт через 外功).
+export function neigongMult(data, s, t) {
+  if (!t) return 1;
+  const p = s.pathId || "qi";
+  if (p === "body") return 1;
+  if (t.path && t.path !== p) return 1;
+  if (p === "spirit" && !t.path) return 1 + ((t.qiMultiplier || 1) - 1) * 0.5;
+  return t.qiMultiplier || 1;
+}
+export function bodyForgeMult(data, s, t) {
+  if (!t) return 1;
+  return 1.15 * (1 + 1.2 * ((t.hpMult || 1) - 1)) * (techUsable(data, s, t) ? (t.forgeMult || 1) : 1);
+}
 export function qiPerSecond(data, s) {
   const m = data.realms.meditation;
   const sl = slottedTechs(data, s);
   const f = focusOf(data, s);
-  // Путь тела копит закалку техникой 外功 (а не 内功): 1.15 × (1 + 1.2 × (hpMult − 1)).
-  const tech = (s.pathId === "body") ? 1.15 * (1 + 1.2 * ((sl.body?.hpMult || 1) - 1)) : (sl.neigong?.qiMultiplier || 1);
+  // Путь тела копит закалку техникой 外功: 1.15 × (1 + 1.2 × (hpMult − 1)) × forgeMult своей техники.
+  const tech = (s.pathId === "body") ? (sl.body ? bodyForgeMult(data, s, sl.body) : 1.15) : neigongMult(data, s, sl.neigong);
   return (m.qiPerSecondBase + m.qiPerSecondPerRealm * s.realmIndex) * tech * pathMult(data, s) * (f?.qiMul ?? 1);
 }
 
@@ -75,7 +130,8 @@ export function breakthroughChance(data, s, usePill = false) {
   // Путь духа: дао-сердце помогает вдвое (до +25% вместо +15%).
   const c = r.baseBreakthroughChance - b.failChancePenaltyPerLayer * (s.layer - 1) + (usePill ? b.pillBonus : 0)
     + (s.life ? Math.min(0.1 + 0.05 * dm, 0.01 * dm * Math.max(0, s.life.stats.daoHeart)) : 0)
-    + (physiqueOf(data, s)?.breakAdd || 0);
+    + (physiqueOf(data, s)?.breakAdd || 0)
+    + (() => { const n = slottedTechs(data, s).neigong; return n?.path && techUsable(data, s, n) ? (n.breakAdd || 0) : 0; })();
   const base = Math.min(0.99, Math.max(b.minChance, c));
   return legendGate(data, s) ? base * (b.legendChanceMul ?? 1) : base;
 }
@@ -134,6 +190,7 @@ export function buyPill(data, s) {
 export function equipTechnique(data, s, id) {
   const t = techById(data, id);
   if (!t || !s.ownedTechniques.includes(id)) return { ok: false, msg: "Сначала изучи." };
+  if (!techUsable(data, s, t)) return { ok: false, msg: "Это техника другого пути." };
   if (!s.techniqueSlots) s.techniqueSlots = { neigong: s.techniqueId, body: null, martial: null, qinggong: null, yishu: null, anqi: null };
   s.techniqueSlots[t.type] = id;
   if (t.type === "neigong") s.techniqueId = id;
@@ -143,7 +200,10 @@ export function equipTechnique(data, s, id) {
 export function learnTechnique(data, s, id) {
   const t = techById(data, id);
   if (!t) return { ok: false, msg: "Нет такой техники." };
+  if (!techUsable(data, s, t)) return { ok: false, msg: "Это техника другого пути." };
   if (s.ownedTechniques.includes(id)) return equipTechnique(data, s, id);
+  const acc = techAccess(data, s, t);
+  if (!acc.ok) return { ok: false, msg: `Не учат: ${acc.why}.` };
   const cost = techCost(data, s, t);
   if (s.spiritStones < cost) return { ok: false, msg: "Не хватает камней." };
   if ((t.minRealm || 0) > s.realmIndex) return { ok: false, msg: "Ступень слишком низка." };

@@ -2,7 +2,8 @@
 // Формулы:
 //   qiMult жизни = root.qiMult * era.qiMult * region.qiMult   (множитель медитации)
 //   максимальный возраст: смертный = mortalBase + wealth.lifeBonus ± spread;
-//                         после пробуждения = max(смертный, realm.maxAge); плюс ageShift от событий
+//                         после пробуждения — плавно по слоям к realm.maxAge ступени; плюс ageShift от событий
+//   старость: с 78% срока риск 1% + 30% × x², x = доля пути от 78% до 100%
 //   риск смерти в год = wealth.hazard * region.hazardMult * era.hazardMult * 0.4 (после пробуждения)
 //                       * 0.5^realmIndex * (2 до 5 лет); после 90% срока +6%/год («старость»)
 //   время: dt_игры = dt_реальное * speed.factor (0 = пауза); untilEvent — сразу до карточки или смерти
@@ -11,9 +12,11 @@ import { newState } from "./state.js";
 import * as G from "./game.js";
 
 const pick = (a, rng) => a[Math.floor(rng() * a.length)];
+// Вес: weight (миры, события) или w (строки летописи). Раньше у летописи читался weight → NaN → всегда последняя строка.
+const wOf = x => x.weight ?? x.w ?? 1;
 function wpick(items, rng) {
-  let r = rng() * items.reduce((t, x) => t + x.weight, 0);
-  for (const x of items) { r -= x.weight; if (r < 0) return x; }
+  let r = rng() * items.reduce((t, x) => t + wOf(x), 0);
+  for (const x of items) { r -= wOf(x); if (r < 0) return x; }
   return items[items.length - 1];
 }
 const by = (arr, id) => arr.find(x => x.id === id);
@@ -93,6 +96,7 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
   const child = mode === "heir" && prev ? prev.children[childIdx] : null;
   const keep = { lineage: s.lineage, settings: s.settings };
   Object.assign(s, newState(), keep);
+  s.familyTechs = child ? [...(prev.familyTechs || [])] : [];
   s.life = rollBirth(data, rng, child ? { entry: prev, child } : null);
   const L = s.life, W = data.world, wealth = by(W.wealth, L.wealthId);
   L.mercy = W.life.mercyFirstLife && s.lineage.length === 0;
@@ -107,8 +111,14 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
     }
     if (L.awakened) {
       if (!L.soulId) L.soulId = rollSoul(data, rng)?.id || null;
-      s.pathId = bestPath(data, s);
+      // Ребёнок жил своей жизнью, пока ты играл(а) за родителя: путь, ступень, секта — его.
+      if (child.awakened && child.pathId) { s.pathId = child.pathId; s.realmIndex = child.realmIndex || 0; s.layer = child.layer || 1; s.qi = Math.floor(child.qi || 0); }
+      else s.pathId = bestPath(data, s);
+      if (child.sect) L.sect = { id: child.sect, since: L.age };
     }
+    if (child.spouse) L.spouse = { ...child.spouse };
+    L.children = (child.kids || []).map(k => ({ ...k }));
+    catchUpChildren(data, s, rng);
     const span = lifespan(data, s);
     if (L.age >= span) L.age = Math.max(0, span - 1);
     L.phase = "play";
@@ -116,12 +126,17 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
     L.household = makeHousehold(data, s, rng);
     L.peers = makePeers(data, s, rng);
     L.phase = "spinRegion";
+    // Знатные и культиваторские дома хранят свои свитки: тайны клана с рождения в родовой библиотеке.
+    const take = (gr, n) => { const p = data.techniques.techniques.filter(t => t.owner === "clan" && t.grade === gr);
+      for (let i = 0; i < n && p.length; i++) s.familyTechs.push(p.splice(Math.floor(rng() * p.length), 1)[0].id); };
+    if (wealth.id === "cultclan") { take("zhong", 2); take("shang", 1); }
+    else if (wealth.id === "noble") take("zhong", 1);
   }
   const phyS = by(W.physiques, L.physiqueId);
   if (phyS?.start) for (const [k, v] of Object.entries(phyS.start)) L.stats[k] = (L.stats[k] || 0) + v;
   const odds = L.odds ? ` Такая судьба выпадает 1 из ${L.odds.toLocaleString("ru-RU")}.` : "";
   if (child) {
-    logLine(s, `Продолжение рода: ${L.name}, ${L.age} лет — не с пелёнок. Дом после ${prev.name}. ${by(W.regions, L.regionId).name}, ${wealth.name}.${L.awakened ? " Корни уже открыты: " + rootText(data, L) + ". " + pathOf(data, s).name + "." : ""}`, "birth");
+    logLine(s, `Продолжение рода: ${L.name}, ${L.age} лет — не с пелёнок. Дом после ${prev.name}. ${by(W.regions, L.regionId).name}, ${wealth.name}.${L.awakened ? " Корни уже открыты: " + rootText(data, L) + ". " + pathOf(data, s).name + ": «" + G.realmsOf(data, s)[s.realmIndex].name + "», слой " + s.layer + "." : ""}${L.spouse ? ` В доме ${L.spouse.gender === "m" ? "муж" : "жена"} ${L.spouse.name}.` : ""}${L.children.length ? ` Детей: ${L.children.length}.` : ""}${s.familyTechs.length ? ` Родовая библиотека: ${s.familyTechs.length} свитк.` : ""}`, "birth");
   } else {
     logLine(s, `Новая судьба: родился(ась) ${L.name} — ${by(W.regions, L.regionId).name}, ${by(W.eras, L.eraId).name}, ${wealth.name}.${odds}`, "birth");
   }
@@ -254,8 +269,8 @@ export function pathOptions(data, s) {
     let ok = true, why = "";
     if (p.requires === "root" && !(root?.qiMult > 0)) { ok = false; why = "нет духовных корней"; }
     if (p.requires === "soul" && !(soul?.mult > 0)) { ok = false; why = "душа тусклая"; }
-    // Вес выбора: тело и дух чуть выше — тело крепче в бою, дух растёт на дао-сердце.
-    const score = mult * (p.id === "body" ? 1.1 : p.id === "spirit" ? 1.2 : 1);
+    // Вес выбора: тело — для тех, у кого корней нет или они слабые (5/4 корня); с тремя корнями и лучше — путь ци.
+    const score = mult * (p.id === "body" ? 0.85 : p.id === "spirit" ? 1.2 : 1);
     return { path: p, ok, why, mult, score };
   });
 }
@@ -293,7 +308,15 @@ function capLifted(data, s, phy) {
 }
 export function lifespan(data, s) {
   const L = s.life;
-  const base = L.awakened ? Math.max(L.baseLife, G.realmsOf(data, s)[s.realmIndex].maxAge) : L.baseLife;
+  // Срок растёт по слоям: от потолка прошлой ступени к потолку текущей (realm.maxAge = срок на 9-м слое).
+  // Первый слой первой ступени — почти смертный срок. Без культивации долгой жизни нет.
+  let base = L.baseLife;
+  if (L.awakened) {
+    const rs = G.realmsOf(data, s), r = rs[s.realmIndex];
+    const prev = s.realmIndex > 0 ? Math.max(L.baseLife, rs[s.realmIndex - 1].maxAge) : L.baseLife;
+    const cur = Math.max(prev, r.maxAge);
+    base = Math.round(prev + (cur - prev) * (s.layer / r.layers));
+  }
   const phy = by(data.world.physiques, L.physiqueId);
   if (phy?.capAge && !capLifted(data, s, phy)) return Math.min(base, phy.capAge) + L.ageShift;
   return base + L.ageShift;
@@ -398,10 +421,13 @@ function finalWords(data, s, rng) {
   if (st.daoHeart >= 5) keys.push("dao"); if (st.connections >= 6) keys.push("social");
   if (!keys.length) keys.push("plain");
   const w = parentWords(L);
-  return kids.slice(0, 3).map(c => ({
-    who: `${c.name}, ${c.gender === "m" ? "сын" : "дочь"}`,
-    text: pick(Q[pick(keys, rng)], rng).replace(/\{(\w+)\}/g, (m, k) => w[k] ?? m),
-  }));
+  // Дети не повторяют друг друга: сначала цитаты подходящих групп, потом «plain», без повторов.
+  const pool = [...new Set([...keys.flatMap(k => Q[k] || []), ...(Q.plain || [])])], used = new Set();
+  return kids.slice(0, 3).map(c => {
+    const left = pool.filter(q => !used.has(q));
+    const q = left.length ? pick(left, rng) : pick(pool, rng); used.add(q);
+    return { who: `${c.name}, ${c.gender === "m" ? "сын" : "дочь"}`, text: q.replace(/\{(\w+)\}/g, (m, k) => w[k] ?? m) };
+  });
 }
 function epitaph(data, s) {
   const L = s.life, st = L.stats, r = G.realmsOf(data, s)[s.realmIndex];
@@ -414,7 +440,7 @@ function epitaph(data, s) {
 export function die(data, s, cause, rng = Math.random) {
   const L = s.life; if (!L.alive) return;
   L.alive = false; L.pending = null;
-  const kids = L.children.filter(c => c.alive).map(c => ({ name: c.name, gender: c.gender, rootId: c.rootId, elements: c.elements, physiqueId: c.physiqueId, soulId: c.soulId, age: childAge(s, c) }));
+  const kids = L.children.filter(c => c.alive).map(c => ({ ...c, age: childAge(s, c) })); // со всей прожитой жизнью: путь, ступень, брак, внуки
   const entry = {
     name: L.name, surname: L.surname, gender: L.gender, generation: L.generation, ageAtDeath: L.age, cause: fmt(s, cause),
     rootName: L.awakened ? rootText(data, L) : "не проверены", regionId: L.regionId, wealthId: L.wealthId,
@@ -424,6 +450,7 @@ export function die(data, s, cause, rng = Math.random) {
     daoHeart: L.stats.daoHeart, karma: L.stats.karma, connections: L.stats.connections,
     spouseName: L.spouse ? L.spouse.name : null, children: kids,
     epitaph: epitaph(data, s), words: finalWords(data, s, rng),
+    familyTechs: [...new Set([...(s.familyTechs || []), ...s.ownedTechniques])],
   };
   L.legacy = entry; s.lineage.push(entry);
   s.lineage = s.lineage.slice(-data.world.life.lineageKeep);
@@ -436,11 +463,16 @@ function matches(data, s, r = {}) {
   if (r.region && !r.region.includes(L.regionId)) return false;
   if (r.era && !r.era.includes(L.eraId)) return false;
   if (r.awakened != null && r.awakened !== L.awakened) return false;
+  if (r.root && !r.root.includes(L.rootId)) return false;                              // корень: ["single","mutant",...]
+  if (r.path && !(L.awakened && r.path.includes(s.pathId || "qi"))) return false;      // путь: ["qi","body","spirit"]
+  if (r.noRoot != null && r.noRoot !== !(by(data.world.roots, L.rootId)?.qiMult > 0)) return false;
   if (r.minRealm != null && s.realmIndex < r.minRealm) return false;
   if (r.maxRealm != null && s.realmIndex > r.maxRealm) return false;
   if (r.married != null && r.married !== !!L.spouse) return false;
   if (r.single != null && r.single !== !L.spouse) return false;
   if (r.hasChildren && !L.children.some(c => c.alive)) return false;
+  if (r.noSect && L.sect) return false;
+  if (r.inSect && !L.sect) return false;
   if (r.elder && L.age < 0.7 * lifespan(data, s)) return false;
   return true;
 }
@@ -459,6 +491,106 @@ function flavor(data, s, rng) {
   const line = wpick(list, rng), idx = data.chronicle.lines.indexOf(line);
   L.recentFlavor.push(idx); if (L.recentFlavor.length > 10) L.recentFlavor.shift();
   logLine(s, line.t, "year");
+}
+
+// ───── Дети живут своей жизнью, пока ты играешь за родителя ─────
+//   16 лет: камень проверки (корни, душа) и путь — как у игрока (bestPath); у членов секты ребёнок с шансом 50% идёт туда же.
+//   Рост за год: ци = qiPerSecond(его путь, тело, душа, лучшие свитки родовой библиотеки) × yearSeconds × CHILD_K
+//                     + CHILD_A × ци до слоя (наставники, приключения); прорыв без пилюль, порог легенды дети не штурмуют.
+//   Брак 18–40 лет — 9%/год; внуки 20–50 лет — 8%/год, до 3. Смерть: старость по сроку своей ступени + 0.4×беды дома.
+const CHILD_K = 0.6, CHILD_A = 0.12;
+function familyBest(data, s, cs) {
+  const ids = new Set([...(s.familyTechs || []), ...(s.ownedTechniques || [])]);
+  const pool = [...ids].map(id => G.techById(data, id)).filter(t => t && G.techUsable(data, cs, t) && (t.minRealm || 0) <= cs.realmIndex);
+  const best = (type, f) => pool.filter(t => t.type === type).sort((a, b) => f(b) - f(a))[0]?.id || null;
+  return { neigong: best("neigong", t => G.neigongMult(data, cs, t)), body: best("body", t => t.hpMult || 1), martial: null, qinggong: null, yishu: null, anqi: null };
+}
+export function childState(data, s, c) {
+  const L = s.life, W = data.world;
+  const root = by(W.roots, c.rootId), phy = by(W.physiques, c.physiqueId), era = by(W.eras, L.eraId), region = by(W.regions, L.regionId), wealth = by(W.wealth, L.wealthId);
+  const cs = { pathId: c.pathId || "qi", realmIndex: c.realmIndex || 0, layer: c.layer || 1, qi: c.qi || 0, ownedTechniques: [], familyTechs: [], spiritStones: 0, pills: 0,
+    life: { physiqueId: c.physiqueId, eraId: L.eraId, regionId: L.regionId, wealthId: L.wealthId, soulId: c.soulId, rootId: c.rootId, elements: c.elements || [],
+      qiMult: (root?.qiMult ?? 0) * (era?.qiMult ?? 1) * (region?.qiMult ?? 1) * (phy?.qiMult || 1),
+      stats: { daoHeart: 1, karma: 0, connections: 0 }, focusId: "practice", awakened: !!c.awakened, age: childAge(s, c),
+      baseLife: W.life.mortalBase + (wealth?.lifeBonus || 0) + (phy?.lifeBonus || 0), ageShift: 0 } };
+  cs.techniqueSlots = familyBest(data, s, cs);
+  return cs;
+}
+export function childSummary(data, s, c) {
+  const bits = [];
+  if (c.awakened && c.pathId) { const cs = childState(data, s, c); bits.push(`${G.pathOf(data, cs).name}: ${G.realmsOf(data, cs)[c.realmIndex || 0].name} ${c.layer || 1}`); }
+  if (c.sect) bits.push(G.sectById(data, c.sect)?.name);
+  if (c.spouse) bits.push(c.gender === "m" ? "женат" : "замужем");
+  const k = (c.kids || []).filter(x => x.alive).length;
+  if (k) bits.push(`${k} ${k === 1 ? "ребёнок" : k < 5 ? "ребёнка" : "детей"}`);
+  return bits.filter(Boolean).join(" · ");
+}
+function makeGrandchild(data, s, c, rng) {
+  const L = s.life, W = data.world, gender = rng() < 0.5 ? "m" : "f";
+  let rootId, elements;
+  if (c.rootId && rng() < W.life.rootInheritChance) { rootId = c.rootId; elements = [...(c.elements || [])]; }
+  else { const r = rollRoot(data, rng); rootId = r.root.id; elements = r.elements; }
+  const soulId = rng() < W.life.rootInheritChance ? c.soulId : rollSoul(data, rng)?.id;
+  const p = generatePerson(data, rng, { gender, surname: L.surname, age: 0, regionId: L.regionId, wealthId: L.wealthId, physiqueId: c.physiqueId, rootId, elements, noRoot: true });
+  return { name: p.name, gender, born: childAge(s, c), rootId, elements, soulId: soulId || null, physiqueId: c.physiqueId, physiqueName: p.physiqueName, stats: p.stats,
+    alive: true, task: "home", awakened: false, pathId: null, realmIndex: 0, layer: 1, qi: 0, spouse: null, kids: [], sect: null };
+}
+function growChildren(data, s, rng) {
+  for (const c of s.life.children) if (c.alive) growOne(data, s, c, childAge(s, c), rng, true);
+}
+// Наследник получил взрослых детей, чья молодость прошла «за кадром»: проживаем им пропущенные годы молча.
+function catchUpChildren(data, s, rng) {
+  const T = data.world.time;
+  for (const c of s.life.children) {
+    const now = childAge(s, c);
+    for (let a = Math.max(T.awakeningAge, c.lastGrown ?? 0); a < now && c.alive; a++) growOne(data, s, c, a, rng, false);
+  }
+}
+function growOne(data, s, c, a, rng, loud) {
+  const L = s.life, W = data.world, T = W.time;
+  const say = (msg) => { if (loud) logLine(s, msg, "family"); };
+  if (a < T.awakeningAge) return;
+  c.lastGrown = a + 1;
+  if (!c.awakened) {
+    c.awakened = true;
+    if (!c.rootId) { const r = rollRoot(data, rng); c.rootId = r.root.id; c.elements = r.elements; }
+    if (!c.soulId) c.soulId = rollSoul(data, rng)?.id || null;
+    c.pathId = bestPath(data, childState(data, s, c)); c.realmIndex = 0; c.layer = 1; c.qi = 0;
+    if (L.sect && rng() < 0.5) { const sd = G.sectById(data, L.sect.id); if (!sd?.paths || sd.paths.includes(c.pathId)) c.sect = L.sect.id; }
+    say(gtext(`${c.name} прошёл(ла) камень проверки: ${rootText(data, c)}. ${G.pathOf(data, childState(data, s, c)).name}${c.sect ? `, секта ${G.sectById(data, c.sect).name}` : ""}.`, c.gender));
+  }
+  // рост
+  const cs = childState(data, s, c), rs = G.realmsOf(data, cs), need = G.qiRequired(data, cs);
+  c.qi = (c.qi || 0) + G.qiPerSecond(data, cs) * T.yearSeconds * CHILD_K + CHILD_A * need;
+  if (c.qi >= need && !G.legendGate(data, cs)) {
+    if (rng() < G.breakthroughChance(data, cs)) {
+      const r = rs[c.realmIndex || 0];
+      if ((c.layer || 1) < r.layers) c.layer = (c.layer || 1) + 1;
+      else if ((c.realmIndex || 0) < rs.length - 1) { c.realmIndex = (c.realmIndex || 0) + 1; c.layer = 1;
+        say(gtext(`${c.name} вошёл(ла) в ступень «${rs[c.realmIndex].name}».`, c.gender)); }
+      c.qi = 0;
+    } else c.qi = need * 0.7;
+  } else c.qi = Math.min(c.qi, need);
+  // брак и внуки
+  if (a >= 18 && a <= 40 && !c.spouse && rng() < 0.09) {
+    const sg = c.gender === "m" ? "f" : "m";
+    let p, n = 0;
+    do { p = generatePerson(data, rng, { gender: sg, regionId: L.regionId, wealthId: L.wealthId, noRoot: true }); n++; } while (p.surname === L.surname && n < 20);
+    c.spouse = { name: p.name, surname: p.surname, gender: sg, type: "arranged", jobId: defaultJob(data, s)?.id || "home", physiqueName: p.physiqueName, stats: p.stats };
+    say(gtext(`${c.name} сочетался(ась) браком: ${p.name}.`, c.gender));
+  }
+  c.kids ??= [];
+  if (c.spouse && a >= 20 && a <= 50 && c.kids.length < 3 && rng() < 0.08) {
+    const gk = makeGrandchild(data, s, c, rng); gk.born = a; c.kids.push(gk);
+    say(`У ${c.name} ${gk.gender === "m" ? "родился сын — твой внук" : "родилась дочь — твоя внучка"} ${gk.name}.`);
+  }
+  // старость и беды взрослого
+  const span = lifespan(data, childState(data, s, c));
+  const old = (a / span - W.life.oldAgeStart) / (1 - W.life.oldAgeStart);
+  if (a >= span || (old >= 0 && rng() < (W.life.oldAgeBase ?? 0) + W.life.oldAgeHazard * old * old) || rng() < by(W.wealth, L.wealthId).hazard * 0.4) {
+    c.alive = false;
+    say(gtext(`Умер(ла) ${c.name}, ${a} лет.`, c.gender) + " Ты пережил(а) своего ребёнка.");
+  }
 }
 
 function makeChild(data, s, rng) {
@@ -489,6 +621,7 @@ function makeChild(data, s, rng) {
     alive: true, 
     task: "home", 
     soulId: soulId || null,
+    awakened: false, pathId: null, realmIndex: 0, layer: 1, qi: 0, spouse: null, kids: [], sect: null,
     physiqueId: L.physiqueId,
     physiqueName: child.physiqueName,
     stats: child.stats,
@@ -594,6 +727,23 @@ function applyEffects(data, s, ef = {}, rng = Math.random) {
   if (ef.connections) st.connections = clamp(st.connections + ef.connections, 0, 30);
   if (ef.years) L.ageShift += ef.years;
   if (ef.legacy) L.legacyBonus += ef.legacy;
+  if (ef.tech) { // техника в подарок: учится бесплатно и встаёт в слот, если лучше пустого
+    const t = G.techById(data, ef.tech);
+    if (t && !s.ownedTechniques.includes(t.id)) {
+      s.ownedTechniques.push(t.id);
+      if (!s.techniqueSlots[t.type]) G.equipTechnique(data, s, t.id);
+      logLine(s, `Освоено без платы: «${t.name}».`, "cult");
+    }
+  }
+  if (ef.sect && !L.sect && L.awakened) {
+    const sd = G.sectById(data, ef.sect);
+    if (sd) { L.sect = { id: sd.id, since: L.age }; logLine(s, `Ты вступил(а) в секту ${sd.name}（${sd.han}）: ${G.sectRankName(s)}. Её 中乘 открыты сразу, 上乘 — внутренним ученикам, 绝学 — личным.`, "awaken"); }
+  }
+  if (ef.scroll && L.awakened) { const t = G.luckyScroll(data, s, rng); logLine(s, t ? `Свиток в руках: «${t.name}». Теперь он и в родовой библиотеке.` : "Свиток оказался пустым: всё это ты уже знаешь.", "luck"); }
+  if (ef.sectTech && L.sect) {
+    const t = G.luckyScroll(data, s, rng, L.sect.id);
+    if (t) logLine(s, `Старейшина открыл тебе «${t.name}». Об этом не говорят вслух.`, "luck"); else { s.spiritStones += 30; logLine(s, "Свитков твоего ранга больше нет — старейшина выдал 30 камней на пилюли.", "cult"); }
+  }
   if (ef.spouse && !L.spouse) {
     L.spouse = makeSpouse(data, s, ef.spouse, rng);
     const how = { love: "по любви", arranged: "по воле семьи", companion: "как даолюй" }[ef.spouse];
@@ -629,7 +779,7 @@ const WEIGHTS = {
   dao: ef => (ef.daoHeart || 0) * 3 + (ef.qiPct || 0) * 10 + (ef.years || 0) * 0.4 + (ef.legacy || 0) + (ef.death ? -100 : 0),
   wealth: ef => (ef.stones || 0) * 0.7 + (ef.connections || 0) * 1.5 + (ef.pill || 0) * 3 + (ef.death ? -100 : 0),
   safe: ef => (ef.years || 0) * 0.5 + (ef.karma || 0) * 0.5 + (ef.stones || 0) * 0.1 + (ef.qiPct || 0) * 3 + (ef.death ? -100 : 0) + (ef.childDeath ? -30 : 0),
-  best: ef => (ef.years || 0) * 2 + (ef.qiPct || 0) * 12 + (ef.daoHeart || 0) * 2 + (ef.stones || 0) * 0.5 + (ef.pill || 0) * 4 + (ef.legacy || 0) * 2 + (ef.karma || 0) * 0.4 + (ef.connections || 0) * 0.6 + (ef.spouse ? 6 : 0) + (ef.death ? -200 : 0) + (ef.childDeath ? -40 : 0),
+  best: ef => (ef.years || 0) * 2 + (ef.qiPct || 0) * 12 + (ef.daoHeart || 0) * 2 + (ef.stones || 0) * 0.5 + (ef.pill || 0) * 4 + (ef.legacy || 0) * 2 + (ef.karma || 0) * 0.4 + (ef.connections || 0) * 0.6 + (ef.spouse ? 6 : 0) + (ef.tech ? 5 : 0) + (ef.sect ? 8 : 0) + (ef.scroll ? 5 : 0) + (ef.sectTech ? 5 : 0) + (ef.death ? -200 : 0) + (ef.childDeath ? -40 : 0),
 };
 function choiceScore(c, mode) {
   const f = WEIGHTS[mode];
@@ -692,11 +842,17 @@ function yearPass(data, s, rng) {
   for (const c of L.children) if (c.alive && childAge(s, c) < 16 && rng() < wealth.hazard * 0.8) {
     c.alive = false; logLine(s, `Умер(ла) твой ребёнок ${c.name}: детская лихорадка не пощадила.`, "family");
   }
+  growChildren(data, s, rng);
+  // Друзья делятся свитками: с 8 связей, 0.4% за каждую связь сверх 6.
+  if (L.awakened && L.stats.connections >= 8 && rng() < 0.004 * (L.stats.connections - 6)) {
+    const t = G.luckyScroll(data, s, rng);
+    if (t) logLine(s, `Старый друг из цзянху переписал для тебя «${t.name}» — по дружбе, не по уставу.`, "luck");
+  }
   const jobHaz = (jobById(data, L.jobId)?.hazard || 0) + (L.spouse ? (jobById(data, L.spouse.jobId)?.hazard || 0) * 0.3 : 0);
   const yishu = G.slottedTechs(data, s).yishu;
   const phy = by(W.physiques, L.physiqueId);
   let hz = (wealth.hazard + jobHaz) * by(W.regions, L.regionId).hazardMult * by(W.eras, L.eraId).hazardMult * (focus?.hazardMul ?? 1) * (phy?.hazard || 1) * (1 - (yishu?.hazardCut || 0));
-  if (L.awakened) hz *= wl.awakenedHazardMult * Math.pow(0.5, s.realmIndex) * (G.pathOf(data, s).hazardMul ?? 1);
+  if (L.awakened) hz *= wl.awakenedHazardMult * Math.pow(wl.realmHazardDecay ?? 0.5, s.realmIndex) * (G.pathOf(data, s).hazardMul ?? 1);
   if (L.age < 5) hz *= wl.infantHazardMult;
   const span = lifespan(data, s);
   if (L.age >= span) return die(data, s, "Дожил(а) отведённый срок", rng);
@@ -704,7 +860,9 @@ function yearPass(data, s, rng) {
     if (L.mercy && !L.awakened) logLine(s, "Беда прошла мимо: небо хранит тебя.", "luck");
     else return die(data, s, pick(W.deathCauses[L.age < T.awakeningAge ? "child" : "adult"], rng), rng);
   }
-  if (L.age >= wl.oldAgeStart * span && rng() < wl.oldAgeHazard) return die(data, s, "Ушёл(ла) от старости", rng);
+  // Старость: с oldAgeStart срока риск растёт квадратично — смерть размазана, а не «все в последний год».
+  const old = (L.age / span - wl.oldAgeStart) / (1 - wl.oldAgeStart);
+  if (old >= 0 && rng() < (wl.oldAgeBase ?? 0) + wl.oldAgeHazard * old * old) return die(data, s, "Ушёл(ла) от старости", rng);
   if (rng() < T.chronicleChance) flavor(data, s, rng);
   if (L.age - L.lastEventAge >= T.minEventGapYears && rng() < T.eventChancePerYear) {
     const e = drawEvent(data, s, rng); if (e) L.pending = e.id;

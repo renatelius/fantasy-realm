@@ -1,5 +1,5 @@
 {
- "_note": "Три пути. Ступени (realms) у каждого пути свои; realmIndex/layer общие. Верхние две ступени — легенды (legend): в мире Печати их достигают единицы.",
+ "_note": "Три пути. Ступени (realms) у каждого пути свои; realmIndex/layer общие. Верхние две ступени — легенды (legend): в мире Печати их достигают единицы. maxAge — срок жизни на 9-м слое ступени; между слоями растёт плавно (life.js → lifespan).",
  "paths": [
   {
    "id": "qi",
@@ -29,7 +29,7 @@
      "baseQi": 5000,
      "growth": 1.4,
      "baseBreakthroughChance": 0.7,
-     "maxAge": 200
+     "maxAge": 150
     },
     {
      "id": "golden_core",
@@ -39,7 +39,7 @@
      "baseQi": 400000,
      "growth": 1.45,
      "baseBreakthroughChance": 0.5,
-     "maxAge": 500
+     "maxAge": 220
     },
     {
      "id": "nascent_soul",
@@ -49,7 +49,7 @@
      "baseQi": 32000000,
      "growth": 1.5,
      "baseBreakthroughChance": 0.35,
-     "maxAge": 1000,
+     "maxAge": 330,
      "legend": true
     },
     {
@@ -60,7 +60,7 @@
      "baseQi": 3000000000,
      "growth": 1.55,
      "baseBreakthroughChance": 0.22,
-     "maxAge": 2000,
+     "maxAge": 500,
      "legend": true
     }
    ]
@@ -97,7 +97,7 @@
      "baseQi": 5000,
      "growth": 1.4,
      "baseBreakthroughChance": 0.68,
-     "maxAge": 190
+     "maxAge": 140
     },
     {
      "id": "marrow",
@@ -107,7 +107,7 @@
      "baseQi": 400000,
      "growth": 1.45,
      "baseBreakthroughChance": 0.48,
-     "maxAge": 420
+     "maxAge": 200
     },
     {
      "id": "golden_body",
@@ -117,7 +117,7 @@
      "baseQi": 32000000,
      "growth": 1.5,
      "baseBreakthroughChance": 0.33,
-     "maxAge": 850,
+     "maxAge": 300,
      "legend": true
     },
     {
@@ -128,7 +128,7 @@
      "baseQi": 3000000000,
      "growth": 1.55,
      "baseBreakthroughChance": 0.2,
-     "maxAge": 1600,
+     "maxAge": 450,
      "legend": true
     }
    ]
@@ -167,7 +167,7 @@
      "baseQi": 5000,
      "growth": 1.4,
      "baseBreakthroughChance": 0.68,
-     "maxAge": 200
+     "maxAge": 160
     },
     {
      "id": "spirit_roam",
@@ -177,7 +177,7 @@
      "baseQi": 400000,
      "growth": 1.45,
      "baseBreakthroughChance": 0.48,
-     "maxAge": 450
+     "maxAge": 240
     },
     {
      "id": "soul_out",
@@ -187,7 +187,7 @@
      "baseQi": 32000000,
      "growth": 1.5,
      "baseBreakthroughChance": 0.34,
-     "maxAge": 900,
+     "maxAge": 350,
      "legend": true
     },
     {
@@ -198,7 +198,7 @@
      "baseQi": 3000000000,
      "growth": 1.55,
      "baseBreakthroughChance": 0.22,
-     "maxAge": 1800,
+     "maxAge": 520,
      "legend": true
     }
    ]

@@ -14,6 +14,7 @@ button.on,button[aria-pressed="true"]{background:var(--ink);color:#0d1216;border
 button.pink{background:var(--pink);color:#fff;border:0;padding:10px 22px;font-weight:600}
 button.ghost{background:transparent}
 button.block{display:block;width:100%;text-align:left;margin-top:8px;padding:10px 12px}
+button.block small{display:block;color:var(--dim);font-size:.78rem;margin-top:2px}
 .serif{font-family:Georgia,"Noto Serif SC","Times New Roman",serif}
 .dim{color:var(--dim);font-size:.86rem}
 .small{font-size:.78rem}
@@ -88,6 +89,10 @@ details summary{cursor:pointer;color:var(--dim);font-size:.82rem;margin-top:6px}
 .peer{padding:7px 0;border-bottom:1px solid #222c35;font-size:.84rem}
 .peer:last-child{border-bottom:0}
 .peer b{font-weight:600} .peer div{color:var(--dim);font-size:.76rem}
+.peer .peer-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;color:var(--ink);font-size:.84rem}
+.peer .peer-h span{color:var(--dim);font-size:.72rem;white-space:nowrap}
+select.jobsel{width:100%;margin-top:4px;font:inherit;font-size:.84rem;color:var(--ink);background:var(--paper2);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+select.jobsel:disabled{opacity:.6}
 .peer i{color:var(--gold);font-style:normal}
 
 /* карта жизни */
@@ -143,6 +148,8 @@ details summary{cursor:pointer;color:var(--dim);font-size:.82rem;margin-top:6px}
 .pcard .pname{font-size:1.25rem;margin:2px 0 4px}
 .pcard button{margin-top:auto}
 .rl{margin:8px 0 10px;padding-left:18px;font-size:.8rem} .rl li{margin:2px 0} .rl small{color:var(--dim)} .rl li.leg{color:var(--gold)}
+#tablock{position:sticky;top:0;z-index:20;background:#3a1420;border-bottom:1px solid var(--pink);padding:10px 16px;text-align:center;font-size:.9rem}
+#tablock button{margin-left:10px;padding:6px 14px}
 .bad-n{color:#f0a0a0} .rare-n{color:var(--gold)}
 </style></head><body>
 <header id="hdr">

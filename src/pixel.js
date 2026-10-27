@@ -112,7 +112,9 @@ export function drawAvatar(c, l, s) {
 
 export function drawYanMap(c, regions, cur) {
   if (!c) return;
-  const ctx = c.getContext("2d"), Wd = c.width, Ht = c.height;
+  // Рисуем в логических 300×120, холст в 2 раза больше — без размытия на широком экране.
+  const ctx = c.getContext("2d"), K = c.width / 300, Wd = 300, Ht = 120;
+  ctx.setTransform(K, 0, 0, K, 0, 0);
   ctx.clearRect(0, 0, Wd, Ht);
   const R = rnd(7);
   // точечная карта материка: эллипс + шум
@@ -130,6 +132,6 @@ export function drawYanMap(c, regions, cur) {
     const x = r.x / 100 * Wd, y = r.y / 100 * Ht, on = r.id === cur.id;
     ctx.fillStyle = on ? "#3ecf9f" : "#6a7a84"; ctx.beginPath(); ctx.arc(x, y, on ? 4 : 2, 0, 7); ctx.fill();
     if (on) { ctx.strokeStyle = "#3ecf9f"; ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.stroke(); }
-    ctx.fillStyle = on ? "#e6ecef" : "#6a7a84"; ctx.font = "9px sans-serif"; ctx.fillText(r.han, x + 6, y - 4);
+    ctx.fillStyle = on ? "#e6ecef" : "#6a7a84"; ctx.font = `${on ? "bold " : ""}8px sans-serif`; ctx.fillText(r.han, x + (on ? 11 : 5), y + 3);
   }
 }

@@ -1,12 +1,13 @@
 {
  "adventure": {
-  "cooldownSec": 20,
-  "lossCooldownSec": 40,
+  "cooldownSec": 7,
+  "lossCooldownSec": 14,
   "pillDropChance": 0.1,
   "qiRewardShare": 0.1,
   "maxRounds": 40,
   "woundYears": 1,
-  "deathOnLoss": 0.03
+  "deathOnLoss": 0.03,
+  "scrollChance": 0.02
  },
  "player": {
   "hpBase": 100,

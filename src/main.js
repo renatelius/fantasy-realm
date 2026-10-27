@@ -1,4 +1,4 @@
-import { load, save, reset } from "./save.js";
+import { load, save, reset, tabLock } from "./save.js";
 import * as G from "./game.js";
 import * as C from "./combat.js";
 import * as L from "./life.js";
@@ -11,7 +11,7 @@ const setHidden = (el, v) => { if (el && el.hidden !== v) el.hidden = v; };
 const n01 = v => Math.max(0, Math.min(100, v));
 const pct = (a, b) => (a / b * 100);
 
-const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes"];
+const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects"];
 const data = Object.fromEntries(await Promise.all(names.map(async n => [n, await (await fetch(`data/${n}.json`)).json()])));
 const by = (arr, id) => arr.find(x => x.id === id);
 const GRADE = Object.fromEntries(data.techniques.grades.map(g => [g.id, g]));
@@ -43,6 +43,8 @@ const factor = () => speedSpec().factor ?? 1;
 const g = (m, f) => s.life.gender === "m" ? m : f;
 const hash = str => { let h = 2166136261; for (const c of str) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 const jpick = (arr, key) => arr[hash(key) % arr.length];
+// Для списков людей: общий сдвиг от «эпохи жизни» + индекс → у соседей по списку разные строки.
+const jpickI = (arr, key, i) => arr[(hash(key) + i) % arr.length];
 
 // ───────── сводные числа рождения ─────────
 const share = (arr, x) => x.weight / arr.reduce((t, y) => t + y.weight, 0);
@@ -66,6 +68,7 @@ function mrz(l) {
   return a + "<br>" + b;
 }
 const docNo = l => `№ ЯНЬ-${l.eraId.toUpperCase().slice(0, 3)}-${String(hash(l.name + l.regionId) % 1e6).padStart(6, "0")}`;
+const cap = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 const fxChips = p => L.physiqueEffects(p).map(e => `<span class="fx ${e.good ? "" : "bad"}">${e.t}</span>`).join("");
 const oneIn = (arr, x) => { const v = 1 / share(arr, x); return v < 10 ? `${(share(arr, x) * 100).toFixed(0)}%` : `1 из ${Math.round(v)}`; };
 const dots = i => "●".repeat(i + 1) + "○".repeat(Math.max(0, 4 - i));
@@ -74,7 +77,7 @@ const dots = i => "●".repeat(i + 1) + "○".repeat(Math.max(0, 4 - i));
 const SPIN = {
   region: { title: "Где ты родишься", sub: "Небо бросает жребий по всей Великой Янь. Ты не выбираешь.", list: () => W.regions, cur: l => l.regionId,
     label: r => `${r.name}<small>${r.han}</small>`, after: "spinPhysique",
-    result: r => `<div class="big">${r.name}（${r.han}）</div><div class="dim">${r.kind}. Здесь рождается ${Math.round(share(W.regions, r) * 100)}% младенцев Янь. ${jpick(J.region[r.id] || J.region.any, s.life.name)}</div>` },
+    result: r => `<div class="big">${r.name}（${r.han}）</div><div class="dim">${cap(r.kind)}. Здесь рождается ${Math.round(share(W.regions, r) * 100)}% младенцев Янь. ${jpick(J.region[r.id] || J.region.any, s.life.name)}</div>` },
   physique: { title: "Телосложение", sub: "Повитуха щупает кости. Мастера скажут потом, что видели всё сразу.", list: () => W.physiques, cur: l => l.physiqueId,
     label: p => `<span class="${p.bad ? "bad-n" : share(W.physiques, p) < 0.04 ? "rare-n" : ""}">${p.name}</span><small>${p.han}</small>`, after: "cert",
     result: p => `<div class="big ${p.bad ? "bad-n" : ""}">${p.name}（${p.han}）</div><div class="dim">${L.gtext(p.text, s.life.gender)} ${p.bad ? "Тяжёлое тело." : ""} Выпадает ${oneIn(W.physiques, p)}.</div><div style="margin-top:6px">${fxChips(p) || `<span class="fx">без особенностей</span>`}</div>` },
@@ -120,6 +123,7 @@ function startSpin() {
   render();
 }
 function nextSpin() {
+  if (!spinState) return; // двойной клик по «Дальше»
   const kind = spinState.kind; spinState = null;
   if (kind === "root") { s.life.phase = "path"; pathAutoAt = null; }
   else s.life.phase = SPIN[kind].after;
@@ -136,7 +140,7 @@ function renderPath() {
     const p = o.path, cb = p.combat || {};
     const fx = [[cb.hp, `тело ×${cb.hp}`, cb.hp > 1], [cb.atk, `удар ×${cb.atk}`, cb.atk > 1], [cb.def, `защита ×${cb.def}`, cb.def > 1],
       [cb.crit, `крит +${Math.round((cb.crit || 0) * 100)}%`, true], [p.hazardMul !== 1, `беды ${p.hazardMul < 1 ? "−" : "+"}${Math.round(Math.abs(1 - p.hazardMul) * 100)}%`, p.hazardMul < 1],
-      [p.daoHeartMul, "дао-сердце ×2 к прорыву", true], [p.id === "body", "лет меньше", false]]
+      [p.daoHeartMul, `дао-сердце ×${p.daoHeartMul} к прорыву`, true], [p.id === "body", "лет меньше", false]]
       .filter(x => x[0]).map(([, t, good]) => `<span class="fx ${good ? "" : "bad"}">${t}</span>`).join("");
     return `<div class="pcard ${o.ok ? "" : "off"} ${o.path.id === best ? "best" : ""}">
       <div class="lbl">${p.han}</div><div class="pname serif">${p.name}</div>
@@ -167,18 +171,18 @@ function renderCert() {
     <div class="grid3">
       <div>Пол<b>${g("Мужской", "Женский")}</b></div>
       <div>Край рождения<b>${f.region.name}</b></div>
-      <div>Место<b>${f.region.kind}</b></div>
+      <div>Место<b>${cap(f.region.kind)}</b></div>
       <div>Достаток семьи<b><span class="dots">${dots(f.wIdx)}</span><br>${f.wealth.name}</b></div>
       <div>Возраст родителей<b>Мать ${h?.mother.age} · Отец ${h?.father.age}</b></div>
       <div>Работа родителей<b>Мать: ${h?.mother.job} · Отец: ${h?.father.job}</b></div>
-      <div>Дом<b>${h?.house || "—"}</b></div>
-      <div>Вера дома<b>${jpick(W.creeds, l.name)}</b></div>
+      <div>Дом<b>${cap(h?.house) || "—"}</b></div>
+      <div>Вера дома<b>${cap(jpick(W.creeds, l.name))}</b></div>
       <div>Ожидаемый срок<b>${f.expect} лет</b></div>
       <div>Телосложение<b>${f.phy.name}（${f.phy.han}）</b><span style="text-transform:none;letter-spacing:0">${fxChips(f.phy)}</span></div>
       <div>Риск умереть до 5 лет<b>${(f.inf * 100).toFixed(1)}%</b></div>
       <div>Эпоха<b>${f.era.name}</b></div>
     </div>
-    <canvas class="yanmap" id="yanmap" width="300" height="120"></canvas>
+    <canvas class="yanmap" id="yanmap" width="600" height="240"></canvas>
     <div class="dim small" style="text-align:center">Вот где на карте Великой Янь твой край. Чжао на картах нет — его стёрли.</div>
     <div class="hl">Из младенцев, что рождаются сегодня, <b>${(f.regShare * 100).toFixed(1)}%</b> рождаются в краю «${f.region.name}» — это 1 из ${Math.round(1 / f.regShare)}. Вся твоя судьба (край × эпоха × достаток × тело) выпадает <b>1 из ${(l.odds || 1).toLocaleString("ru-RU")}</b>.</div>
     <table class="cmp"><tr><th>Если бы вы родились в один день</th><th>В среднем по Янь</th><th>${f.region.name} (ты)</th></tr>
@@ -198,8 +202,9 @@ function renderCert() {
 // ───────── игра ─────────
 function stage(l) {
   if (l.age < 3) return "младенец"; if (l.age < 12) return "дитя"; if (l.age < 16) return "отрок";
+  if (l.age < 30) return "юность";
   const r = l.age / L.lifespan(data, s);
-  return r < 0.25 ? "расцвет" : r < 0.7 ? "зрелость" : "закат";
+  return r < (W.life.oldAgeStart ?? 0.78) ? "зрелость" : "закат";
 }
 function lifeStats() {
   const l = s.life, st = l.stats, span = L.lifespan(data, s);
@@ -236,6 +241,7 @@ function renderPass() {
       <span>Корни</span><b>${l.rootRevealed ? L.rootText(data, l) : `спят до ${W.time.awakeningAge} лет`}</b>
       ${l.soulId ? `<span>Душа</span><b>${W.souls?.find(x => x.id === l.soulId)?.name || "—"}</b>` : ""}
       ${l.awakened ? `<span>Путь</span><b style="color:var(--jade)">${G.pathOf(data, s).name} ${G.pathOf(data, s).han}</b>` : ""}
+      ${l.sect ? `<span>Секта</span><b>${G.sectById(data, l.sect.id)?.name} · ${G.sectRankName(s)}</b>` : ""}
       <span>Ремесло</span><b>${L.jobById(data, l.jobId)?.name || (l.age < 6 ? "ещё не учится" : "пока нет")}</b>
     </div>
     <div class="mrz">${mrz(l)}</div></div>`);
@@ -278,7 +284,7 @@ function renderCult() {
   setHTML(el, `<h2>Путь <small>побед ${s.wins} · поражений ${s.losses}</small></h2>
     <div class="realm">${r.name}<small>слой ${s.layer}/${r.layers}</small></div>
     <div class="track" style="margin:8px 0 4px"><i style="width:${Math.min(100, pct(s.qi, need))}%;background:var(--jade)"></i></div>
-    <div class="dim small">${Math.floor(s.qi)} / ${need} ци · ${sp.untilEvent ? "прокрутка" : `+${(G.qiPerSecond(data, s) * factor()).toFixed(1)}/с`}</div>
+    <div class="dim small">${Math.floor(s.qi)} / ${need} ци · ${sp.untilEvent ? "прокрутка" : (factor() ? `+${(G.qiPerSecond(data, s) * factor()).toFixed(1)}/с` : `пауза · +${G.qiPerSecond(data, s).toFixed(1)}/с на ×1`)}</div>
     ${G.legendGate(data, s) ? `<div class="note" style="border-color:var(--red);background:#e06a6a14">Порог легенды: «${G.realmsOf(data, s)[s.realmIndex + 1].name}». Шанс урезан ×${data.realms.breakthrough.legendChanceMul}, при неудаче ${Math.round((data.realms.breakthrough.legendDeathChance || 0) * 100)}% погибнуть — Печать замечает тех, кто растёт слишком высоко. Пилюля обязательна.${G.gateWaitYears(data, s) ? ` Жилы заживают ещё ${G.gateWaitYears(data, s)} г.` : ""}</div>` : ""}
     <div class="dim small">Прорыв: ${Math.round(ch * 100)}% · с пилюлей ${Math.round(chp * 100)}% · пилюля ${G.pillPrice(data, s)} камней</div>
     ${(() => { const o = advOdds(); return `<div class="dim small">Приключение: победа ~${Math.round(o.win * 100)}% · <span style="color:${o.death > 0.01 ? "var(--red)" : "inherit"}">гибель ~${(o.death * 100).toFixed(1)}%</span> · поражение = рана (срок −${data.enemies.adventure.woundYears || 0})</div>${newbieHint(o)}`; })()}
@@ -297,7 +303,11 @@ function sceneCaption(l) {
   if (l.spouse) fam.push(g("с женой", "с мужем"));
   const kids = l.children.filter(c => c.alive).length;
   if (kids) fam.push(`${kids} ${kids === 1 ? "ребёнок" : kids < 5 ? "ребёнка" : "детей"}`);
-  if (!l.spouse && l.age < 20 && h) fam.push(`с родителями${h.siblings.length ? ` и ${h.siblings.length} ${h.siblings.length === 1 ? "братом или сестрой" : "братьями и сёстрами"}` : ""}`);
+  if (!l.spouse && l.age < 20 && h) {
+    const b = h.siblings.filter(x => x.gender === "m").length, g = h.siblings.length - b;
+    const sib = [b ? (b === 1 ? "братом" : `${b} братьями`) : "", g ? (g === 1 ? "сестрой" : `${g} сёстрами`) : ""].filter(Boolean).join(" и ");
+    fam.push(`с родителями${sib ? ", " + sib : ""}`);
+  }
   const joke = jpick(J.scene, l.name + l.age);
   return `${f.region.name} · ${h?.house || "дом"} ${fam.length ? "· " + fam.join(", ") : ""}<div class="dim small" style="margin-top:4px">${joke}</div>`;
 }
@@ -310,7 +320,8 @@ function renderFocus() {
   const f = birthFacts(l);
   const small = l.age < 6;
   const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self"));
-  const jobChips = l.age >= data.jobs.workAge && jobs.length ? `<div class="lbl" style="margin-top:10px">Ремесло</div><div class="chips">${jobs.map(j => `<button class="${j.id === l.jobId ? "on" : ""}" data-job="${j.id}" data-who="self">${j.name} · ${j.stones}</button>`).join("")}</div>` : "";
+  const jobChips = l.age >= data.jobs.workAge && jobs.length ? `<div class="lbl" style="margin-top:10px">Ремесло</div>
+    <select class="jobsel" data-who="self" ${s.settings.autoPlay ? "disabled" : ""}>${jobs.slice().sort((a, b) => b.stones - a.stones).map(j => `<option value="${j.id}" ${j.id === l.jobId ? "selected" : ""}>${j.name} — ${j.stones} камн./год${j.hazard ? " · риск" : ""}</option>`).join("")}</select>` : "";
   setHTML(el, `<h2>Фокус этого года</h2>
     <div class="dim">${stage(l)[0].toUpperCase() + stage(l).slice(1)} · ${f.region.name} · ${f.era.name}</div>
     ${small ? `<div class="dim" style="margin-top:8px">${jpick(J.baby, l.name + l.age)} С шести лет ты сможешь выбирать, на что тратить год. Этот отрезок можно спокойно пролистать на ×8.</div>` : `
@@ -331,7 +342,8 @@ function renderFamily() {
   l.children.forEach((c, i) => {
     const a = L.childAge(s, c);
     const tasks = c.alive && a >= 6 ? `<div class="chips" style="justify-content:flex-end;margin:4px 0 0">${data.jobs.childTasks.map(t => `<button class="${(c.task || "home") === t.id ? "on" : ""}" data-child="${i}" data-task="${t.id}">${t.name}</button>`).join("")}</div>` : "";
-    rows.push(`<div class="row2"><span>${c.gender === "m" ? "Сын" : "Дочь"}</span><b>${c.name} · ${c.alive ? a + " лет" : "умер(ла)"}${tasks}</b></div>`);
+    const sum = c.alive ? L.childSummary(data, s, c) : "";
+    rows.push(`<div class="row2"><span>${c.gender === "m" ? "Сын" : "Дочь"}</span><b>${c.name} · ${c.alive ? a + " лет" : "умер(ла)"}${sum ? `<small>${sum}</small>` : ""}${a < 16 ? tasks : ""}</b></div>`);
   });
   setHTML($("family"), `<h2>Семья и жизнь</h2>${rows.join("") || `<div class="dim">Один(а) под небом.</div>`}`);
 }
@@ -339,21 +351,22 @@ function renderFamily() {
 function peerStatus(p, i) {
   const age = s.life.age;
   if (age < 6) return "раннее детство";
-  if (age < 16) return jpick(J.peerKid, p.name + Math.floor(age / 4));
+  if (age < 16) return jpickI(J.peerKid, "kid" + Math.floor(age / 4), i);
   const roll = hash(p.name + "fate") % 100;
+  const lvl = Math.min(9, 1 + Math.floor((age - 16) / 6 * (1 + (hash(p.name) % 3) / 2)));
   if (p.rootId && age >= 16) {
-    const lvl = Math.min(9, 1 + Math.floor((age - 16) / 6 * (1 + (hash(p.name) % 3) / 2)));
     if (roll < 8 && age > 40) return `<i>ушёл(ла) в затвор и не вышел(ла)</i>`;
-    return `Конденсация ци, слой ${lvl}. ${jpick(J.peerCult, p.name + Math.floor(age / 7))}`;
+    return `Конденсация ци, слой ${lvl}. ${jpickI(J.peerCult, "cult" + Math.floor(age / 7), i)}`;
   }
-  if (roll < 6 + age / 4) return age > 30 ? `<i>погиб(ла): ${jpick(J.peerDeath, p.name)}</i>` : jpick(J.peerAdult, p.name + Math.floor(age / 7));
-  return jpick(J.peerAdult, p.name + Math.floor(age / 7));
+  if (roll % 3 === 0 && age >= 16) return `Закалка кожи, слой ${Math.max(1, lvl - 1)}. ${jpickI(J.peerAdult, "adult" + Math.floor(age / 7), i)}`;
+  if (roll < 6 + age / 4) return age > 30 ? `<i>погиб(ла): ${jpick(J.peerDeath, p.name)}</i>` : jpickI(J.peerAdult, "adult" + Math.floor(age / 7), i);
+  return jpickI(J.peerAdult, "adult" + Math.floor(age / 7), i);
 }
 function renderPeers() {
   const l = s.life;
   if (!l.peers?.length) { setHTML($("peers"), `<h2>Родившиеся в ту же секунду</h2><div class="dim">Наследник рода: ровесников тебе не записали.</div>`); return; }
-  setHTML($("peers"), `<h2>Родившиеся в ту же секунду <small>в этом возрасте</small></h2>` + l.peers.map((p, i) =>
-    `<div class="peer"><b>${p.name}</b> <span class="dim small" style="float:right">${p.gender === "m" ? "М" : "Ж"}</span><div>${p.region}</div><div>${L.gtext(peerStatus(p, i), p.gender)}</div></div>`).join(""));
+  setHTML($("peers"), `<h2>Родившиеся в ту же секунду</h2><div class="lbl" style="margin:-6px 0 4px">в этом возрасте</div>` + l.peers.map((p, i) =>
+    `<div class="peer"><div class="peer-h"><b>${p.name}</b><span>${p.region} · ${p.gender === "m" ? "М" : "Ж"}</span></div><div>${L.gtext(peerStatus(p, i), p.gender)}</div></div>`).join(""));
 }
 
 function renderMap() {
@@ -389,7 +402,9 @@ function renderDeath() {
   setHidden(el, l.alive);
   if (l.alive) return;
   const gx = l.legacy;
-  const heirs = gx.children.map((c, i) => `<button class="block" data-heir="${i}">Продолжить родом: ${c.name} (${c.gender === "m" ? "сын" : "дочь"}, ${c.age} лет)</button>`).join("");
+  const heirs = gx.children.map((c, i) => { const sum = L.childSummary(data, s, c);
+    return `<button class="block" data-heir="${i}">Продолжить родом: ${c.name} (${c.gender === "m" ? "сын" : "дочь"}, ${c.age} лет)${sum ? `<small>${sum}</small>` : ""}</button>`; }).join("")
+    + (gx.familyTechs?.length ? `<div class="dim small" style="margin-top:6px">Родовая библиотека переходит наследнику: ${gx.familyTechs.length} свитк. — учатся бесплатно, если позволяет путь.</div>` : "");
   setHTML(el, `<h2>${gx.name} · ${gx.ageAtDeath} лет</h2><div class="dim">${gx.cause}. Корни: ${gx.rootName}</div>
     <p class="serif" style="font-size:1.05rem">${gx.epitaph}</p>
     ${gx.words.map(w => `<div class="quote">«${w.text}»${w.who ? `<small>${w.who}</small>` : ""}</div>`).join("")}
@@ -403,17 +418,29 @@ function renderTree() {
 }
 function techLine(t) {
   const gr = GRADE[t.grade], own = s.ownedTechniques.includes(t.id), act = s.techniqueSlots?.[t.type] === t.id;
-  const bits = [t.qiMultiplier ? `ци ×${t.qiMultiplier}` : "", t.hpMult ? `тело ×${t.hpMult}` : "", t.atkMult ? `удар ×${t.atkMult}` : "", t.defMult ? `защита ×${t.defMult}` : "", t.critAdd ? `крит +${Math.round(t.critAdd * 100)}%` : "", t.hazardCut ? `риск −${Math.round(t.hazardCut * 100)}%` : "", t.pillMul ? `пилюля ×${t.pillMul}` : ""].filter(Boolean).join(" · ");
+  const PN = { qi: "путь ци", body: "путь тела", spirit: "путь духа" };
+  const eff = t.type === "neigong" && s.life.awakened && G.neigongMult(data, s, t) !== (t.qiMultiplier || 1)
+    ? (s.pathId === "body" ? " (телу не нужно)" : ` (на твоём пути ×${G.neigongMult(data, s, t).toFixed(2)})`) : "";
+  const bits = [t.path ? `<span class="fx ${G.techUsable(data, s, t) ? "" : "bad"}">${PN[t.path]}</span>` : "",
+    t.qiMultiplier ? `ци ×${t.qiMultiplier}${eff}` : "", t.breakAdd ? `прорыв +${Math.round(t.breakAdd * 100)}%` : "", t.forgeMult ? `закалка ×${t.forgeMult}` : "", t.hpMult ? `тело ×${t.hpMult}` : "", t.atkMult ? `удар ×${t.atkMult}` : "", t.defMult ? `защита ×${t.defMult}` : "", t.critAdd ? `крит +${Math.round(t.critAdd * 100)}%` : "", t.hazardCut ? `риск −${Math.round(t.hazardCut * 100)}%` : "", t.pillMul ? `пилюля ×${t.pillMul}` : ""].filter(Boolean).join(" · ");
   const needRealm = !own && (t.minRealm || 0) > s.realmIndex;
-  const st = own ? (act ? "в работе" : "изучена") : `${G.techCost(data, s, t)} камней`;
-  const dis = !s.life.alive || !!s.life.pending || act || needRealm || !s.life.awakened;
-  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.han} · ${st}${needRealm ? ` · с ${G.realmsOf(data, s)[t.minRealm].name}` : ""}<small>${bits}. ${t.text}</small></button>`;
+  const acc = G.techAccess(data, s, t), cost = G.techCost(data, s, t);
+  const SRC = { family: "из родовой библиотеки · бесплатно", market: `рынок · ${cost} камней`, sect: `секта · вклад ${cost} камней` };
+  const st = own ? (act ? "в работе" : "изучена") : acc.ok ? SRC[acc.src] : `🔒 ${acc.why}`;
+  const dis = !s.life.alive || !!s.life.pending || act || needRealm || !s.life.awakened || !G.techUsable(data, s, t) || !acc.ok;
+  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.han} · ${st}${needRealm ? ` · нужна ступень «${G.realmsOf(data, s)[t.minRealm].name}»` : ""}<small>${bits}. ${t.text}</small></button>`;
 }
 function renderTechs() {
   const det = $("techs").closest("details"); if (!det.open) return;
-  setHTML($("techs"), data.techniques.types.map(type => {
-    const list = data.techniques.techniques.filter(t => t.type === type.id).sort((a, b) => GRADE[a.grade].rank - GRADE[b.grade].rank);
-    return `<h4 style="margin:12px 0 2px">${type.han} · ${type.name}</h4>` + list.map(techLine).join("");
+  const sd = s.life.sect && G.sectById(data, s.life.sect.id);
+  const head = `<div class="note">Рынок продаёт только 凡功 и 下乘 — втридорога. 中乘 и выше держат секты, кланы и семьи.<br>
+    Родовая библиотека: <b>${(s.familyTechs || []).length}</b> свитк. (бесплатно потомкам) · ${sd ? `секта <b>${sd.name}</b>, ${G.sectRankName(s)}` : "без секты"}.</div>`;
+  setHTML($("techs"), head + data.techniques.types.map(type => {
+    // После выбора пути чужие техники скрыты; свои — первыми.
+    const list = data.techniques.techniques.filter(t => t.type === type.id && (!s.life.awakened || G.techUsable(data, s, t)))
+      .sort((a, b) => (G.techAccess(data, s, b).ok - G.techAccess(data, s, a).ok) || (!!b.path - !!a.path) || GRADE[a.grade].rank - GRADE[b.grade].rank);
+    const note = type.id === "neigong" && s.pathId === "body" && s.life.awakened ? `<div class="dim small">Путь тела копит закалку через 外功, не через 内功.</div>` : "";
+    return `<h4 style="margin:12px 0 2px">${type.han} · ${type.name}</h4>${note}` + list.map(techLine).join("");
   }).join(""));
 }
 
@@ -464,9 +491,25 @@ document.body.addEventListener("click", e => {
   if (d.child !== undefined) { L.setChildTask(data, s, +d.child, d.task); return done(); }
   if (d.t) { const r = G.learnTechnique(data, s, d.t); log(r.msg, r.ok ? "cult" : "info"); return done(); }
 });
+document.body.addEventListener("change", e => {
+  const sel = e.target.closest("select.jobsel"); if (!sel) return;
+  const r = L.setJob(data, s, sel.value, sel.dataset.who); if (!r.ok) log(r.msg, "info"); done();
+});
 $("techs").closest("details").addEventListener("toggle", () => { $("techs")._h = null; render(); });
 
+// Чужая вкладка держит игру — эта стоит на паузе и показывает плашку.
+let foreign = !tabLock();
+function lockBanner() {
+  let b = $("tablock");
+  if (!foreign) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement("div"); b.id = "tablock"; document.body.prepend(b); }
+  b.innerHTML = `Игра открыта в другой вкладке — здесь она на паузе, чтобы вкладки не затирали друг другу сохранение. <button class="pink" id="tab-take">Играть здесь</button>`;
+  $("tab-take").onclick = () => { tabLock(true); foreign = false; s = load(); s.lastReal = null; spinState = null; lockBanner(); render(); };
+}
+lockBanner();
 setInterval(() => {
+  if (foreign) return;
+  if (!tabLock()) { foreign = true; lockBanner(); return; }
   const l = s.life;
   // рулетка докрутилась
   if (spinState?.stage === "rolling" && Date.now() >= spinState.at) { spinState.stage = "done"; render(); }

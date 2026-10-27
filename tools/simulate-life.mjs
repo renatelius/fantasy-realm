@@ -7,7 +7,7 @@ import * as L from "../src/life.js";
 import { newState } from "../src/state.js";
 
 const rd = n => JSON.parse(fs.readFileSync(new URL(`../data/${n}.json`, import.meta.url)));
-const data = Object.fromEntries(["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs"].map(n => [n, rd(n)]));
+const data = Object.fromEntries(["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "sects"].map(n => [n, rd(n)]));
 const N = +process.argv[2] || 400, speed = process.argv[3] || "normal";
 function rngFrom(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const med = a => a.length ? a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)] : NaN;
@@ -41,9 +41,9 @@ function playLife(seed, mode, prevState, mercy = false) {
 }
 
 // 1) распределение лотереи рождения
-const rng0 = rngFrom(1), W = data.world, cnt = { region: tally(), era: tally(), wealth: tally(), root: tally() };
+const rng0 = rngFrom(1), W = data.world, cnt = { region: tally(), era: tally(), wealth: tally() }; // корни выпадают в 16 лет, не при рождении
 const B = 20000;
-for (let i = 0; i < B; i++) { const b = L.rollBirth(data, rng0); inc(cnt.region, b.regionId); inc(cnt.era, b.eraId); inc(cnt.wealth, b.wealthId); inc(cnt.root, b.rootId); }
+for (let i = 0; i < B; i++) { const b = L.rollBirth(data, rng0); inc(cnt.region, b.regionId); inc(cnt.era, b.eraId); inc(cnt.wealth, b.wealthId); }
 console.log(`Лотерея рождения (${B} бросков), доли:`);
 for (const [k, o] of Object.entries(cnt)) console.log(`  ${k}: ` + Object.entries(o).map(([id, n]) => `${id} ${(n / B * 100).toFixed(1)}%`).join(", "));
 
@@ -53,7 +53,7 @@ for (let i = 0; i < N; i++) {
   const { s, minutes, events } = playLife(100 + i, "new");
   const l = s.life; res.push({ age: l.age, minutes, events, awakened: l.awakened, realm: s.realmIndex, layer: s.layer, cause: l.legacy.cause, married: !!l.spouse || l.children.length > 0, kids: l.children.length, heirs: l.legacy.children.length });
   { const all = [...data.world.deathCauses.child, ...data.world.deathCauses.adult, "Дожил(а) отведённый срок", "Ушёл(ла) от старости", "Погиб(ла) в шторме", "Сорвался(лась) с горной тропы"];
-    inc(causes, all.find(c => L.gtext(c, "m") === l.legacy.cause || L.gtext(c, "f") === l.legacy.cause) || l.legacy.cause); }
+    inc(causes, all.find(c => L.gtext(c, "m") === l.legacy.cause || L.gtext(c, "f") === l.legacy.cause) || l.legacy.cause.replace(/\bПала\b/, "Пал").replace("пережила", "пережил").replace("Оскорбила", "Оскорбил").replace("Замёрзла", "Замёрз")); }
   if (l.awakened) { inc(pathT, s.pathId); for (let r = 0; r <= s.realmIndex; r++) reached[r]++; }
 }
 const aw = res.filter(r => r.awakened);
