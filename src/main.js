@@ -463,10 +463,19 @@ function renderSect() {
   const tierOk = !nr || G.maxTier(data, s) >= nr.tier;
   const need = nr ? `<div class="dim small">К рангу «${nr.name}»: ступень «${G.realmForTier(data, s, nr.tier).name}» ${tierOk ? "✓" : "✗"} · заслуги ${Math.floor(sc.merit)}/${nr.merit} ${sc.merit >= nr.merit ? "✓" : "✗"}${block && tierOk && sc.merit >= nr.merit ? ` · <span style="color:var(--gold)">${block}</span>` : !block ? ` · испытание: шанс ~${Math.round(S.trialChance(data, s) * 100)}%` : ""}</div>` : `<div class="dim small">Выше ранга нет.</div>`;
   const m = sc.master, frd = (sc.peers || []);
-  const rules = (sd.rules || []).map(id => data.sects.ruleDefs?.[id]).filter(Boolean).map(r => `<span class="fx" title="${r.text}">${r.name}</span>`).join("");
+  const rules = S.activeRules(data, sd, sc.ruleOverrides).map(id => data.sects.ruleDefs?.[id]).filter(Boolean).map(r => `<span class="fx" title="${r.text}">${r.name}</span>`).join("");
   const names = ids => (ids || []).map(id => G.sectById(data, id)?.name).filter(Boolean).join(", ") || "—";
   const pc = S.pillCost(data, s), dis = !!l.pending ? "disabled" : "";
   const hd = sc.head, cands = hd?.self ? S.successorCandidates(data, s) : [];
+  const HPn = hd?.self ? S.headPanel(data, s) : null;
+  const powerHtml = HPn ? `<div class="lbl" style="margin-top:10px">Власть главы</div>
+    <div class="fammet">
+      <div>Казна секты<b>${HPn.treasury}</b><small>+${HPn.income.stones} камн. и +${HPn.income.contrib} 贡献 в год</small></div>
+      <div>Ворота<b>${HPn.fort ? "укреплены" : "обычные"}</b><small>${HPn.fort ? `ещё ${yw(HPn.fort)}` : "в войну беды сильнее"}</small></div>
+      <div>Обида совета<b>${HPn.grudge}</b><small>${HPn.grudge ? "старейшины помнят" : "чисто"}</small></div>
+    </div>
+    ${HPn.groups.map(gr => `<div class="dim small" style="margin-top:6px">${gr.name}</div><div class="btns">${gr.items.map(a => `<button data-hp="${a.act}"${a.arg != null ? ` data-ha="${a.arg}"` : ""} title="${esc(a.hint + (a.ok ? "" : " — " + a.why))}" ${dis || s.settings.autoPlay || !a.ok ? "disabled" : ""}>${a.label}</button>`).join("")}</div>`).join("")}
+    <div class="dim small" style="margin-top:4px">${s.settings.autoPlay ? "Авторежим правит сам: стены в войну, мир, когда шатается положение, ученики до трёх, иногда пилюли и свиток роду. Казну себе не берёт." : "Наведи на кнопку — увидишь цену и последствия."}</div>` : "";
   const succHtml = hd?.self ? `<div class="lbl" style="margin-top:10px">Преемник</div>
     <div class="dim small">${sc.successor ? `Назван: <b>${sc.successor.name}</b> (${sc.successor.who}).` : "Пока никто не назван — если умрёшь, печать отдаст совет: самому одарённому не из родни."} Назначить можно кого угодно; обычно печать отдают по дару. Родню заметно слабее лучшего ученика совет не простит.</div>
     ${cands.map(c => `<div class="row2"><span>${c.who}</span><b>${c.name}<small>дар: ${c.word}${c.cur ? " · названный преемник" : ""}</small>${c.cur ? "" : `<button data-succ="${c.i}" ${dis || s.settings.autoPlay ? "disabled" : ""}>Назначить</button>`}</b></div>`).join("")}`
@@ -483,11 +492,11 @@ function renderSect() {
     </div>
     ${m ? `<div class="row2${m.alive ? "" : " dead"}"><span>${m.alive ? "Учитель" : "Учитель †"}</span><b>${m.title} ${m.name}${m.alive && !m.retired ? `<small>доверие ${Math.round(m.rel ?? 50)}</small>` : m.retired ? `<small>${g("теперь ты сам учишь", "теперь ты сама учишь")}</small>` : ""}</b></div>` : ""}
     ${sc.head ? `<div class="row2${sc.head.gone ? " dead" : ""}"><span>Глава секты</span><b>${sc.head.self ? g("ты сам", "ты сама") : sc.head.gone ? `${sc.head.name} †<small>печать ждёт преемника</small>` : `${sc.head.name}<small>${yw(Math.max(0, l.age - (sc.head.since ?? l.age)))} у печати${sc.head.peer === "rival" ? (sc.head.gender === "f" ? " · твоя соперница" : " · твой соперник") : sc.head.peer === "friend" ? (sc.head.gender === "f" ? " · твоя подруга" : " · твой друг") : ""}${sc.heirApparent ? " · ты — названный преемник" : ""}</small>`}</b></div>` : ""}
-    ${frd.map(p => `<div class="row2${p.alive ? "" : " dead"}"><span>${p.kind === "friend" ? "Друг" : "Соперник"}</span><b>${p.name}${p.alive ? ` · ${R[p.rank]?.name}<small>дар: ${S.talentWord(S.peerTalent(p))}${sc.headHeir === p.name ? " · преемник главы" : ""}</small>` : " †"}</b></div>`).join("")}
-    ${succHtml}
-    <div class="row2"><span>Союзники</span><b>${names(sd.allies)}</b></div>
+    ${frd.map(p => `<div class="row2${p.alive ? "" : " dead"}"><span>${p.kind === "friend" ? "Друг" : "Соперник"}</span><b>${p.name}${p.alive ? ` · ${R[p.rank]?.name}<small>дар: ${S.talentWord(S.peerTalent(p))}${sc.headHeir === p.name ? " · преемник главы" : ""}</small>` : p.expelled ? (p.gender === "f" ? " · изгнана" : " · изгнан") : " †"}</b></div>`).join("")}
+    ${succHtml}${powerHtml}
+    <div class="row2"><span>Союзники</span><b>${names(S.sectAllies(data, s))}</b></div>
     <div class="row2"><span>Враги</span><b>${names(sd.enemies)}</b></div>
-    ${sc.war ? `<div class="note" style="border-color:var(--red);background:#e06a6a14">Война с ${G.sectById(data, sc.war.with)?.name} — ещё ~${yw(Math.max(1, sc.war.until - l.age))}. Беды ×${data.sects.config?.warHazard ?? 1.2}, вклад ×${data.sects.config?.warContribMul ?? 1.5}.</div>` : ""}
+    ${sc.war ? `<div class="note" style="border-color:var(--red);background:#e06a6a14">Война с ${G.sectById(data, sc.war.with)?.name} — ещё ~${yw(Math.max(1, sc.war.until - l.age))}. Беды ×${S.fortified(s) ? "меньше (ворота укреплены)" : data.sects.config?.warHazard ?? 1.2}, вклад ×${data.sects.config?.warContribMul ?? 1.5}.${HPn?.war != null ? ` Шанс победы ~${HPn.war}%.` : ""}</div>` : ""}
     <div style="margin-top:6px">${rules}</div>
     <div class="btns">
       <button data-sect="pill" ${dis || sc.contrib < pc ? "disabled" : ""}>Пилюля за ${pc} 贡献</button>
@@ -534,9 +543,11 @@ function renderMap() {
 // Подсказка к варианту: в какую сторону он тянет (без точных чисел) и есть ли шанс/риск.
 const FXN = { stones: "камни", karma: "карма", daoHeart: "дао-сердце", connections: "связи", qiPct: "ци", years: "срок", legacy: "наследие", pill: "пилюля" };
 // Родня, род, секта: числа — стрелкой, флаги — словом (good = не красная плашка).
-const KIN_FX = { harmony: "лад", famWealth: "достаток", rep: "名望", treasury: "казна", contrib: "贡献", sectStanding: "положение", masterRel: "учитель", rivalRel: "соседи", allyRel: "союзник", parentYears: "годы родителю" };
+const KIN_FX = { harmony: "лад", famWealth: "достаток", rep: "名望", treasury: "казна", contrib: "贡献", sectStanding: "положение", masterRel: "учитель", rivalRel: "соседи", allyRel: "союзник", parentYears: "годы родителю", sectTreasury: "казна секты" };
 const KIN_FLAGS = { sectTrial: ["испытание", true], allyMarriage: ["брак союза", true], rivalMarriage: ["брак мира", true], feudEnd: ["мир", true], warEnd: ["перемирие", true], sibSect: ["родня в секту", true], clanRule: ["устав", true], sibMarry: ["свадьба", true],
-  parentDeath: ["смерть родителя", false], spouseLeave: ["уход супруга", false], sectLeave: ["уход из секты", false], sectExpel: ["изгнание", false], masterDeath: ["смерть учителя", false], masterLost: ["учитель изгнан", false], peerFriendLost: ["друг отвернётся", false], sectWait: ["отсрочка", false] };
+  parentDeath: ["смерть родителя", false], spouseLeave: ["уход супруга", false], sectLeave: ["уход из секты", false], sectExpel: ["изгнание", false], masterDeath: ["смерть учителя", false], masterLost: ["учитель изгнан", false], peerFriendLost: ["друг отвернётся", false], sectWait: ["отсрочка", false],
+  sectFortify: ["стены", true], sectTruce: ["мир сект", true], sectAlly: ["союз сект", true], discipleNew: ["ученик", true], discipleTrain: ["выучка", true], sectGrudgeClear: ["совет простит", true],
+  sectDeclareWar: ["война сект", false], discipleLoss: ["потеря ученика", false], sectGrudge: ["обида совета", false] };
 function choiceHint(c) {
   const ef = c.effects || {}, out = [];
   for (const [k, n] of Object.entries(FXN)) if (ef[k]) out.push(`<span class="fx ${ef[k] > 0 ? "" : "bad"}">${n}${ef[k] > 0 ? "↑" : "↓"}</span>`);
@@ -702,6 +713,11 @@ document.body.addEventListener("click", e => {
   if (d.sw) { const r = G.switchPath(data, s, d.sw); log(r.msg, r.ok ? "awaken" : "info"); return done(); }
   if (d.t) { const r = G.learnTechnique(data, s, d.t); log(r.msg, r.ok ? "cult" : "info"); return done(); }
   if (d.clan) { const r = d.clan === "donate" ? CL.donate(data, s) : d.clan === "scroll" ? CL.buyScroll(data, s) : CL.take(data, s); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.hp) {
+    const warn = { take: "Взять камни из казны секты? Старейшины это запомнят.", war: "Объявить войну? Отменить её можно будет только миром.", expel: "Изгнать соперника? Возможен раскол." }[d.hp];
+    if (warn && !confirm(warn)) return;
+    const r = S.headAction(data, s, d.hp, d.ha); if (!r.ok) log(r.msg, "info"); return done();
+  }
   if (d.succ !== undefined) { const r = S.appointSuccessor(data, s, +d.succ); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.sect === "pill") { log(S.sectPill(data, s) ? "Секта выдала пилюлю за вклад." : "Не хватает 贡献.", "sect"); return done(); }
   if (d.sect === "leave") { if (confirm("Уйти из секты? Вернуться в неё будет нельзя, выученное останется.")) { S.leaveSect(data, s, "leave"); done(); } return; }

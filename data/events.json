@@ -7727,6 +7727,386 @@
      }
     }
    ]
+  },
+  {
+   "id": "head_conspiracy",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 8,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true,
+    "sectGrudgeMin": 1
+   },
+   "title": "Заговор в совете",
+   "text": "Под дверью — записка без подписи: трое старейшин сговорились потребовать отчёта о казне. Или печати.",
+   "note": "Карточка приходит, когда совет обижен: казна взята себе, свиток вынесен из библиотеки.",
+   "choices": [
+    {
+     "label": "Вернуть взятое и покаяться",
+     "text": "Ты положил(а) камни на стол совета и поклонился(ась) первым(ой).",
+     "minStones": 80,
+     "effects": {
+      "stones": -80,
+      "sectTreasury": 80,
+      "sectStanding": 10,
+      "sectGrudgeClear": true,
+      "karma": 1
+     }
+    },
+    {
+     "label": "Вызвать заговорщиков на поединок",
+     "text": "Ты вышел(ла) во двор и ждал(а), кто встанет напротив.",
+     "effects": {
+      "sectStanding": -4
+     },
+     "bonus": {
+      "p": 0.5,
+      "text": "Двое отступились, третий не поднялся с колен. Совет присмирел.",
+      "effects": {
+       "sectGrudgeClear": true,
+       "sectStanding": 12
+      }
+     },
+     "risk": {
+      "p": 0.25,
+      "text": "Против тебя встали все трое — и победили числом.",
+      "effects": {
+       "sectStanding": -20
+      }
+     }
+    },
+    {
+     "label": "Сделать вид, что не знаешь",
+     "text": "Записка сгорела в жаровне. Шёпот — нет.",
+     "effects": {
+      "sectGrudge": 1,
+      "daoHeart": -1
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_envoy",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 5,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true,
+    "sectNoWar": true,
+    "sectEnemyAny": true
+   },
+   "title": "Посол {sectFoe}",
+   "text": "У ворот посол {sectFoe} с ларцом и свитком. В свитке — «вечный мир» и межа, проведённая прямо по вашим тропам.",
+   "choices": [
+    {
+     "label": "Принять дары и межу",
+     "text": "Ларец унесли в казну. Тропы — в чужую сторону.",
+     "effects": {
+      "sectTreasury": 60,
+      "sectStanding": -6,
+      "karma": 1
+     }
+    },
+    {
+     "label": "Отослать посла с пустыми руками",
+     "text": "Посол ушёл, не оборачиваясь.",
+     "effects": {
+      "sectStanding": 4
+     }
+    },
+    {
+     "label": "Бросить свиток в огонь",
+     "text": "Пепел взлетел над воротами. Это и есть ответ.",
+     "effects": {
+      "sectDeclareWar": true,
+      "sectStanding": 6,
+      "rep": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_levy",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 4,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true,
+    "hasDisciple": true
+   },
+   "title": "Указ из столицы",
+   "text": "Гонец канцелярии привёз указ: прислать учеников в войска «для охраны границы». Вернутся ли они — указ не говорит.",
+   "choices": [
+    {
+     "label": "Отправить учеников",
+     "text": "Ученики ушли строем. Один оглянулся.",
+     "effects": {
+      "discipleLoss": true,
+      "rep": 4,
+      "stones": 40
+     }
+    },
+    {
+     "label": "Откупиться из казны",
+     "text": "Гонец взвесил кошель на ладони и уехал довольным.",
+     "effects": {
+      "sectTreasury": -80,
+      "sectStanding": 2
+     }
+    },
+    {
+     "label": "Отказать гонцу",
+     "text": "Ты сказал(а), что ученики служат Пути, а не канцелярии.",
+     "effects": {
+      "sectStanding": 6
+     },
+     "risk": {
+      "p": 0.35,
+      "text": "Через год к воротам пришли люди в сером — и ушли с казной.",
+      "effects": {
+       "sectTreasury": -60,
+       "sectStanding": -6
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_genius",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 4,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true
+   },
+   "title": "Гений у ворот",
+   "text": "Третий день у ворот на коленях стоит оборванный подросток. Камень проверки под его ладонью вспыхнул так, что старейшины прикрыли глаза.",
+   "choices": [
+    {
+     "label": "Взять в личные ученики",
+     "text": "Ты сам(а) поднял(а) его с колен.",
+     "effects": {
+      "discipleNew": "genius",
+      "sectTreasury": -30
+     }
+    },
+    {
+     "label": "Отправить во внешний двор, как всех",
+     "text": "Пусть пройдёт тот же путь, что и прочие.",
+     "effects": {
+      "sectStanding": 3
+     },
+     "bonus": {
+      "p": 0.3,
+      "text": "Через десять лет о нём заговорили сами старейшины — и ты взял(а) его к себе.",
+      "effects": {
+       "discipleNew": "genius"
+      }
+     }
+    },
+    {
+     "label": "Прогнать: сирота без рода — беда",
+     "text": "Ворота закрылись. Говорят, его подобрали в Солнце и Луне.",
+     "effects": {
+      "karma": -2
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_schism",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 3,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true
+   },
+   "title": "Раскол",
+   "text": "Половина внутреннего двора требует вернуть старый устав и грозит уйти в горы вместе со свитками библиотеки.",
+   "choices": [
+    {
+     "label": "Уступить и созвать совет",
+     "text": "Совет заседал девять дней. Устав переписали ещё раз.",
+     "effects": {
+      "sectStanding": 4,
+      "sectTreasury": -40
+     }
+    },
+    {
+     "label": "Удержать силой",
+     "text": "Ты встал(а) у ворот библиотеки сам(а).",
+     "effects": {
+      "sectStanding": -6
+     },
+     "bonus": {
+      "p": 0.5,
+      "text": "Недовольные разошлись по кельям. Шёпот стих.",
+      "effects": {
+       "sectGrudgeClear": true,
+       "sectStanding": 10
+      }
+     },
+     "risk": {
+      "p": 0.3,
+      "text": "Ночью часть двора ушла — и увела ученика.",
+      "effects": {
+       "discipleLoss": true,
+       "sectTreasury": -60
+      }
+     }
+    },
+    {
+     "label": "Отпустить недовольных",
+     "text": "Ушедшим ты сам(а) открыл(а) ворота.",
+     "effects": {
+      "discipleLoss": true,
+      "sectStanding": -3,
+      "daoHeart": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_audit",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 3,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true,
+    "sectTreasuryMin": 100
+   },
+   "title": "Ревизия казны",
+   "text": "Казначей принёс счётные книги: за десять лет в них дыра на сотню камней. Он смотрит в пол и ждёт твоего слова.",
+   "choices": [
+    {
+     "label": "Наказать казначея",
+     "text": "Розги и новая книга. Часть камней нашлась под его полом.",
+     "effects": {
+      "sectStanding": 4,
+      "sectTreasury": 40,
+      "karma": -1
+     }
+    },
+    {
+     "label": "Покрыть недостачу из своих",
+     "text": "Ты молча доложил(а) камни из своего кошеля.",
+     "minStones": 60,
+     "effects": {
+      "stones": -60,
+      "sectTreasury": 60,
+      "sectStanding": 6
+     }
+    },
+    {
+     "label": "Сжечь книги",
+     "text": "Нет книг — нет недостачи. Нет и доверия.",
+     "effects": {
+      "sectGrudge": 1,
+      "karma": -2,
+      "sectTreasury": 20
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_alliance",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 4,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true
+   },
+   "title": "Чай у водопада",
+   "text": "Глава соседней секты зовёт тебя на чай у водопада. Говорят, ищет союзника — на случай, если канцелярия придёт к обоим.",
+   "choices": [
+    {
+     "label": "Поехать и заключить союз",
+     "text": "Две чаши, один свиток, две печати.",
+     "effects": {
+      "sectAlly": true,
+      "sectTreasury": -30
+     }
+    },
+    {
+     "label": "Отказать вежливо",
+     "text": "Чай ты выпил(а) у себя, глядя на свой водопад.",
+     "effects": {
+      "daoHeart": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "head_tournament",
+   "minAge": 30,
+   "maxAge": 2000,
+   "weight": 4,
+   "requires": {
+    "inSect": true,
+    "sectHeadSelf": true,
+    "hasDisciple": true
+   },
+   "title": "Турнир у Пика Мечей",
+   "text": "Великие секты собирают турнир учеников. Победителю — слава на поколение, проигравшему — насмешка на два.",
+   "choices": [
+    {
+     "label": "Выставить лучших учеников",
+     "text": "Ученики месяц не выходили со двора для упражнений.",
+     "effects": {
+      "discipleTrain": true
+     },
+     "bonus": {
+      "p": 0.45,
+      "text": "Твой ученик дошёл до последнего круга.",
+      "effects": {
+       "rep": 5,
+       "sectTreasury": 60,
+       "sectStanding": 6
+      }
+     },
+     "risk": {
+      "p": 0.2,
+      "text": "Ученика унесли с помоста на руках — и не донесли.",
+      "effects": {
+       "discipleLoss": true
+      }
+     }
+    },
+    {
+     "label": "Выйти на помост лично",
+     "text": "Глава против глав — так не делали лет сто.",
+     "effects": {
+      "sectStanding": 3
+     },
+     "bonus": {
+      "p": 0.4,
+      "text": "Ты ушёл(ла) с помоста последним(ей) стоящим(ей).",
+      "effects": {
+       "rep": 8
+      }
+     },
+     "risk": {
+      "p": 0.15,
+      "text": "Чужой удар сбил дыхание на полгода.",
+      "effects": {
+       "sectStanding": -8,
+       "qiPct": -0.2
+      }
+     }
+    },
+    {
+     "label": "Не участвовать",
+     "text": "Слава подождёт. Насмешка — тоже.",
+     "effects": {}
+    }
+   ]
   }
  ]
 }

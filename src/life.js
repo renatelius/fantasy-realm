@@ -672,7 +672,7 @@ export function growKin(data, s, c, a, rng, loud, role = "child") {
     } else c.qi = need * 0.7;
   } else c.qi = Math.min(c.qi, need);
   // брак и дети (устав Шаолиня: монахи не женятся)
-  if (a >= 18 && a <= 40 && !c.spouse && !(c.sect && S.childNoMarriage(data, c.sect)) && rng() < 0.09) marryKin(data, s, c, rng, loud, role);
+  if (a >= 18 && a <= 40 && !c.spouse && !(c.sect && S.childNoMarriage(data, c.sect, s)) && rng() < 0.09) marryKin(data, s, c, rng, loud, role);
   c.kids ??= [];
   if (c.spouse && a >= 20 && a <= 50 && c.kids.filter(k => k.alive).length < 3 && rng() < 0.08) {
     const gk = makeGrandchild(data, s, c, rng); gk.born = a; c.kids.push(gk);
@@ -1006,7 +1006,9 @@ const WEIGHTS = {
 const KIN_W = ef => (ef.harmony || 0) * 0.3 + (ef.famWealth || 0) * 0.4 + (ef.rep || 0) * 0.5 + (ef.treasury || 0) * 0.05 + (ef.contrib || 0) * 0.2 + (ef.sectStanding || 0) * 0.3
   + (ef.masterRel || 0) * 0.1 + (ef.rivalRel || 0) * 0.05 + (ef.allyRel || 0) * 0.08 + (ef.parentYears || 0) * 0.8
   + (ef.sectTrial ? 10 : 0) + (ef.sectHeir ? 8 : 0) + (ef.sectHeirLost ? -8 : 0) + (ef.sectYield ? -6 : 0) + (ef.masterGift ? 6 : 0) + (ef.allyMarriage ? 7 : 0) + (ef.rivalMarriage ? 5 : 0) + (ef.feudEnd ? 5 : 0) + (ef.warEnd ? 3 : 0) + (ef.sibSect ? 2 : 0) + (ef.clanRule ? 1 : 0)
-  + (ef.parentDeath ? -25 : 0) + (ef.spouseLeave ? -15 : 0) + (ef.sectLeave ? -18 : 0) + (ef.sectExpel ? -40 : 0) + (ef.masterDeath ? -4 : 0) + (ef.peerFriendLost ? -3 : 0) + (ef.sectWait ? -1 : 0);
+  + (ef.parentDeath ? -25 : 0) + (ef.spouseLeave ? -15 : 0) + (ef.sectLeave ? -18 : 0) + (ef.sectExpel ? -40 : 0) + (ef.masterDeath ? -4 : 0) + (ef.peerFriendLost ? -3 : 0) + (ef.sectWait ? -1 : 0)
+  + (ef.sectTreasury || 0) * 0.03 + (ef.sectFortify ? 3 : 0) + (ef.sectDeclareWar ? -2 : 0) + (ef.sectTruce ? 2 : 0) + (ef.sectAlly ? 5 : 0) + (ef.discipleNew ? 4 : 0) + (ef.discipleTrain ? 3 : 0)
+  + (ef.discipleLoss ? -4 : 0) + (ef.sectGrudge || 0) * -4 + (ef.sectGrudgeClear ? 4 : 0);
 function choiceScore(c, mode) {
   const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef);
   const riskN = (mode === "safe" || mode === "best") ? 3 : 1;
