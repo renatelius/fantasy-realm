@@ -159,7 +159,9 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
   CL.startClan(data, s, child ? "heir" : "new", rng);
   const odds = L.odds ? ` Такая судьба выпадает 1 из ${L.odds.toLocaleString("ru-RU")}.` : "";
   if (child) {
-    logLine(s, `Продолжение рода: ${L.name}, ${yearsW(L.age)} — не с пелёнок. Дом после ${prev.name}${cand.kind === "child" ? "" : ` (${cand.word})`}. ${by(W.regions, L.regionId).name}, ${wealth.name}.${L.awakened ? " Корни уже открыты: " + rootText(data, L) + ". " + pathOf(data, s).name + ": «" + G.realmsOf(data, s)[s.realmIndex].name + "», слой " + s.layer + "." : ""}${L.spouse ? ` В доме ${L.spouse.gender === "m" ? "муж" : "жена"} ${L.spouse.name}.` : ""}${L.children.length ? ` Детей: ${L.children.length}.` : ""}${s.familyTechs.length ? ` Родовая библиотека: ${s.familyTechs.length} свитк.` : ""}`, "birth");
+    logLine(s, `Продолжение рода: ${L.name}, ${yearsW(L.age)} — не с пелёнок. Дом после ${prev.name}${cand.kind === "child" ? "" : ` (${cand.word})`}. ${by(W.regions, L.regionId).name}, ${wealth.name}.${L.awakened ? " Корни уже открыты: " + rootText(data, L) + ". " + pathOf(data, s).name + ": «" + G.realmsOf(data, s)[s.realmIndex].name + "», слой " + s.layer + "." : ""}${s.familyTechs.length ? ` Родовая библиотека: ${s.familyTechs.length} свитк.` : ""}`, "birth");
+    const kidsNow = L.children.filter(c => c.alive);
+    if (L.spouse || kidsNow.length) logLine(s, gtext(`Ты не ${L.gender === "m" ? "один" : "одна"}: ${[L.spouse ? `${L.spouse.gender === "m" ? "муж" : "жена"} ${L.spouse.name}` : "", kidsNow.length ? `${kidsNow.length === 1 ? "ребёнок" : "дети"} — ${kidsNow.map(c => `${c.name} (${yearsW(childAge(s, c))})`).join(", ")}` : ""].filter(Boolean).join("; ")}. Эта жизнь шла своим чередом, пока ты играл(а) за ${prev.name}.`, L.gender), "family");
   } else {
     logLine(s, `Новая судьба: родился(ась) ${L.name} — ${by(W.regions, L.regionId).name}, ${by(W.eras, L.eraId).name}, ${wealth.name}.${odds}`, "birth");
   }
@@ -551,24 +553,31 @@ export function childState(data, s, c) {
   cs.techniqueSlots = familyBest(data, s, cs);
   return cs;
 }
-export function childSummary(data, s, c) {
+export function childSummary(data, s, c, opts = {}) {
   const bits = [];
   if (c.physiqueName) bits.push(`тело «${c.physiqueName}»`);
   if (c.awakened && c.rootId) bits.push(rootText(data, c));
   if (c.awakened && c.pathId) { const cs = childState(data, s, c); bits.push(`${G.pathOf(data, cs).name}: ${G.realmsOf(data, cs)[c.realmIndex || 0].name} ${c.layer || 1}`); }
   if (c.sect) bits.push(G.sectById(data, c.sect)?.name);
   if (c.sectSuccessor) bits.push("названный преемник главы");
-  if (c.spouse) bits.push(c.gender === "m" ? "женат" : "замужем");
+  if (c.spouse && !opts.noFam) bits.push(c.gender === "m" ? `женат на ${c.spouse.name}` : `замужем за ${c.spouse.name}`);
   const k = (c.kids || []).filter(x => x.alive).length;
-  if (k) bits.push(`${k} ${k === 1 ? "ребёнок" : k < 5 ? "ребёнка" : "детей"}`);
+  if (k && !opts.noFam) bits.push(`${k} ${k === 1 ? "ребёнок" : k < 5 ? "ребёнка" : "детей"}`);
   return bits.filter(Boolean).join(" · ");
+}
+// Имя ребёнка не повторяет имён родителя, деда и братьев-сестёр.
+function freshGiven(data, rng, gender, taken) {
+  const used = new Set(taken.map(n => String(n || "").split(" ").slice(1).join(" ")));
+  let g = pick(data.world.names[gender], rng);
+  for (let i = 0; i < 15 && used.has(g); i++) g = pick(data.world.names[gender], rng);
+  return g;
 }
 function makeGrandchild(data, s, c, rng) {
   const L = s.life, gender = rng() < 0.5 ? "m" : "f";
   // «self» — с точки зрения будущего наследника: если он продолжит род, это будут его дети.
   const gn = inheritGenes(data, rng, { who: "self", rootId: c.rootId, elements: c.elements, physiqueId: c.physiqueId, soulId: c.soulId },
     c.spouse ? { who: "spouse", ...ensureGenes(data, c.spouse, rng) } : null);
-  const p = generatePerson(data, rng, { gender, surname: L.surname, age: 0, regionId: L.regionId, wealthId: L.wealthId, physiqueId: gn.physiqueId, rootId: gn.rootId, elements: gn.elements, noRoot: true });
+  const p = generatePerson(data, rng, { gender, given: freshGiven(data, rng, gender, [c.name, L.name, ...(c.kids || []).map(k => k.name)]), surname: L.surname, age: 0, regionId: L.regionId, wealthId: L.wealthId, physiqueId: gn.physiqueId, rootId: gn.rootId, elements: gn.elements, noRoot: true });
   return { name: p.name, gender, born: childAge(s, c), rootId: gn.rootId, elements: gn.elements, rootSrc: gn.rootSrc, phyFrom: gn.phyFrom, soulId: gn.soulId,
     physiqueId: gn.physiqueId, physiqueName: p.physiqueName, stats: p.stats,
     alive: true, task: "home", awakened: false, pathId: null, realmIndex: 0, layer: 1, qi: 0, spouse: null, kids: [], sect: null };

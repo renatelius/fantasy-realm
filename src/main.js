@@ -586,8 +586,10 @@ function renderDeath() {
   if (l.alive) return;
   const gx = l.legacy, R = gx.report;
   const cands = L.heirCandidates(data, gx);
-  const hb = c => { const sum = L.childSummary(data, s, c.node);
-    return `<button class="block" data-heir="${c.j}">Продолжить родом: ${c.node.name} (${c.word}, ${yw(c.age)})${sum ? `<small>${sum}</small>` : ""}</button>`; };
+  const hb = c => { const n = c.node, sum = L.childSummary(data, s, n, { noFam: true });
+    const kids = (n.kids || []).filter(k => k.alive).length;
+    const fam = [n.spouse ? (n.gender === "m" ? `женат на ${n.spouse.name}` : `замужем за ${n.spouse.name}`) : "", kids ? `${kids} ${kids === 1 ? "ребёнок" : kids < 5 ? "ребёнка" : "детей"}` : ""].filter(Boolean).join(", ");
+    return `<button class="block" data-heir="${c.j}">Продолжить родом: ${n.name} (${c.word}, ${yw(c.age)})${sum ? `<small>${sum}</small>` : ""}${fam ? `<small style="color:var(--gold)">Уже не ${n.gender === "m" ? "один" : "одна"}: ${fam} — начнёшь вместе с ними</small>` : ""}</button>`; };
   const near = cands.filter(c => c.kind === "child"), far = cands.filter(c => c.kind !== "child");
   const heirs = near.map(hb).join("")
     + (far.length ? `<details class="kinheirs"${near.length ? "" : " open"} style="margin:6px 0"><summary>Другие родичи — внуки, правнуки, братья, сёстры, племянники (${far.length})</summary>${far.map(hb).join("")}</details>` : "")
