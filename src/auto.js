@@ -3,14 +3,19 @@
 // Порядок года:
 //   1) ремесло — самое доходное из доступных;   2) дети ≥ 6 лет — «помощь» (камни);
 //   3) фокус — до пробуждения «семья» (меньше риск), после — «гунфу», но «семья», если есть супруг и детей < 2;
+//      в секте — «служба секте», когда до ранга не хватает только заслуг; казна рода покупает свиток, если хватает с запасом;
 //   4) техники — в каждый слот лучшая ДОСТУПНАЯ (рынок, род, секта по рангу, найденные), с запасом камней на пилюлю;
 //   5) прорывы — пока хватает ци: пилюля, если она даёт ≥ +8% или шанс < 60%; до 12 попыток за вызов;
 //      порог легенды — только на закате жизни (с oldAgeStart − 3% срока) и с пилюлей;
 //   6) приключение — если шанс победы ≥ 55% (поражение ранит и может убить; враги бьют техниками).
+//   0) путь — ступор (до слоя > autoOutYears лет или порог легенды до заката) → открытый путь, где слой
+//      наберётся быстрее всего (хотя бы вдвое быстрее). Застрял и там — снова к самому быстрому. На закате — к порогу легенды.
 //      Пока проигрываем (< 70%), техники 招式/外功/暗器 покупаются первыми и без запаса на пилюлю.
 import * as G from "./game.js";
 import * as C from "./combat.js";
 import * as L from "./life.js";
+import * as S from "./sect.js";
+import * as CL from "./clan.js";
 
 const TYPE_VALUE = {
   neigong: t => (t.qiMultiplier || 1) * 10,
@@ -41,6 +46,8 @@ function pickFocus(data, s) {
   if (l.awakened) {
     const kids = l.children.filter(c => c.alive).length;
     want = l.spouse && kids < 2 && l.age <= 45 ? "family" : "practice";
+    // В секте: служить, когда до следующего ранга не хватает только заслуг (sect.js → serviceWanted).
+    if (want === "practice" && S.serviceWanted(data, s)) want = "sect";
     if (l.age >= 0.92 * L.lifespan(data, s)) want = "rest";
   } else if (l.age >= (data.jobs.workAge || 12)) want = "work";
   if (l.focusId !== want) L.setFocus(data, s, want);
@@ -55,7 +62,7 @@ function pickChildren(data, s) {
 // Шанс победы кэшируется по ступени, слою, слотам и телу (оценка — 36 пробных боёв).
 let oddsKey = "", oddsWin = 1;
 function winChance(data, s) {
-  const k = [s.realmIndex, s.layer, JSON.stringify(s.techniqueSlots), s.life?.physiqueId].join("|");
+  const k = [s.pathId, s.realmIndex, s.layer, JSON.stringify(s.techniqueSlots), s.life?.physiqueId].join("|");
   if (k !== oddsKey) { oddsKey = k; oddsWin = C.adventureOdds(data, s, 12).win; }
   return oddsWin;
 }
@@ -74,9 +81,10 @@ function pickTechniques(data, s, say) {
       : type.id === "body" && s.pathId === "body" ? (t => base(t) + G.bodyForgeMult(data, s, t) * 8) : base;
     const curV = cur ? val(cur) : -1;
     const cands = data.techniques.techniques
-      .filter(t => t.type === type.id && G.techUsable(data, s, t) && (t.minRealm || 0) <= s.realmIndex && val(t) > curV + 1e-9)
+      .filter(t => t.type === type.id && G.techUsable(data, s, t) && (t.minRealm || 0) <= G.tierOf(data, s) && val(t) > curV + 1e-9)
       .filter(t => G.techAccess(data, s, t).ok)
-      .filter(t => s.ownedTechniques.includes(t.id) || s.spiritStones - G.techCost(data, s, t) >= reserve)
+      .filter(t => s.ownedTechniques.includes(t.id) || s.spiritStones - G.techCost(data, s, t) >= reserve
+        || (G.techAccess(data, s, t).src === "sect" && (s.life.sect?.contrib || 0) >= S.contribCost(data, s, t)))
       .sort((a, b) => val(b) - val(a));
     if (!cands.length) continue;
     const t = cands[0];
@@ -85,17 +93,52 @@ function pickTechniques(data, s, say) {
   }
 }
 
+// Несколько путей: застрял — развивай другой (слои других путей дают бонус к прорыву всех).
+function sunset(data, s) { return s.life.age >= ((data.world.life.oldAgeStart ?? 0.88) - 0.03) * L.lifespan(data, s); }
+// Лет до следующего слоя: медитация + ци за победы (авто ходит в бой при шансе ≥ 55%).
+function yearsToNext(data, p, win) {
+  const T = data.world.time, cfg = data.enemies.adventure, need = G.qiRequired(data, p);
+  const adv = win >= 0.55 ? (T.yearSeconds / cfg.cooldownSec) * win * (cfg.qiRewardShare || 0) * need * (G.realmsOf(data, p)[p.realmIndex]?.qiRewardMul ?? 1) * G.pathSpeedMul(data, p) : 0;
+  const rate = G.qiPerSecond(data, p) * T.yearSeconds + adv;
+  return rate > 0 ? Math.max(0, need - p.qi) / rate : Infinity;
+}
+// Ступор: если на текущем пути до следующего слоя дольше autoOutYears лет (или порог легенды до заката) —
+// переходим на открытый путь, где слой наберётся быстрее всего (медитация + ци за победы), если там хотя бы
+// вдвое быстрее. Временное замедление после смены в оценку не входит — иначе авто металось бы туда-обратно.
+// На закате — к порогу легенды сильнейшим путём. Цена смены — game.js → pathSpeedMul.
+function pickPath(data, s, say) {
+  if (s.settings.autoPaths === false || G.pathSwitchWait(data, s)) return;
+  const ids = G.openPaths(data, s), cur = s.pathId || "qi";
+  if (ids.length < 2) return;
+  const cp = data.realms.crossPath || {}, outY = cp.autoOutYears ?? 3, faster = cp.autoFaster ?? 0.5;
+  const probes = ids.map(id => ({ id, p: { ...G.pathProbe(data, s, id), pathSlowUntil: null } }));
+  const winOf = x => x.id === cur ? winChance(data, s) : (x.win ??= C.adventureOdds(data, x.p, 6).win);
+  const yrs = x => x.y ??= G.legendGate(data, x.p) ? (G.gateWaitYears(data, x.p) || !sunset(data, s) ? Infinity : 0) : yearsToNext(data, x.p, winOf(x));
+  const lvl = x => G.levelOf(data, x.id, x.p);
+  const main = probes.reduce((a, b) => lvl(b) > lvl(a) ? b : a), here = probes.find(x => x.id === cur);
+  let target = null;
+  if (sunset(data, s)) {
+    if (cur !== main.id && G.legendGate(data, main.p) && !G.gateWaitYears(data, main.p)) target = main.id;
+  } else if (yrs(here) > outY) {
+    const best = probes.filter(x => x.id !== cur && yrs(x) < yrs(here) * faster).sort((a, b) => yrs(a) - yrs(b))[0];
+    if (best) target = best.id;
+  }
+  if (!target || target === cur) return;
+  const was = G.pathOf(data, s).name, r = G.switchPath(data, s, target);
+  if (r.ok) say(sunset(data, s) ? `На закате — к порогу легенды. ${r.msg}` : `${was} упёрся в стену. ${r.msg}`, "awaken");
+}
+
 function doBreakthroughs(data, s, say, rng) {
   for (let i = 0; i < 12 && G.canBreakthrough(data, s); i++) {
     const raw = G.breakthroughChance(data, s, false), withPill = G.breakthroughChance(data, s, true);
-    // Порог легенды: только на закате (≥ 85% срока — терять нечего), с пилюлей и шансом ≥ 4%.
+    // Порог легенды: только на закате (с oldAgeStart − 3% срока, сейчас 75% — терять нечего), с пилюлей и шансом ≥ 4%.
     if (G.legendGate(data, s) && (s.life.age < ((data.world.life.oldAgeStart ?? 0.88) - 0.03) * L.lifespan(data, s) || withPill < 0.04 || (s.pills < 1 && s.spiritStones < G.pillPrice(data, s)))) break;
     const wantPill = withPill - raw >= 0.08 || raw < 0.6 || G.legendGate(data, s);
-    if (wantPill && s.pills < 1) G.buyPill(data, s);
+    if (wantPill && s.pills < 1 && !S.sectPill(data, s)) G.buyPill(data, s); // сначала пилюля за 贡献
     const use = wantPill && s.pills >= 1;
     const before = `${G.realmsOf(data, s)[s.realmIndex].name} ${s.layer}`;
     const r = G.breakthrough(data, s, use, rng);
-    say(r.ok ? `Автопрорыв${use ? " с пилюлей" : ""}: ${before} → ${G.realmsOf(data, s)[s.realmIndex].name}, слой ${s.layer}.` : `Прорыв сорвался${use ? " даже с пилюлей" : ""}: ци рассеялась.`, r.ok ? "break" : "cult");
+    say(r.ok ? `Автопрорыв${use ? " с пилюлей" : ""}: ${before} → ${G.realmsOf(data, s)[s.realmIndex].name}, слой ${s.layer}.` : `${use ? "Даже с пилюлей не вышло. " : ""}${r.msg}`, r.ok ? "break" : "cult");
     if (r.fatal) { say(r.msg, "death"); break; }
     if (!r.ok) break;
   }
@@ -114,7 +157,7 @@ function doAdventure(data, s, say, rng) {
 }
 function flushAdventures(s, say) {
   const y = s.life?.advYear; if (!y?.w) return;
-  say(`За год: ${y.w} ${y.w % 10 === 1 && y.w % 100 !== 11 ? "победа" : [2, 3, 4].includes(y.w % 10) && ![12, 13, 14].includes(y.w % 100) ? "победы" : "побед"} в приключениях, +${y.st} камней.`, "adv");
+  say(`За год: ${y.w} ${y.w % 10 === 1 && y.w % 100 !== 11 ? "победа" : [2, 3, 4].includes(y.w % 10) && ![12, 13, 14].includes(y.w % 100) ? "победы" : "побед"} в приключениях, +${L.stonesW(y.st)}.`, "adv");
   s.life.advYear = null;
 }
 
@@ -125,7 +168,10 @@ export function autoYear(data, s, rng = Math.random) {
   const say = (m, k = "cult") => L.logLine(s, m, k);
   flushAdventures(s, say);
   pickJob(data, s); pickChildren(data, s); pickFocus(data, s);
+  CL.autoClan(data, s, rng);
+  if ((l.sect?.standing ?? 100) < 35) S.giveAlms(data, s);
   if (!l.awakened) return;
+  pickPath(data, s, say);
   pickTechniques(data, s, say);
   doBreakthroughs(data, s, say, rng);
   doAdventure(data, s, say, rng);
@@ -135,7 +181,7 @@ export function autoYear(data, s, rng = Math.random) {
 export function autoTick(data, s, rng = Math.random) {
   if (!s.settings.autoPlay) return;
   const l = s.life;
-  if (!l?.alive || l.phase !== "play" || l.pending || l.pendingRoot || !l.awakened) return;
+  if (!l?.alive || l.phase !== "play" || l.pending || l.pendingRoot || l.pause || !l.awakened) return;
   const say = (m, k = "cult") => L.logLine(s, m, k);
   doBreakthroughs(data, s, say, rng);
   doAdventure(data, s, say, rng);

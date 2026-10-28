@@ -148,9 +148,50 @@ select.jobsel:disabled{opacity:.6}
 .pcard .pname{font-size:1.25rem;margin:2px 0 4px}
 .pcard button{margin-top:auto}
 .rl{margin:8px 0 10px;padding-left:18px;font-size:.8rem} .rl li{margin:2px 0} .rl small{color:var(--dim)} .rl li.leg{color:var(--gold)}
+.prows{display:grid;gap:4px;margin-top:4px}
+.prow{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;font-size:.8rem;padding:4px 6px;border-radius:5px}
+.prow.cur{background:#3ecf9f14}
+.prow .pn{font-weight:600;white-space:nowrap}.prow.cur .pn{color:var(--jade)}
+.prow .pa{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pb{padding:3px 10px;font-size:.75rem}
+.prow span.pb{padding:0}
+.prow .pfx{grid-column:1/-1;color:var(--jade);font-size:.74rem;opacity:.9}
 #tablock{position:sticky;top:0;z-index:20;background:#3a1420;border-bottom:1px solid var(--pink);padding:10px 16px;text-align:center;font-size:.9rem}
 #tablock button{margin-left:10px;padding:6px 14px}
 .bad-n{color:#f0a0a0} .rare-n{color:var(--gold)}
+
+/* 27.10.2026 — по мотивам 1in8b: подсказки к выбору, паузы, звёзды летописи, узор жизни */
+button.block small .fx{margin:4px 4px 0 0}
+button.block.picked{outline:2px solid var(--gold);outline-offset:-2px}
+.chips button small.fxh{display:block;font-size:.68rem;opacity:.7;margin-top:2px}
+#event textarea{width:100%;box-sizing:border-box;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:transparent;color:inherit;resize:vertical}
+#event [data-hold]{cursor:pointer}
+#chron li{cursor:pointer}
+#chron li.star{background:#d9b45a1f}
+#chron li.star .a::after{content:" ★";color:var(--gold)}
+#chron li.k-stat{opacity:.75;font-style:italic}
+#chron li.k-note{color:var(--gold)}
+.pattern{margin:10px 0;padding:10px;border:1px dashed var(--line);border-radius:10px}
+.pattern .pair{display:grid;grid-template-columns:80px 1fr 80px;align-items:center;gap:8px;margin:6px 0;font-size:.85rem}
+.pattern .pair span:last-of-type{text-align:right}
+.pattern .pair i{position:relative;height:4px;background:var(--line);border-radius:2px}
+.pattern .pair i::after{content:"";position:absolute;left:var(--p);top:-4px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--jade)}
+.pattern .pair small{grid-column:1/-1;text-align:center;opacity:.65;margin-top:-4px}
+ul.stars{margin:4px 0 8px;padding-left:18px}
+ul.stars li{margin:4px 0}
+
+/* семья, род, секта (family.js, clan.js, sect.js) */
+.fammet{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin:4px 0 6px;font-size:.74rem;color:var(--dim)}
+.fammet b{display:block;color:var(--ink,#e8e2d4);font-size:.98rem;font-weight:600;margin-top:2px}
+.fammet small{display:block;font-size:.7rem;opacity:.85}
+.tr{font-style:normal;font-weight:700;margin-left:2px;color:var(--dim)} .tr.up{color:var(--jade)} .tr.down{color:var(--red)}
+.chg{list-style:none;padding:0;margin:4px 0 6px;font-size:.78rem}
+.chg li{display:flex;gap:8px;padding:2px 0;border-bottom:1px dashed #222c35} .chg .a{color:var(--dim);min-width:52px;flex:none}
+.row2.dead{opacity:.5} .row2.dead b{text-decoration:none;font-weight:400}
+.fx.fresh{background:#d9b45a24;color:var(--gold);margin-left:6px}
+.rankchain{font-size:.74rem;color:var(--dim);margin:6px 0 4px;line-height:1.5} .rankchain .done{color:#9fd8c4} .rankchain .cur{color:var(--gold);font-weight:700}
+.tablets li small{display:block;color:var(--dim)} .tablets li.life{border-left-color:var(--gold)}
+.k-clan{color:#e6c98a} .k-sect{color:#b8c8ff}
 </style></head><body>
 <header id="hdr">
   <div class="top">
@@ -171,6 +212,7 @@ select.jobsel:disabled{opacity:.6}
     <div class="card pass" id="pass"></div>
     <div class="card" id="stats"></div>
     <div class="card" id="cult"></div>
+    <div class="card" id="sect" hidden></div>
   </div>
   <div>
     <div class="card scene-card"><div id="scene"></div><div class="scene-cap" id="scene-cap"></div></div>
@@ -181,6 +223,7 @@ select.jobsel:disabled{opacity:.6}
   </div>
   <div>
     <div class="card" id="family"></div>
+    <div class="card" id="clan" hidden></div>
     <div class="card" id="peers"></div>
     <div class="card"><h2>Карта жизни <small>1 клетка = 1 год</small></h2><div class="lmap" id="lmap"></div>
       <div class="dim small" style="margin-top:8px">Зелень — прожитые годы, бордо — выборы, золото — проверка корней, нефрит — прорывы. Рамка — сколько живут в твоём краю.</div></div>

@@ -1,5 +1,5 @@
 {
- "_note": "Три пути. Ступени (realms) у каждого пути свои; realmIndex/layer общие. Верхние две ступени — легенды (legend): в мире Печати их достигают единицы. maxAge — срок жизни на 9-м слое ступени; между слоями растёт плавно (life.js → lifespan).",
+ "_note": "Три пути, у каждого 7 ступеней. Активный путь — в realmIndex/layer/qi, остальные начатые — в state.paths; развивать можно все открытые. tier — ярус ступени: 0 первая, 1 Основание и ровня, 2 Золотое ядро и ровня, 3–4 легенды; переходные ступени (3 слоя) — полуярусы 0.5 и 1.5. По ярусу считаются ранг в секте, доступ к техникам (techniques.minRealm), карточки и летопись (requires.minRealm/maxRealm), скорость медитации, риск бед и достаток наследника. qiRewardMul — ци за победу на этой ступени ×N: переходные ступени проходятся быстрее. Верхние две ступени — легенды (legend). maxAge — срок жизни на последнем слое ступени; между слоями растёт плавно (life.js → lifespan).",
  "paths": [
   {
    "id": "qi",
@@ -15,6 +15,7 @@
      "id": "qi_condensation",
      "name": "Конденсация ци",
      "han": "炼气",
+     "tier": 0,
      "layers": 9,
      "baseQi": 100,
      "growth": 1.35,
@@ -22,19 +23,45 @@
      "maxAge": 100
     },
     {
+     "id": "ren_du",
+     "name": "Открытие Жэнь и Ду",
+     "han": "通任督",
+     "tier": 0.5,
+     "layers": 3,
+     "baseQi": 1610,
+     "growth": 1.459,
+     "baseBreakthroughChance": 0.8,
+     "maxAge": 125,
+     "qiRewardMul": 3
+    },
+    {
      "id": "foundation",
      "name": "Основание",
      "han": "筑基",
+     "tier": 1,
      "layers": 9,
      "baseQi": 5000,
      "growth": 1.4,
      "baseBreakthroughChance": 0.7,
-     "maxAge": 150
+     "maxAge": 160
+    },
+    {
+     "id": "bigu",
+     "name": "Отказ от зерна",
+     "han": "辟谷",
+     "tier": 1.5,
+     "layers": 3,
+     "baseQi": 112590,
+     "growth": 1.526,
+     "baseBreakthroughChance": 0.6,
+     "maxAge": 192,
+     "qiRewardMul": 3
     },
     {
      "id": "golden_core",
      "name": "Золотое ядро",
      "han": "金丹",
+     "tier": 2,
      "layers": 9,
      "baseQi": 400000,
      "growth": 1.45,
@@ -45,6 +72,7 @@
      "id": "nascent_soul",
      "name": "Зарождение души",
      "han": "元婴",
+     "tier": 3,
      "layers": 9,
      "baseQi": 32000000,
      "growth": 1.5,
@@ -56,6 +84,7 @@
      "id": "spirit_transform",
      "name": "Преображение духа",
      "han": "化神",
+     "tier": 4,
      "layers": 9,
      "baseQi": 3000000000,
      "growth": 1.55,
@@ -83,6 +112,7 @@
      "id": "skin",
      "name": "Закалка кожи",
      "han": "炼皮",
+     "tier": 0,
      "layers": 9,
      "baseQi": 100,
      "growth": 1.35,
@@ -90,19 +120,45 @@
      "maxAge": 95
     },
     {
+     "id": "flesh",
+     "name": "Закалка плоти",
+     "han": "炼肉",
+     "tier": 0.5,
+     "layers": 3,
+     "baseQi": 1610,
+     "growth": 1.459,
+     "baseBreakthroughChance": 0.79,
+     "maxAge": 120,
+     "qiRewardMul": 3
+    },
+    {
      "id": "bronze_bone",
      "name": "Медные жилы, железные кости",
      "han": "铜筋铁骨",
+     "tier": 1,
      "layers": 9,
      "baseQi": 5000,
      "growth": 1.4,
      "baseBreakthroughChance": 0.68,
-     "maxAge": 140
+     "maxAge": 150
+    },
+    {
+     "id": "organs",
+     "name": "Закалка внутренностей",
+     "han": "炼脏",
+     "tier": 1.5,
+     "layers": 3,
+     "baseQi": 112590,
+     "growth": 1.526,
+     "baseBreakthroughChance": 0.58,
+     "maxAge": 180,
+     "qiRewardMul": 3
     },
     {
      "id": "marrow",
      "name": "Очищение мозга костей",
      "han": "洗髓",
+     "tier": 2,
      "layers": 9,
      "baseQi": 400000,
      "growth": 1.45,
@@ -113,6 +169,7 @@
      "id": "golden_body",
      "name": "Золотое тело",
      "han": "金身",
+     "tier": 3,
      "layers": 9,
      "baseQi": 32000000,
      "growth": 1.5,
@@ -124,6 +181,7 @@
      "id": "vajra",
      "name": "Нетленный алмаз",
      "han": "金刚不坏",
+     "tier": 4,
      "layers": 9,
      "baseQi": 3000000000,
      "growth": 1.55,
@@ -153,6 +211,7 @@
      "id": "spirit_sense",
      "name": "Духовное чувство",
      "han": "灵觉",
+     "tier": 0,
      "layers": 9,
      "baseQi": 100,
      "growth": 1.35,
@@ -160,19 +219,45 @@
      "maxAge": 100
     },
     {
+     "id": "calm_spirit",
+     "name": "Успокоение духа",
+     "han": "定神",
+     "tier": 0.5,
+     "layers": 3,
+     "baseQi": 1610,
+     "growth": 1.459,
+     "baseBreakthroughChance": 0.78,
+     "maxAge": 130,
+     "qiRewardMul": 3
+    },
+    {
      "id": "soul_condense",
      "name": "Сгущение души",
      "han": "凝魂",
+     "tier": 1,
      "layers": 9,
      "baseQi": 5000,
      "growth": 1.4,
      "baseBreakthroughChance": 0.68,
-     "maxAge": 160
+     "maxAge": 170
+    },
+    {
+     "id": "sea_of_mind",
+     "name": "Море сознания",
+     "han": "识海",
+     "tier": 1.5,
+     "layers": 3,
+     "baseQi": 112590,
+     "growth": 1.526,
+     "baseBreakthroughChance": 0.58,
+     "maxAge": 207,
+     "qiRewardMul": 3
     },
     {
      "id": "spirit_roam",
      "name": "Странствие духа",
      "han": "神游",
+     "tier": 2,
      "layers": 9,
      "baseQi": 400000,
      "growth": 1.45,
@@ -183,6 +268,7 @@
      "id": "soul_out",
      "name": "Выход души из тела",
      "han": "出窍",
+     "tier": 3,
      "layers": 9,
      "baseQi": 32000000,
      "growth": 1.5,
@@ -194,6 +280,7 @@
      "id": "heaven_man",
      "name": "Единство неба и человека",
      "han": "天人合一",
+     "tier": 4,
      "layers": 9,
      "baseQi": 3000000000,
      "growth": 1.55,
@@ -216,5 +303,32 @@
   "legendChanceMul": 0.15,
   "legendDeathChance": 0.1,
   "legendCooldownYears": 15
+ },
+ "crossPath": {
+  "_note": "Несколько путей (game.js → switchPath, crossPathBonus, pathSpeedMul). Бонус: каждый пройденный слой другого пути даёт perLayer к прорыву активного, не больше cap. Цена: каждый ДРУГОЙ путь с хотя бы одним прорывом режет ци и награды за победы на splitPenalty (множится); после смены пути switchSlowYears лет скорость ×switchSlowMul; следующая смена — через switchYears лет. Авторежим: если на текущем пути до слоя дольше autoOutYears лет (или порог легенды до заката) — переходит на открытый путь, где слой наберётся быстрее всего, если там быстрее хотя бы в 1/autoFaster раз. Срок: сильнейший путь даёт свою прибавку целиком, каждый другой — otherLifeShare своей. passives — постоянные эффекты пути за каждый пройденный слой (L): тело hp/def, дух dao (дао-сердце) и breakCap (потолок его вклада в прорыв), ци qi (скорость)/atk/stones (камни за победы). Эффекты всех путей складываются.",
+  "perLayer": 0.015,
+  "cap": 0.25,
+  "switchYears": 1,
+  "splitPenalty": 0.15,
+  "switchSlowYears": 2,
+  "switchSlowMul": 0.5,
+  "autoOutYears": 3,
+  "otherLifeShare": 0.75,
+  "passives": {
+   "body": {
+    "hp": 0.025,
+    "def": 0.02
+   },
+   "spirit": {
+    "dao": 0.3,
+    "breakCap": 0.002
+   },
+   "qi": {
+    "qi": 0.01,
+    "atk": 0.012,
+    "stones": 0.02
+   }
+  },
+  "autoFaster": 0.5
  }
 }

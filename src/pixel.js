@@ -12,6 +12,10 @@ const LAND = {
   haiyun: { hill: "#2a3a4a", ground: "#5a5040", top: "#6a7a5a", sea: true },
   hanmu: { hill: "#4a4a3a", ground: "#6a5a3a", top: "#8a8a4a" },
   penglai: { hill: "#3a5a5a", ground: "#4a5a4a", top: "#5ab08a", sea: true },
+  yanjing: { hill: "#3a3a48", ground: "#5a5048", top: "#7a6a5a" },
+  liangzhou: { hill: "#5a4a32", ground: "#7a6440", top: "#9a8050" },
+  kunlun: { hill: "#5a6a7a", ground: "#b8c4cc", top: "#e6ecef", peaks: true },
+  hedu: { hill: "#2a2a2e", ground: "#3a3632", top: "#4a4440" },
 };
 
 function px(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
@@ -49,9 +53,24 @@ export function drawScene(host, data, s) {
   px(ctx, 128, 7, 7, 7, night ? "#e8e0c0" : "#ffe8a0");
   if (era === "rift") { ctx.strokeStyle = "#ff6a6a"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(48, 8); ctx.lineTo(44, 14); ctx.lineTo(54, 22); ctx.stroke(); }
   // горы
+  const hy = x => 30 + Math.sin(x / 17 + hash(l.regionId) % 7) * 6 + (l.regionId === "qinglong" ? -8 * Math.abs(Math.sin(x / 23)) : land.peaks ? -12 * Math.abs(Math.sin(x / 19)) : 0);
   ctx.fillStyle = land.hill; ctx.beginPath(); ctx.moveTo(0, 44);
-  for (let x = 0; x <= Wd; x += 8) ctx.lineTo(x, 30 + Math.sin(x / 17 + hash(l.regionId) % 7) * 6 + (l.regionId === "qinglong" ? -8 * Math.abs(Math.sin(x / 23)) : 0));
+  for (let x = 0; x <= Wd; x += 8) ctx.lineTo(x, hy(x));
   ctx.lineTo(Wd, 44); ctx.fill();
+  if (land.peaks) for (let x = 0; x <= Wd; x += 4) if (hy(x) < 24) px(ctx, x, hy(x), 4, 2, "#e6ecef"); // снежные шапки Куньлуня
+  if (l.regionId === "yanjing") { // стена столицы и надвратная башня
+    px(ctx, 70, 34, 90, 12, "#5a4a44"); for (let x = 70; x < Wd; x += 6) px(ctx, x, 32, 3, 2, "#5a4a44");
+    px(ctx, 104, 24, 20, 10, "#6a3a30"); px(ctx, 100, 22, 28, 2, "#7a2f3a"); px(ctx, 110, 38, 8, 8, "#2a1a14");
+    if (night) { px(ctx, 107, 28, 2, 2, "#f0c060"); px(ctx, 119, 28, 2, 2, "#f0c060"); }
+  }
+  if (l.regionId === "liangzhou") { // сигнальная башня; ночью — дым
+    px(ctx, 118, 22, 6, 22, "#4a3a2a"); px(ctx, 116, 20, 10, 2, "#3a2a1a");
+    if (night) for (let i = 0; i < 5; i++) px(ctx, 119 + (i % 2), 18 - i * 3, 3, 2, "#8a8a8a88");
+  }
+  if (l.regionId === "hedu") { // обломки колонн стёртого дворца
+    px(ctx, 100, 30, 3, 16, "#6a6460"); px(ctx, 108, 36, 3, 10, "#6a6460"); px(ctx, 116, 26, 3, 20, "#6a6460"); px(ctx, 96, 28, 12, 2, "#5a5450");
+    for (let i = 0; i < 12; i++) px(ctx, 90 + R() * 40, 44 + R() * 2, 1, 1, "#8a847e");
+  }
   if (l.regionId === "qinglong") { // храм на горе
     px(ctx, 100, 18, 12, 2, "#7a2f3a"); px(ctx, 102, 20, 8, 5, "#3a2a22"); px(ctx, 98, 17, 16, 1, "#2a1a14");
   }
@@ -73,7 +92,7 @@ export function drawScene(host, data, s) {
 
   // люди: игрок + семья
   const ground = 58, people = [];
-  const mine = { skin: "#e8c8a0", hair: "#1a1410", long: l.gender === "f", topknot: l.gender === "m" && l.age >= 16, robe: l.awakened ? REALM_ROBE[s.realmIndex] || "#e6ecef" : ROBE[hash(l.name) % ROBE.length], sash: l.awakened ? "#7a2f3a" : null, sword: l.awakened && l.age >= 18 };
+  const mine = { skin: "#e8c8a0", hair: "#1a1410", long: l.gender === "f", topknot: l.gender === "m" && l.age >= 16, robe: l.awakened ? REALM_ROBE[Math.floor(s.tier ?? s.realmIndex)] || "#e6ecef" : ROBE[hash(l.name) % ROBE.length], sash: l.awakened ? "#7a2f3a" : null, sword: l.awakened && l.age >= 18 };
   const h = l.age < 3 ? 6 : l.age < 12 ? 9 + Math.floor(l.age / 3) : l.age > 70 ? 13 : 15;
   const hh = l.household;
   if (hh && l.age < 22) {
@@ -86,7 +105,7 @@ export function drawScene(host, data, s) {
   l.children.filter(k => k.alive).slice(0, 4).forEach((k, i) => { const a = l.age - k.born; people.push({ h: a < 3 ? 6 : Math.min(15, 8 + Math.floor(a / 2)), cfg: { skin: "#e8c8a0", hair: "#1a1410", long: k.gender === "f", robe: ROBE[(i + 4) % ROBE.length] } }); });
   let x = 70;
   for (const p of people) {
-    if (p.me && l.awakened) { ctx.fillStyle = s.realmIndex >= 2 ? "#d9b45a33" : "#3ecf9f26"; ctx.fillRect(x - 4, ground - p.h - 4, 11, p.h + 4); }
+    if (p.me && l.awakened) { ctx.fillStyle = (s.tier ?? s.realmIndex) >= 2 ? "#d9b45a33" : "#3ecf9f26"; ctx.fillRect(x - 4, ground - p.h - 4, 11, p.h + 4); }
     person(ctx, x, ground, p.h, p.cfg); x += 9;
   }
   // собака-талисман (как щенок у 1in8b) — у каждого дома своя
@@ -100,7 +119,7 @@ export function drawAvatar(c, l, s) {
   if (!c) return;
   const ctx = c.getContext("2d"); ctx.clearRect(0, 0, 14, 17);
   px(ctx, 0, 0, 14, 17, "#24343a");
-  const robe = l.awakened ? REALM_ROBE[s.realmIndex] || "#e6ecef" : ROBE[hash(l.name) % ROBE.length];
+  const robe = l.awakened ? REALM_ROBE[Math.floor(s.tier ?? s.realmIndex)] || "#e6ecef" : ROBE[hash(l.name) % ROBE.length];
   px(ctx, 4, 3, 6, 6, "#e8c8a0"); px(ctx, 4, 2, 6, 2, "#1a1410");
   if (l.gender === "f") { px(ctx, 3, 3, 1, 8, "#1a1410"); px(ctx, 10, 3, 1, 8, "#1a1410"); }
   else if (l.age >= 16) px(ctx, 6, 0, 2, 2, "#1a1410");

@@ -1,0 +1,295 @@
+{
+ "_note": "Живая семья (src/family.js) и род (src/clan.js). Семья: достаток семьи — шкала wealth (band очков на ступень достатка), сдвиг за год = шум + работа/фокус + опора культиватора − возврат к достатку рождения (revert); беды и удачи; клан культиваторов — только со ступени cultclanNeedTier. Лад в доме 0–100: фокус года, браки, рождения, смерти; низкий лад — реже дети и чуть больше бед. Род — между поколениями: 名望 (rep) решает ярус, казна копится из взносов (duesShare заработка) и дохода рода (baseIncome по ярусу). Казна помогает ресурсами, но НЕ ци: доля цены пилюли (pillDiscount), подарок наследнику (heirShare, heirCap), свиток 中乘 в родовую библиотеку (scroll). Соседние дома: rel −100..100, вражда с feudAt, союз с allyRel.",
+ "family": {
+  "band": 25,
+  "noise": 2.0,
+  "revert": 0.04,
+  "focusNudge": {
+   "work": 0.3,
+   "family": 0,
+   "practice": -0.2,
+   "rest": -0.2,
+   "sect": -0.1
+  },
+  "goodJobStones": 6,
+  "goodJobNudge": 0.2,
+  "tierSupport": [
+   [
+    1,
+    0.15
+   ],
+   [
+    2,
+    0.3
+   ]
+  ],
+  "orphanDrift": -1,
+  "disasterChance": 0.025,
+  "disasterLoss": 10,
+  "windfallChance": 0.015,
+  "windfallGain": 10,
+  "cultclanNeedTier": 2,
+  "harmonyStart": 60,
+  "harmonyMean": 55,
+  "harmonyRevert": 0.1,
+  "harmonyFocus": {
+   "family": 1,
+   "rest": 0.5,
+   "work": -0.3,
+   "practice": -0.6,
+   "sect": -0.8
+  },
+  "harmonyKinds": {
+   "death": -8,
+   "birth": 3,
+   "marriage": 3
+  },
+  "harmonyLow": 30,
+  "harmonyHigh": 75,
+  "lowBirthMul": 0.8,
+  "highBirthMul": 1.1,
+  "lowHazardMul": 1.05,
+  "highHazardMul": 0.95,
+  "parentHazard": 0.6,
+  "cultParent": {
+   "cultclan": 0.6,
+   "noble": 0.1
+  },
+  "cultParentLife": [
+   40,
+   80
+  ],
+  "sibSectChance": 0.15,
+  "histKeep": 15,
+  "changesKeep": 24,
+  "trendYears": 5,
+  "disasters": [
+   "Град побил урожай и крышу.",
+   "Пожар в квартале добрался до вашего двора.",
+   "Разлив реки унёс амбар.",
+   "Мор прошёл по скотине.",
+   "Ростовщик потребовал старый долг деда."
+  ],
+  "windfalls": [
+   "Дальний родич оставил семье лавку.",
+   "Урожай вышел на славу — продали втридорога.",
+   "Старый долг вернули с лихвой."
+  ]
+ },
+ "clan": {
+  "tiers": [
+   {
+    "id": "obscure",
+    "name": "безвестный род",
+    "rep": 0
+   },
+   {
+    "id": "respected",
+    "name": "уважаемый род",
+    "rep": 20
+   },
+   {
+    "id": "noble",
+    "name": "знатный род",
+    "rep": 60
+   },
+   {
+    "id": "great",
+    "name": "великий клан культиваторов",
+    "rep": 150
+   }
+  ],
+  "startRep": {
+   "poor": 0,
+   "peasant": 5,
+   "craft": 22,
+   "noble": 65,
+   "cultclan": 160
+  },
+  "startTreasury": {
+   "poor": 0,
+   "peasant": 5,
+   "craft": 20,
+   "noble": 80,
+   "cultclan": 300
+  },
+  "baseIncome": [
+   1,
+   3,
+   8,
+   20
+  ],
+  "duesShare": 0.1,
+  "repDecay": 0.01,
+  "repPerAwakened": 0.15,
+  "repAwakenCap": 4,
+  "repPerTier": 4,
+  "pillDiscount": [
+   0,
+   0.05,
+   0.1,
+   0.15
+  ],
+  "scroll": {
+   "minTier": 1,
+   "cost": [
+    0,
+    220,
+    200,
+    180
+   ],
+   "shangTier": 3,
+   "shangCost": 600
+  },
+  "heirShare": 0.15,
+  "heirCap": [
+   10,
+   40,
+   120,
+   300
+  ],
+  "takeShare": 0.2,
+  "takeGap": 5,
+  "donateShare": 0.2,
+  "donateRepPer": 15,
+  "allyRel": 40,
+  "feudAt": -60,
+  "feudEndAt": -30,
+  "relDrift": 4,
+  "relRevert": 0.03,
+  "feudIncident": 0.04,
+  "allyGift": 0.03,
+  "feudHazard": 1.05,
+  "tabletsKeep": 80,
+  "clansKeep": 6,
+  "neighborCount": [
+   6,
+   8
+  ],
+  "oldGrudge": 0.1,
+  "neighborTierWeights": [
+   5,
+   4,
+   2,
+   1
+  ],
+  "neighbors": [
+   {
+    "s": "Мужун",
+    "han": "慕容"
+   },
+   {
+    "s": "Наньгун",
+    "han": "南宫"
+   },
+   {
+    "s": "Шангуань",
+    "han": "上官"
+   },
+   {
+    "s": "Оуян",
+    "han": "欧阳"
+   },
+   {
+    "s": "Сыма",
+    "han": "司马"
+   },
+   {
+    "s": "Чжугэ",
+    "han": "诸葛"
+   },
+   {
+    "s": "Дуань",
+    "han": "段"
+   },
+   {
+    "s": "Тан",
+    "han": "唐"
+   },
+   {
+    "s": "Бай",
+    "han": "白"
+   },
+   {
+    "s": "Хуанфу",
+    "han": "皇甫"
+   },
+   {
+    "s": "Линху",
+    "han": "令狐"
+   },
+   {
+    "s": "Ся",
+    "han": "夏"
+   },
+   {
+    "s": "Фэн",
+    "han": "冯"
+   },
+   {
+    "s": "Ло",
+    "han": "罗"
+   },
+   {
+    "s": "Сун",
+    "han": "宋"
+   },
+   {
+    "s": "Гу",
+    "han": "顾"
+   }
+  ],
+  "rules": [
+   {
+    "id": "pot",
+    "name": "Общий котёл",
+    "text": "Пятая часть заработка — в казну рода.",
+    "fx": {
+     "duesShare": 0.2
+    }
+   },
+   {
+    "id": "elders",
+    "name": "Слово старших",
+    "text": "Браки решают старшие: сговор приносит роду имя, своеволие — пересуды.",
+    "fx": {
+     "arrangedRep": 2,
+     "loveRep": -3
+    }
+   },
+   {
+    "id": "peace",
+    "name": "Мир с соседями",
+    "text": "Соседям уступают дорогу: обиды гаснут быстрее.",
+    "fx": {
+     "relUp": 0.6
+    }
+   },
+   {
+    "id": "blood",
+    "name": "Кровь за кровь",
+    "text": "Обиду не прощают: вражда разгорается быстрее, зато за победы чтят вдвое.",
+    "fx": {
+     "relUp": -0.6,
+     "feudRepMul": 2
+    }
+   },
+   {
+    "id": "letters",
+    "name": "Грамота прежде меча",
+    "text": "Дети рода учатся грамоте: из грамоты чаще выходят связи.",
+    "fx": {
+     "lettersMul": 2
+    }
+   },
+   {
+    "id": "frugal",
+    "name": "Бережливость",
+    "text": "Казна не тратится на пиры: каждый год прирастает на два из ста.",
+    "fx": {
+     "interest": 0.02
+    }
+   }
+  ]
+ }
+}

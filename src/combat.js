@@ -6,8 +6,9 @@
 //   техника врага: лучшая из enemy.techniques с fromLevel ≤ L; множит hp/atk/def врага.
 //     Враги растут техниками так же, как игрок: кто не учит 招式/外功, тот отстаёт.
 //   поражение: рана (срок −woundYears) и шанс гибели = deathOnLoss * (1/hpMult тела)^2 * (0.7 с 轻功 — успел уйти)
-import { qiRequired, slottedTechs, realmsOf, pathOf, techUsable, techAccess, luckyScroll } from "./game.js";
-import { die } from "./life.js";
+import { qiRequired, slottedTechs, realmsOf, pathOf, techUsable, techAccess, luckyScroll, talentOf, pathSpeedMul, pathPassives, tierOf } from "./game.js";
+import { die, stonesW } from "./life.js";
+import { onAdventureWin } from "./sect.js";
 
 export function globalLevel(data, s) {
   let L = s.layer - 1;
@@ -20,9 +21,10 @@ export function playerStats(data, s) {
   const sl = slottedTechs(data, s);
   const body = s.life && data.world.physiques?.find(x => x.id === s.life.physiqueId);
   const pc = pathOf(data, s).combat || {}; // путь тела крепче, путь духа бьёт сильнее, но хрупок
-  const hp = p.hpBase * g * (sl.body?.hpMult || 1) * (body?.hpMult || 1) * (pc.hp || 1);
-  const atk = p.atkBase * g * (sl.martial?.atkMult || 1) * (sl.body?.atkMult || 1) * (sl.anqi?.atkMult || 1) * (body?.atkMult || 1) * (pc.atk || 1);
-  const def = p.defBase * g * (sl.body?.defMult || 1) * (sl.martial?.defMult || 1) * (body?.defMult || 1) * (pc.def || 1);
+  const pp = pathPassives(data, s); // эффекты всех путей: тело — здоровье/защита, ци — удар
+  const hp = pp.hp * p.hpBase * g * (sl.body?.hpMult || 1) * (body?.hpMult || 1) * (pc.hp || 1);
+  const atk = pp.atk * p.atkBase * g * (sl.martial?.atkMult || 1) * (sl.body?.atkMult || 1) * (sl.anqi?.atkMult || 1) * (body?.atkMult || 1) * (pc.atk || 1) * (talentOf(data, s)?.atkMult || 1);
+  const def = pp.def * p.defBase * g * (sl.body?.defMult || 1) * (sl.martial?.defMult || 1) * (body?.defMult || 1) * (pc.def || 1);
   const crit = p.critChance + (sl.qinggong?.critAdd || 0) + (sl.martial?.critAdd || 0) + (sl.anqi?.critAdd || 0) + (body?.critAdd || 0) + (pc.crit || 0);
   return { hp, atk, def, crit };
 }
@@ -66,7 +68,7 @@ export function adventureOdds(data, s, n = 30, rng = Math.random) {
 export function combatHint(data, s, cost) {
   const sl = slottedTechs(data, s), val = t => (t.atkMult || 1) * (t.hpMult || 1) * (t.defMult || 1) * (1 + (t.critAdd || 0));
   const cands = data.techniques.techniques
-    .filter(t => ["martial", "body", "anqi"].includes(t.type) && techUsable(data, s, t) && techAccess(data, s, t).ok && (t.minRealm || 0) <= s.realmIndex && !s.ownedTechniques.includes(t.id))
+    .filter(t => ["martial", "body", "anqi"].includes(t.type) && techUsable(data, s, t) && techAccess(data, s, t).ok && (t.minRealm || 0) <= tierOf(data, s) && !s.ownedTechniques.includes(t.id))
     .filter(t => val(t) > (sl[t.type] ? val(sl[t.type]) : 1) + 1e-9)
     .map(t => ({ t, c: cost(t) })).sort((a, b) => a.c - b.c);
   const empty = ["martial", "body"].filter(k => !sl[k]).length;
@@ -94,13 +96,15 @@ export function adventure(data, s, now = Date.now(), rng = Math.random) {
     if (s.life && cfg.woundYears) s.life.ageShift -= cfg.woundYears;
     return { ok: false, enemy: e.id, win: false, wound: true, msg: `Поражение от: ${e.name}${with_}. Рана заживёт, но годы она забрала${cfg.woundYears ? ` (срок −${cfg.woundYears})` : ""}.` };
   }
-  const stones = Math.round(e.stones * (1 + 0.15 * globalLevel(data, s)));
-  const qi = Math.floor(cfg.qiRewardShare * qiRequired(data, s));
+  const stones = Math.round(e.stones * (1 + 0.15 * globalLevel(data, s)) * pathPassives(data, s).stones);
+  // Доля ци до слоя за победу; переходные ступени (realm.qiRewardMul) проходятся быстрее; несколько путей — награда меньше.
+  const qi = Math.floor(cfg.qiRewardShare * qiRequired(data, s) * (realmsOf(data, s)[s.realmIndex]?.qiRewardMul ?? 1) * pathSpeedMul(data, s));
   const pill = rng() < cfg.pillDropChance;
   s.wins += 1; s.spiritStones += stones; s.qi = Math.min(qiRequired(data, s), s.qi + qi);
+  onAdventureWin(data, s); // 贡献 секте за победу (с потолком за год)
   if (pill) s.pills += 1;
   // Удача: в тайнике врага — свиток тайной техники своего пути.
   const scroll = s.life?.awakened && rng() < (cfg.scrollChance || 0) ? luckyScroll(data, s, rng) : null;
   s.adventureReadyAt = now + cfg.cooldownSec * 1000;
-  return { ok: true, enemy: e.id, win: true, scroll, msg: `Победа над «${e.name}»${with_}: +${stones} камней, +${qi} ци${pill ? ", найдена пилюля" : ""}${scroll ? `, в тайнике — свиток «${scroll.name}»` : ""}.` };
+  return { ok: true, enemy: e.id, win: true, scroll, msg: `Победа над «${e.name}»${with_}: +${stonesW(stones)}, +${qi} ци${pill ? ", найдена пилюля" : ""}${scroll ? `, в тайнике — свиток «${scroll.name}»` : ""}.` };
 }

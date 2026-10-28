@@ -1,2 +1,5 @@
-﻿.backup-ui/
-
+.backup-ui/
+.backup-*/
+README.md.before-tidy
+_commit.bat
+_commit-msg.txt

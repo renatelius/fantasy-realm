@@ -1,5 +1,5 @@
 {
- "_note": "Секты держат 中乘 и выше в тайне. Внешний ученик — 中乘, внутренний (2-я ступень) — 上乘, личный (3-я) — 绝学. paths — каким путям секта берёт детей членов.",
+ "_note": "Секты держат 中乘 и выше в тайне. Ранги (ranks): слуга → внешний (中乘) → внутренний (上乘) → личный (绝学) → старший ученик → старейшина → глава. Повышение: ярус пути (tier) + заслуги (merit, копятся из 贡献) + испытание (карточки sect_trial_N). 贡献 (contrib) — тратится на техники секты (1 贡献 = config.contrib.stonePerContrib камней) и пилюли. paths — каким путям секта открыта; rules — устав (ruleDefs); allies/enemies — отношения, из них — войны сект. Логика — src/sect.js.",
  "sects": [
   {
    "id": "wudang",
@@ -8,6 +8,20 @@
    "paths": [
     "qi",
     "spirit"
+   ],
+   "desc": "Меч, дыхание и книги. Писцы Первого Писца: молчание — их техника.",
+   "regions": [
+    "qinglong"
+   ],
+   "rules": [
+    "silence"
+   ],
+   "allies": [
+    "shaolin",
+    "emei"
+   ],
+   "enemies": [
+    "sunmoon"
    ]
   },
   {
@@ -17,6 +31,22 @@
    "paths": [
     "body",
     "qi"
+   ],
+   "desc": "Устав, кулак и милостыня. Поминают стёртые имена как «безымянных предков».",
+   "regions": [
+    "huangfeng",
+    "yanjing"
+   ],
+   "rules": [
+    "noMarriage",
+    "alms"
+   ],
+   "allies": [
+    "wudang",
+    "beggars"
+   ],
+   "enemies": [
+    "sunmoon"
    ]
   },
   {
@@ -27,6 +57,21 @@
     "qi",
     "body",
     "spirit"
+   ],
+   "desc": "Сострадание и жёсткая дисциплина. Прячет детей, чьи корни слишком «удобны» канцелярии.",
+   "regions": [
+    "qinglong",
+    "haiyun"
+   ],
+   "rules": [
+    "compassion"
+   ],
+   "allies": [
+    "wudang"
+   ],
+   "enemies": [
+    "sunmoon",
+    "kongtong"
    ]
   },
   {
@@ -35,6 +80,19 @@
    "han": "华山",
    "paths": [
     "qi"
+   ],
+   "desc": "Меч и спор школ: можно ли разрезать печать, как узел.",
+   "regions": [
+    "yanjing",
+    "huangfeng"
+   ],
+   "rules": [
+    "duels"
+   ],
+   "allies": [],
+   "enemies": [
+    "sunmoon",
+    "qinglong"
    ]
   },
   {
@@ -44,6 +102,18 @@
    "paths": [
     "qi",
     "spirit"
+   ],
+   "desc": "Дальние снега, мало гостей. Хранит осколок Земли — если верить трактату, который Удан отрицает.",
+   "regions": [
+    "kunlun"
+   ],
+   "rules": [
+    "retreat"
+   ],
+   "allies": [],
+   "enemies": [
+    "kongtong",
+    "sunmoon"
    ]
   },
   {
@@ -53,6 +123,19 @@
    "paths": [
     "body",
     "qi"
+   ],
+   "desc": "Жёсткость, яды и пограничье. Бездонь для них — просто ещё один враг на тракте.",
+   "regions": [
+    "liangzhou",
+    "hanmu"
+   ],
+   "rules": [
+    "poison"
+   ],
+   "allies": [],
+   "enemies": [
+    "kunlun",
+    "emei"
    ]
   },
   {
@@ -63,6 +146,23 @@
     "body",
     "qi",
     "spirit"
+   ],
+   "desc": "Слух дешевле бумаги. Первыми узнают, какое имя двор вычеркнул в этом году.",
+   "regions": [
+    "haiyun",
+    "huangfeng",
+    "hanmu",
+    "yanjing"
+   ],
+   "rules": [
+    "noWealth",
+    "rumors"
+   ],
+   "allies": [
+    "shaolin"
+   ],
+   "enemies": [
+    "sunmoon"
    ]
   },
   {
@@ -71,6 +171,18 @@
    "han": "青龙门",
    "paths": [
     "qi"
+   ],
+   "desc": "Малая горная секта у Цинлун: строгие старшие, честные экзамены.",
+   "regions": [
+    "qinglong"
+   ],
+   "rules": [
+    "elders"
+   ],
+   "allies": [],
+   "enemies": [
+    "crane",
+    "huashan"
    ]
   },
   {
@@ -81,6 +193,19 @@
     "qi",
     "spirit",
     "body"
+   ],
+   "desc": "Лазурный Журавль берёт всех, кто дойдёт до ворот: учат все три пути.",
+   "regions": [
+    "huangfeng",
+    "haiyun",
+    "qinglong"
+   ],
+   "rules": [
+    "open"
+   ],
+   "allies": [],
+   "enemies": [
+    "qinglong"
    ]
   },
   {
@@ -91,7 +216,220 @@
     "body",
     "qi",
     "spirit"
+   ],
+   "desc": "Помнят Чжао иначе, чем Янь, и готовы платить за память кровью — в том числе чужой. Для двора и великих сект — ересь.",
+   "regions": [
+    "hedu",
+    "huangfeng"
+   ],
+   "rules": [
+    "heretic"
+   ],
+   "allies": [],
+   "enemies": [
+    "wudang",
+    "shaolin",
+    "emei",
+    "huashan",
+    "kunlun",
+    "beggars"
    ]
   }
- ]
+ ],
+ "ranks": [
+  {
+   "id": "servant",
+   "name": "слуга",
+   "han": "杂役",
+   "tier": 0,
+   "merit": 0
+  },
+  {
+   "id": "outer",
+   "name": "внешний ученик",
+   "han": "外门弟子",
+   "tier": 0,
+   "merit": 20
+  },
+  {
+   "id": "inner",
+   "name": "внутренний ученик",
+   "han": "内门弟子",
+   "tier": 1,
+   "merit": 80
+  },
+  {
+   "id": "personal",
+   "name": "личный ученик",
+   "han": "亲传弟子",
+   "tier": 2,
+   "merit": 220
+  },
+  {
+   "id": "senior",
+   "name": "старший ученик",
+   "han": "首席弟子",
+   "tier": 2,
+   "merit": 600
+  },
+  {
+   "id": "elder",
+   "name": "старейшина",
+   "han": "长老",
+   "tier": 2,
+   "merit": 2000,
+   "years": 25,
+   "seatChance": 0.02
+  },
+  {
+   "id": "head",
+   "name": "глава",
+   "han": "掌门",
+   "tier": 2,
+   "merit": 4000,
+   "years": 40,
+   "succession": true
+  }
+ ],
+ "ruleDefs": {
+  "silence": {
+   "name": "Молчание",
+   "text": "Выдавший тайну секты изгоняется сразу.",
+   "fx": {
+    "strictBetray": true
+   }
+  },
+  "noMarriage": {
+   "name": "Без брака",
+   "text": "Монах не женится. Женатых берут мирскими учениками — выше внутреннего двора им не подняться.",
+   "fx": {
+    "noMarriage": true
+   }
+  },
+  "alms": {
+   "name": "Милостыня",
+   "text": "Злому сердцу ранга не дают: для повышения карма не ниже нуля.",
+   "fx": {
+    "needKarma": 0
+   }
+  },
+  "compassion": {
+   "name": "Сострадание",
+   "text": "Для повышения нужна карма от +2.",
+   "fx": {
+    "needKarma": 2
+   }
+  },
+  "duels": {
+   "name": "Спор школ",
+   "text": "Победы в цзянху — лучший вклад: за приключения 贡献 ×1,5.",
+   "fx": {
+    "advContribMul": 1.5
+   }
+  },
+  "retreat": {
+   "name": "Затвор",
+   "text": "Гунфу в снегах — тоже служба: в фокусе «Гунфу» 贡献 ×2.",
+   "fx": {
+    "practiceContribMul": 2
+   }
+  },
+  "poison": {
+   "name": "Яды пограничья",
+   "text": "Опасная жизнь (беды +5%), зато за приключения 贡献 ×2.",
+   "fx": {
+    "hazardMul": 1.05,
+    "advContribMul": 2
+   }
+  },
+  "noWealth": {
+   "name": "Пустая чаша",
+   "text": "У нищего кошель дырявый: больше 400 камней — косые взгляды.",
+   "fx": {
+    "stoneFrown": 400
+   }
+  },
+  "rumors": {
+   "name": "Слухи",
+   "text": "Нищие знают всех: связи иногда прибывают сами.",
+   "fx": {
+    "connChance": 0.15
+   }
+  },
+  "elders": {
+   "name": "Старшим кланяться",
+   "text": "Устав простой и строгий: за дерзость — розги.",
+   "fx": {}
+  },
+  "open": {
+   "name": "Открытые ворота",
+   "text": "Журавль берёт любой путь и любого, кто дошёл.",
+   "fx": {}
+  },
+  "heretic": {
+   "name": "Ересь",
+   "text": "Канцелярия охотится (беды +15%), великие секты враждебны, но вклад ценится в полтора раза выше.",
+   "fx": {
+    "hazardMul": 1.15,
+    "contribMul": 1.5
+   }
+  }
+ },
+ "config": {
+  "contrib": {
+   "base": 6,
+   "perTier": 6,
+   "focusMul": 2.5,
+   "focusAdd": 8,
+   "advWin": 2,
+   "advCapYear": 20,
+   "stonePerContrib": 4,
+   "pillDiv": 4
+  },
+  "trial": {
+   "base": 0.6,
+   "perDao": 0.03,
+   "perTier": 0.15,
+   "min": 0.2,
+   "max": 0.95,
+   "gapYears": 3
+  },
+  "standingStart": 50,
+  "masterDeath": 0.02,
+  "masterOld": 0.04,
+  "peerDeath": 0.008,
+  "peerPromote": 0.08,
+  "warChance": 0.015,
+  "warYears": [
+   3,
+   6
+  ],
+  "warHazard": 1.15,
+  "warContribMul": 1.5,
+  "warPeerDeathMul": 3,
+  "frownStanding": -3,
+  "masterTitles": [
+   "наставник",
+   "старейшина",
+   "наставница",
+   "старейшина"
+  ],
+  "warSeatMul": 2,
+  "succession": {
+   "_note": "Глава секты — живой человек (sect.js → headYear). Уходит с шансом headDeath в год (+headOld после headOldYears у печати, ×warMul в войну). Тогда старейшина, выполнивший условия, выходит к «Печати главы»: шанс испытания + contested, + heirBonus у названного преемника, + rivalPenalty, если соперник — тоже старейшина.",
+   "headDeath": 0.015,
+   "headOld": 0.03,
+   "headOldYears": 80,
+   "warMul": 2.5,
+   "startTenure": 60,
+   "heirChance": 0.04,
+   "heirStanding": 80,
+   "heirBonus": 0.25,
+   "contested": -0.15,
+   "rivalPenalty": -0.1,
+   "rivalHeadStanding": 8,
+   "headRep": 15,
+   "vacantYears": 3
+  }
+ }
 }

@@ -38,7 +38,7 @@
     {
      "name": "Стая теней",
      "han": "影群",
-     "fromLevel": 9,
+     "fromLevel": 12,
      "atkMult": 1.225,
      "hpMult": 1.175,
      "defMult": 1.1
@@ -46,7 +46,7 @@
     {
      "name": "Вой над Бездонью",
      "han": "无间嚎",
-     "fromLevel": 18,
+     "fromLevel": 24,
      "atkMult": 1.375,
      "hpMult": 1.3,
      "defMult": 1.2
@@ -73,7 +73,7 @@
     {
      "name": "Меч без ножен",
      "han": "无鞘剑",
-     "fromLevel": 9,
+     "fromLevel": 12,
      "atkMult": 1.25,
      "hpMult": 1.15,
      "defMult": 1.125
@@ -81,7 +81,7 @@
     {
      "name": "Стёртая печать",
      "han": "残印诀",
-     "fromLevel": 18,
+     "fromLevel": 24,
      "atkMult": 1.4,
      "hpMult": 1.275,
      "defMult": 1.225
@@ -108,7 +108,7 @@
     {
      "name": "Тысяча шёпотов",
      "han": "千语",
-     "fromLevel": 9,
+     "fromLevel": 12,
      "atkMult": 1.2,
      "hpMult": 1.2,
      "defMult": 1.15
@@ -116,7 +116,7 @@
     {
      "name": "Плач стёртого царства",
      "han": "赵亡泣",
-     "fromLevel": 18,
+     "fromLevel": 24,
      "atkMult": 1.35,
      "hpMult": 1.35,
      "defMult": 1.25
