@@ -416,20 +416,26 @@
   ],
   "warSeatMul": 2,
   "succession": {
-   "_note": "Глава секты — живой человек (sect.js → headYear). Уходит с шансом headDeath в год (+headOld после headOldYears у печати, ×warMul в войну). Тогда старейшина, выполнивший условия, выходит к «Печати главы»: шанс испытания + contested, + heirBonus у названного преемника, + rivalPenalty, если соперник — тоже старейшина.",
+   "_note": "Глава секты — живой человек (sect.js → headYear). Раз в несколько лет (nameChance) он называет преемника — самого одарённого из тебя и соучеников с ранга heirMinRank (дар = скорость пути, sect.js → myTalent/peerTalent; твой — с поправкой на положение). Глава уходит с шансом headDeath в год (+headOld после headOldYears, ×warMul в войну). Тогда к «Печати главы» выходит названный преемник (с личного ученика, нужна ступень главы) или старейшина, выполнивший все условия. Шанс: + contested, + heirBonus преемнику, + rivalPenalty, + perTalent × (дар − 1). Сам глава назначает преемником кого угодно: родню на Пути, учеников (disciples), соучеников; родня заметно слабее лучшего ученика (< nepotism × дар) — положение −nepotismStanding.",
    "headDeath": 0.015,
    "headOld": 0.03,
    "headOldYears": 80,
    "warMul": 2.5,
    "startTenure": 60,
-   "heirChance": 0.04,
-   "heirStanding": 80,
+   "heirStanding": 40,
    "heirBonus": 0.25,
    "contested": -0.15,
    "rivalPenalty": -0.1,
    "rivalHeadStanding": 8,
    "headRep": 15,
-   "vacantYears": 3
+   "vacantYears": 3,
+   "heirMinRank": 4,
+   "nameChance": 0.025,
+   "perTalent": 0.1,
+   "disciples": 3,
+   "discipleDeath": 0.01,
+   "nepotism": 0.7,
+   "nepotismStanding": 10
   }
  }
 }

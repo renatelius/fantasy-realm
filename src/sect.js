@@ -66,6 +66,133 @@ export function joinSect(data, s, id, rank = 1, rng = Math.random, quiet = false
 // ───── глава секты и преемство ─────
 const SUCC = data => cfg(data).succession || {};
 const topRank = data => ranks(data).length - 1;
+// Дар (талант) — скорость пути: корень × душа × тело × эпоха × край (game.js → pathMult). Обычный — около 1.
+const TALENT_WORDS = [[0.7, "посредственный"], [1.1, "обычный"], [1.6, "способный"], [2.4, "одарённый"], [Infinity, "редкий дар"]];
+export const talentWord = v => TALENT_WORDS.find(([x]) => v < x)[1];
+const hashU = str => { let h = 2166136261; for (const ch of String(str)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 10000) / 10000; };
+const rollTalent = u => Math.round((0.55 + u * u * 2.4) * 100) / 100;
+export function peerTalent(p) { if (p.talent == null) p.talent = rollTalent(hashU(p.name + "dao")); return p.talent; }
+export function myTalent(data, s) { try { return G.pathMult(data, s) || 0.5; } catch (e) { return 1; } }
+export function kinTalent(data, s, c) { try { return G.pathMult(data, L.childState(data, s, c), c.pathId || "qi") || 0.5; } catch (e) { return 1; } }
+// Годишься ли ты в главы, когда печать свободна: названный преемник — с ранга heirMinRank (дар важнее выслуги),
+// остальные — старейшина, выполнивший все условия ранга главы. Ступень главы нужна всем.
+function headEligible(data, s) {
+  const sc = s.life?.sect, R = ranks(data), top = topRank(data);
+  if (!sc || sc.lay || G.maxTier(data, s) < R[top].tier) return false;
+  if (sc.heirApparent) return sc.rank >= (SUCC(data).heirMinRank ?? 3);
+  return sc.rank === top - 1 && !baseBlock(data, s);
+}
+// Кого глава назовёт преемником: самого одарённого из тебя и соучеников с ранга heirMinRank. Твой дар весит
+// с поправкой на положение в секте (×0.6 при 0, ×1.0 при 50, ×1.4 при 100).
+function nameHeir(data, s, hd) {
+  const sc = s.life.sect, C = SUCC(data), min = C.heirMinRank ?? 3;
+  const st = sc.standing ?? 50;
+  const me = sc.rank >= min && !sc.lay && st >= (C.heirStanding ?? 40) ? myTalent(data, s) * (0.6 + st / 125) : 0;
+  const peer = (sc.peers || []).filter(p => p.alive && p.rank >= min).map(p => ({ p, v: peerTalent(p) })).sort((a, b) => b.v - a.v)[0];
+  if (me > 0 && (!peer || me >= peer.v)) {
+    if (sc.heirApparent) return;
+    sc.heirApparent = true; sc.headHeir = null;
+    F.famNote(data, s, null, L.gtext(`Глава ${hd.name} при всём совете назвал(а) тебя преемником: «${talentWord(myTalent(data, s))} дар не держат во внешнем дворе». Старейшины кланялись — кто искренне, кто нет.`, hd.gender), "rank", "sect");
+  } else if (peer && sc.headHeir !== peer.p.name) {
+    const was = sc.heirApparent, fem = peer.p.gender === "f";
+    const rel = peer.p.kind === "friend" ? (fem ? "твою подругу" : "твоего друга") : (fem ? "твою соперницу" : "твоего соперника");
+    sc.heirApparent = false; sc.headHeir = peer.p.name;
+    L.logLine(s, L.gtext(`Глава ${hd.name} назвал(а) преемником ${rel} ${peer.p.name}: дар — ${talentWord(peer.v)}.`, hd.gender) + (was ? " Тебя больше не зовут преемником." : ""), "sect");
+  }
+}
+// Печать в твоих руках.
+function takeSeal(data, s, rng, text) {
+  const sc = s.life.sect, R = ranks(data), top = topRank(data);
+  sc.rank = top; sc.merit = Math.max(sc.merit || 0, R[top].merit); sc.seatFor = null; sc.vacantAt = null; sc.heirApparent = false; sc.headHeir = null; sc.successor = null;
+  sc.head = { self: true, name: s.life.name, gender: s.life.gender, since: s.life.age };
+  if (sc.master?.alive) sc.master = { ...sc.master, retired: true };
+  ensureDisciples(data, s, rng);
+  F.famNote(data, s, null, text, "rank", "sect");
+  CL.applyEffects(data, s, { rep: SUCC(data).headRep ?? 15 });
+}
+// ───── ты — глава: ученики и преемник ─────
+function newDisciple(data, s, rng) { const p = person(data, s, rng, { kind: "disciple", age0: s.life.age }); p.talent = rollTalent(rng()); return p; }
+function ensureDisciples(data, s, rng) {
+  const sc = s.life.sect;
+  sc.disciples = (sc.disciples || []).filter(d => d.alive);
+  while (sc.disciples.length < (SUCC(data).disciples ?? 3)) sc.disciples.push(newDisciple(data, s, rng));
+}
+// Родня по роли: дети → внуки → правнуки; братья/сёстры → племянники → внучатые.
+function kinNodes(s) {
+  const L0 = s.life, out = [], NX = { child: "grand", grand: "great", sib: "nephew", nephew: "gnephew" };
+  const add = (n, role) => { out.push({ node: n, role }); const r = NX[role]; if (r) for (const k of n.kids || []) add(k, r); };
+  for (const c of L0.children || []) add(c, "child");
+  for (const x of L0.household?.siblings || []) if (L0.age - x.born >= 0) add(x, "sib");
+  return out;
+}
+// Кого можно назвать преемником: кого угодно — родню на Пути (её путь секта учит), учеников, соучеников.
+export function successorCandidates(data, s) {
+  const sc = s.life?.sect, sd = sectDef(data, s); if (!sc?.head?.self) return [];
+  const ok = n => n.alive && n.awakened && (!sd?.paths || sd.paths.includes(n.pathId || "qi")) && !(n.sect && n.sect !== sc.id);
+  const kin = kinNodes(s).filter(x => ok(x.node)).map(x => ({ kind: "kin", ref: x.node, name: x.node.name, gender: x.node.gender, who: L.kinWord(x.node, x.role), talent: kinTalent(data, s, x.node) }));
+  const dis = (sc.disciples || []).filter(p => p.alive).map(p => ({ kind: "disciple", ref: p, name: p.name, gender: p.gender, who: p.gender === "f" ? "ученица" : "ученик", talent: p.talent }));
+  const peers = (sc.peers || []).filter(p => p.alive).map(p => ({ kind: "peer", ref: p, name: p.name, gender: p.gender,
+    who: p.kind === "friend" ? (p.gender === "f" ? "подруга" : "друг") : (p.gender === "f" ? "соперница" : "соперник"), talent: peerTalent(p) }));
+  return [...kin, ...dis, ...peers].map((c, i) => ({ ...c, i, word: talentWord(c.talent), cur: sc.successor?.name === c.name }));
+}
+export function appointSuccessor(data, s, i) {
+  const sc = s.life?.sect, list = successorCandidates(data, s), c = list[i];
+  if (!c) return { ok: false, msg: "Такого кандидата нет." };
+  for (const x of kinNodes(s)) if (x.node.sectSuccessor) delete x.node.sectSuccessor;
+  if (c.kind === "kin") { c.ref.sectSuccessor = true; if (!c.ref.sect) c.ref.sect = sc.id; }
+  sc.successor = { name: c.name, gender: c.gender, kind: c.kind, who: c.who, talent: c.talent };
+  const best = Math.max(0, ...list.filter(x => x.kind !== "kin").map(x => x.talent));
+  let msg = L.gtext(`Ты назвал(а) преемником: ${c.who} ${c.name}, дар — ${c.word}.`, s.life.gender);
+  if (c.kind === "kin" && c.talent < best * (SUCC(data).nepotism ?? 0.7)) {
+    sc.standing = clamp((sc.standing ?? 50) - (SUCC(data).nepotismStanding ?? 10), 0, 100);
+    msg += " Старейшины промолчали, но запомнили: печать уходит по крови, а не по дару.";
+  } else if (c.talent >= best) { sc.standing = clamp((sc.standing ?? 50) + 3, 0, 100); msg += " Совет кивнул: дар виден всем."; }
+  F.famNote(data, s, c.kind === "kin" ? c.ref : null, msg, "rank", "sect");
+  return { ok: true, msg };
+}
+// Авторежим: самый одарённый, родне — небольшая фора.
+export function autoAppoint(data, s) {
+  const list = successorCandidates(data, s); if (!list.length) return;
+  const best = list.reduce((b, c) => (c.talent * (c.kind === "kin" ? 1.15 : 1) > b.talent * (b.kind === "kin" ? 1.15 : 1) ? c : b), list[0]);
+  if (s.life.sect.successor?.name !== best.name) appointSuccessor(data, s, best.i);
+}
+function headSelfYear(data, s, rng) {
+  const sc = s.life.sect, C = SUCC(data);
+  for (const d of sc.disciples || []) if (d.alive && rng() < (C.discipleDeath ?? 0.01)) {
+    d.alive = false; L.logLine(s, `${d.gender === "f" ? "Твоя ученица" : "Твой ученик"} ${d.name} погиб${d.gender === "f" ? "ла" : ""} в странствии.`, "sect");
+  }
+  if (sc.successor && !successorCandidates(data, s).some(c => c.name === sc.successor.name)) {
+    L.logLine(s, L.gtext(`${sc.successor.name} больше не может принять печать. Преемника нужно назвать заново.`, s.life.gender), "sect");
+    sc.successor = null;
+  }
+  ensureDisciples(data, s, rng);
+  if (!sc.successor && s.settings?.autoPlay) autoAppoint(data, s);
+}
+// Кому уходит печать после твоей смерти: названному преемнику, иначе — самому одарённому не из родни (решает совет).
+export function deathSuccession(data, s) {
+  const sc = s.life?.sect; if (!sc?.head?.self) return null;
+  const list = successorCandidates(data, s);
+  let c = sc.successor ? list.find(x => x.name === sc.successor.name) : null;
+  const will = !!c;
+  if (!c) c = list.filter(x => x.kind !== "kin").sort((a, b) => b.talent - a.talent)[0] || null;
+  if (!c) return { sectId: sc.id, name: null, will: false };
+  return { sectId: sc.id, name: c.name, gender: c.gender, kind: c.kind, who: c.who, talent: c.talent, word: c.word, will };
+}
+// Наследник из той же секты: названный преемник принимает печать (с Золотого ядра; до того правит регент),
+// остальным главой становится тот, кому печать ушла.
+export function heirSeal(data, s, prev, child, rng = Math.random) {
+  const sc = s.life?.sect, su = prev?.sectSucc; if (!sc || !su?.name || su.sectId !== sc.id) return;
+  const R = ranks(data), top = topRank(data), sd = sectDef(data, s);
+  if (child.sectSuccessor) {
+    const t = L.gtext(`${prev.name} завещал(а) печать главы тебе`, prev.gender);
+    if (G.maxTier(data, s) >= R[top].tier) takeSeal(data, s, rng, `${t}: теперь ты ${R[top].name}（${R[top].han}）секты ${sd.name}.`);
+    else {
+      sc.rank = Math.max(sc.rank, SUCC(data).heirMinRank ?? 3); sc.heirApparent = true;
+      sc.head = { ...newHead(data, s, rng, true), regent: true };
+      L.logLine(s, `${t}, но совет не отдаст её, пока ты не войдёшь в «${G.realmForTier(data, s, R[top].tier).name}». До тех пор правит регент ${sc.head.name}.`, "sect");
+    }
+  } else sc.head = { name: su.name, gender: su.gender, since: s.life.age };
+}
 function newHead(data, s, rng, fresh = false) {
   const h = person(data, s, rng); h.since = s.life.age - (fresh ? 0 : Math.floor(rng() * (SUCC(data).startTenure ?? 60)));
   return h;
@@ -74,7 +201,8 @@ export function ensureHead(data, s, rng = Math.random) { const sc = s.life?.sect
 // Печать уходит другому: соперник-старейшина, друг-старейшина или кто-то из круга.
 function appointOther(data, s, rng, prefix = "") {
   const L0 = s.life, sc = L0.sect, top = topRank(data), sd = sectDef(data, s);
-  const cand = (sc.peers || []).filter(p => p.alive && p.rank === top - 1).sort((a, b) => (b.kind === "rival") - (a.kind === "rival"))[0];
+  const named = sc.headHeir && (sc.peers || []).find(p => p.alive && p.name === sc.headHeir);
+  const cand = named || (sc.peers || []).filter(p => p.alive && p.rank === top - 1).sort((a, b) => peerTalent(b) - peerTalent(a))[0];
   let txt;
   if (cand) {
     const f = cand.gender === "f";
@@ -83,17 +211,23 @@ function appointOther(data, s, rng, prefix = "") {
     else { sc.standing = clamp((sc.standing ?? 50) + 5, 0, 100); txt = `Печать главы принял(а) ${f ? "твоя подруга" : "твой друг"} ${cand.name}: в совете у тебя теперь есть рука.`; }
     txt = L.gtext(txt, cand.gender);
   } else { sc.head = newHead(data, s, rng, true); txt = L.gtext(`Новым главой стал(а) ${sc.head.name} из старейшин.`, sc.head.gender); }
-  sc.seatFor = null; sc.heirApparent = false; sc.vacantAt = null;
+  sc.seatFor = null; sc.heirApparent = false; sc.vacantAt = null; sc.headHeir = null;
   L.logLine(s, `${prefix}${prefix ? " " : ""}${txt}`, "sect");
 }
 // Глава уходит: если ты старейшина и годишься — печать ждёт тебя (испытание sect_trial_N), иначе её берёт другой.
-function succession(data, s, rng) {
+function succession(data, s, rng, how0 = null) {
   const L0 = s.life, sc = L0.sect, sd = sectDef(data, s), old = sc.head, top = topRank(data);
-  const how = sc.war ? "пал(а) в войне сект" : rng() < 0.3 ? "ушёл(ла) в вечный затвор" : "умер(ла)";
+  const how = how0 || (sc.war ? "пал(а) в войне сект" : rng() < 0.3 ? "ушёл(ла) в вечный затвор" : "умер(ла)");
   const pre = L.gtext(`Глава ${old.name} ${how}.`, old.gender);
   // Ушёл глава из твоих соучеников — его больше нет и среди них.
   if (old.peer) for (const p of sc.peers || []) if (p.alive && p.name === old.name && p.rank === top) { p.alive = false; p.diedAt = L0.age; }
-  if (sc.rank === top - 1 && !baseBlock(data, s)) {
+  // Регент ушёл раньше, чем завещанный преемник дорос до печати: совет ставит нового регента, завещание в силе.
+  if (old.regent && sc.heirApparent && !headEligible(data, s)) {
+    sc.head = { ...newHead(data, s, rng, true), regent: true };
+    L.logLine(s, `${pre} Совет поставил нового регента — ${sc.head.name}. Печать по-прежнему ждёт тебя.`, "sect");
+    return;
+  }
+  if (headEligible(data, s)) {
     sc.head = { ...old, gone: true }; sc.seatFor = top; sc.vacantAt = L0.age; sc.lastTrial = -99;
     F.famNote(data, s, null, `${pre} Печать главы лежит на алтаре — совет старейшин назвал и твоё имя.${sc.heirApparent ? " Ты — названный преемник." : ""}`, "rank", "sect");
   } else appointOther(data, s, rng, pre);
@@ -104,11 +238,10 @@ function headYear(data, s, rng) {
   const hd = sc.head;
   if (hd.self) return;
   if (hd.gone) { if (sc.seatFor !== top || L0.age - (sc.vacantAt ?? L0.age) > (C.vacantYears ?? 3)) appointOther(data, s, rng, "Печать главы не могла ждать дольше."); return; }
-  // Названный преемник: старейшина в чести.
-  if (!sc.heirApparent && sc.rank === top - 1 && (sc.standing ?? 50) >= (C.heirStanding ?? 80) && rng() < (C.heirChance ?? 0.04)) {
-    sc.heirApparent = true;
-    F.famNote(data, s, null, L.gtext(`Глава ${hd.name} при всём совете назвал(а) тебя преемником. Старейшины кланялись — кто искренне, кто нет.`, hd.gender), "rank", "sect");
-  }
+  // Регент уступает печать, как только завещанный преемник дорос до ступени главы.
+  if (hd.regent && sc.heirApparent && headEligible(data, s)) { succession(data, s, rng, "сложил(а) регентство"); return; }
+  // Глава выбирает преемника по дару (nameHeir) — раз в несколько лет пересматривает.
+  if (!hd.regent && sc.rank >= (C.heirMinRank ?? 3) && rng() < (C.nameChance ?? 0.05)) nameHeir(data, s, hd);
   const tenure = L0.age - (hd.since ?? L0.age);
   const p = ((C.headDeath ?? 0.015) + (tenure > (C.headOldYears ?? 80) ? C.headOld ?? 0.03 : 0)) * (sc.war ? C.warMul ?? 2 : 1);
   if (rng() < p) succession(data, s, rng);
@@ -168,32 +301,31 @@ function baseBlock(data, s) {
   return null;
 }
 export function trialDue(data, s) {
-  const sc = s.life?.sect; if (!sc || promoteBlock(data, s)) return null;
+  const sc = s.life?.sect; if (!sc) return null;
+  const top = topRank(data);
+  if (sc.seatFor === top) return headEligible(data, s) && by(data.events.events, `sect_trial_${top}`) ? `sect_trial_${top}` : null;
+  if (promoteBlock(data, s)) return null;
   if (s.life.age - (sc.lastTrial ?? -99) < (cfg(data).trial?.gapYears ?? 3)) return null;
   const id = `sect_trial_${sc.rank + 1}`;
   return by(data.events.events, id) ? id : null;
 }
 export function trialChance(data, s) {
-  const T = cfg(data).trial || {}, sc = s.life.sect, nr = nextRank(data, s), C = SUCC(data);
-  // Печать главы: названный преемник — легче, соперник в совете — тяжелее.
-  const succ = nr?.succession ? (C.contested ?? -0.15) + (sc.heirApparent ? C.heirBonus ?? 0.25 : 0) + (highRival(sc) ? C.rivalPenalty ?? -0.1 : 0) : 0;
-  return clamp((T.base ?? 0.6) + (T.perDao ?? 0.03) * G.daoHeartEff(data, s) + (T.perTier ?? 0.15) * (G.maxTier(data, s) - (nr?.tier ?? 0)) + ((sc.standing ?? 50) - 50) / 200 + succ, T.min ?? 0.2, T.max ?? 0.95);
+  const T = cfg(data).trial || {}, sc = s.life.sect, C = SUCC(data), R = ranks(data), top = topRank(data);
+  const forHead = sc.seatFor === top, tgt = forHead ? R[top] : nextRank(data, s);
+  // Печать главы: спор (−), названный преемник (+), соперник в круге (−), дар (+ за каждую единицу сверх обычного).
+  const succ = forHead ? (C.contested ?? -0.15) + (sc.heirApparent ? C.heirBonus ?? 0.25 : 0) + (highRival(sc) ? C.rivalPenalty ?? -0.1 : 0) + (C.perTalent ?? 0.1) * (myTalent(data, s) - 1) : 0;
+  return clamp((T.base ?? 0.6) + (T.perDao ?? 0.03) * G.daoHeartEff(data, s) + (T.perTier ?? 0.15) * (G.maxTier(data, s) - (tgt?.tier ?? 0)) + ((sc.standing ?? 50) - 50) / 200 + succ, T.min ?? 0.2, T.max ?? 0.95);
 }
 function doTrial(data, s, rng) {
   const sc = s.life.sect, R = ranks(data), sd = sectDef(data, s);
   sc.lastTrial = s.life.age;
-  if (promoteBlock(data, s)) return;
-  const forHead = !!R[sc.rank + 1]?.succession;
-  if (forHead) {
-    if (rng() < trialChance(data, s)) {
-      sc.rank += 1; sc.seatFor = null; sc.vacantAt = null; sc.heirApparent = false;
-      sc.head = { self: true, name: s.life.name, gender: s.life.gender, since: s.life.age };
-      if (sc.master?.alive) sc.master = { ...sc.master, retired: true };
-      F.famNote(data, s, null, `Печать главы в твоих руках: теперь ты ${R[sc.rank].name}（${R[sc.rank].han}）секты ${sd.name}. Старейшины поклонились — и каждый запомнил, как именно.`, "rank", "sect");
-      CL.applyEffects(data, s, { rep: SUCC(data).headRep ?? 15 });
-    } else appointOther(data, s, rng, "Совет старейшин не отдал тебе печать.");
+  if (sc.seatFor === topRank(data)) {
+    if (!headEligible(data, s)) { appointOther(data, s, rng, "Совет решил, что ты не готов(а) к печати."); return; }
+    if (rng() < trialChance(data, s)) takeSeal(data, s, rng, `Печать главы в твоих руках: теперь ты ${R[topRank(data)].name}（${R[topRank(data)].han}）секты ${sd.name}. Старейшины поклонились — и каждый запомнил, как именно.`);
+    else appointOther(data, s, rng, "Совет старейшин не отдал тебе печать.");
     return;
   }
+  if (promoteBlock(data, s)) return;
   if (rng() < trialChance(data, s)) {
     sc.rank += 1; sc.seatFor = null;
     if (sc.rank >= 4) sc.master = sc.master?.alive ? { ...sc.master, retired: true } : sc.master;
@@ -259,6 +391,7 @@ export function sectYear(data, s, rng = Math.random) {
   // Глава секты правит, стареет и уходит — тогда и решается, кому печать.
   headYear(data, s, rng);
   if (!L0.sect) return;
+  if (sc.head?.self) headSelfYear(data, s, rng);
   // Место в круге старейшин освобождается редко.
   const nr = nextRank(data, s);
   if (nr?.seatChance && sc.seatFor !== sc.rank + 1 && !baseBlock(data, s) && rng() < nr.seatChance * (sc.war ? C.warSeatMul ?? 2 : 1)) {
@@ -361,7 +494,7 @@ export function applyEffects(data, s, ef = {}, rng = Math.random) {
   if (ef.masterLost && m?.alive) { m.alive = false; m.diedAt = L0.age; m.disgraced = true; L.logLine(s, `${m.name} изгнан${m.gender === "f" ? "а" : ""} из секты. Учителя тебе дадут нового.`, "sect"); }
   if (ef.peerFriendLost) { const f = friend(sc); if (f) { f.kind = "rival"; L.logLine(s, `${f.name} больше не здоровается с тобой.`, "sect"); } }
   if (ef.warEnd && sc.war) { const foe = G.sectById(data, sc.war.with); sc.war = null; L.logLine(s, `С ${foe?.name} заключено перемирие.`, "sect"); }
-  if (ef.sectHeir && !sc.heirApparent && sc.rank === topRank(data) - 1) { sc.heirApparent = true; F.famNote(data, s, null, `Глава ${sc.head?.name || ""} назвал(а) тебя преемником.`.replace("назвал(а)", sc.head?.gender === "f" ? "назвала" : "назвал"), "rank", "sect"); }
+  if (ef.sectHeir && !sc.heirApparent && !sc.head?.self && sc.rank >= (SUCC(data).heirMinRank ?? 3)) { sc.headHeir = null; sc.heirApparent = true; F.famNote(data, s, null, `Глава ${sc.head?.name || ""} назвал(а) тебя преемником.`.replace("назвал(а)", sc.head?.gender === "f" ? "назвала" : "назвал"), "rank", "sect"); }
   if (ef.sectHeirLost && sc.heirApparent) { sc.heirApparent = false; L.logLine(s, "Совет больше не зовёт тебя преемником.", "sect"); }
   if (ef.sectYield && sc.seatFor === topRank(data)) { appointOther(data, s, rng, "Ты уступил(а) печать."); return; }
   if (ef.sectTrial) doTrial(data, s, rng);

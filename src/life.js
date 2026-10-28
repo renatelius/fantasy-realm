@@ -134,7 +134,7 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
       // Ребёнок жил своей жизнью, пока ты играл(а) за родителя: путь, ступень, секта — его.
       if (child.awakened && child.pathId) { s.pathId = child.pathId; s.realmIndex = child.realmIndex || 0; s.layer = child.layer || 1; s.qi = Math.floor(child.qi || 0); }
       else s.pathId = bestPath(data, s);
-      if (child.sect) S.heirSect(data, s, child.sect, rng);
+      if (child.sect) { S.heirSect(data, s, child.sect, rng); S.heirSeal(data, s, prev, child, rng); }
     }
     if (child.spouse) L.spouse = { ...child.spouse };
     L.children = (child.kids || []).map(stripAge);
@@ -475,7 +475,7 @@ export function die(data, s, cause, rng = Math.random) {
     spouseName: L.spouse ? L.spouse.name : null, spouseGender: L.spouse?.gender || null, children: kids,
     jobName: jobById(data, L.jobId)?.name || "", clanKey: L.clanKey || null,
     sectName: L.sect ? G.sectById(data, L.sect.id)?.name || null : null, sectRank: L.sect ? G.sectRankName(s, data) : null,
-    kinTree: snapKin(s),
+    kinTree: snapKin(s), sectSucc: S.deathSuccession(data, s),
     epitaph: epitaph(data, s), words: finalWords(data, s, rng),
     familyTechs: [...new Set([...(s.familyTechs || []), ...s.ownedTechniques])],
   };
@@ -557,6 +557,7 @@ export function childSummary(data, s, c) {
   if (c.awakened && c.rootId) bits.push(rootText(data, c));
   if (c.awakened && c.pathId) { const cs = childState(data, s, c); bits.push(`${G.pathOf(data, cs).name}: ${G.realmsOf(data, cs)[c.realmIndex || 0].name} ${c.layer || 1}`); }
   if (c.sect) bits.push(G.sectById(data, c.sect)?.name);
+  if (c.sectSuccessor) bits.push("названный преемник главы");
   if (c.spouse) bits.push(c.gender === "m" ? "женат" : "замужем");
   const k = (c.kids || []).filter(x => x.alive).length;
   if (k) bits.push(`${k} ${k === 1 ? "ребёнок" : k < 5 ? "ребёнка" : "детей"}`);

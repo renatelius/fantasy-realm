@@ -466,9 +466,16 @@ function renderSect() {
   const rules = (sd.rules || []).map(id => data.sects.ruleDefs?.[id]).filter(Boolean).map(r => `<span class="fx" title="${r.text}">${r.name}</span>`).join("");
   const names = ids => (ids || []).map(id => G.sectById(data, id)?.name).filter(Boolean).join(", ") || "—";
   const pc = S.pillCost(data, s), dis = !!l.pending ? "disabled" : "";
+  const hd = sc.head, cands = hd?.self ? S.successorCandidates(data, s) : [];
+  const succHtml = hd?.self ? `<div class="lbl" style="margin-top:10px">Преемник</div>
+    <div class="dim small">${sc.successor ? `Назван: <b>${sc.successor.name}</b> (${sc.successor.who}).` : "Пока никто не назван — если умрёшь, печать отдаст совет: самому одарённому не из родни."} Назначить можно кого угодно; обычно печать отдают по дару. Родню заметно слабее лучшего ученика совет не простит.</div>
+    ${cands.map(c => `<div class="row2"><span>${c.who}</span><b>${c.name}<small>дар: ${c.word}${c.cur ? " · названный преемник" : ""}</small>${c.cur ? "" : `<button data-succ="${c.i}" ${dis || s.settings.autoPlay ? "disabled" : ""}>Назначить</button>`}</b></div>`).join("")}`
+    : sc.heirApparent ? `<div class="note">${hd?.regent ? `Печать завещана тебе. Пока ты не войдёшь в «${G.realmForTier(data, s, R[R.length - 1].tier).name}», правит регент ${hd.name}.` : `Глава назвал тебя преемником. Когда печать освободится, она ждёт тебя (нужна ступень «${G.realmForTier(data, s, R[R.length - 1].tier).name}»).`}</div>`
+    : sc.headHeir ? `<div class="dim small" style="margin-top:4px">Преемник главы — ${sc.headHeir}.</div>` : "";
   setHTML(el, `<h2>${sd.name} <small>${sd.han} · ${G.sectRankName(s, data)}${sc.lay ? " (мирской)" : ""}</small></h2>
     <div class="dim small">${sd.desc || ""}</div>
     <div class="rankchain">${chain}</div>${need}
+    <div class="dim small">Твой дар: ${S.talentWord(S.myTalent(data, s))} — по нему глава выбирает преемника.</div>
     <div class="fammet">
       <div>贡献<b>${Math.floor(sc.contrib)}</b><small>+${S.contribYear(data, s)} в год${l.focusId === "sect" ? " (служба)" : ""}</small></div>
       <div>Заслуги<b>${Math.floor(sc.merit)}</b><small>для рангов, не тратятся</small></div>
@@ -476,7 +483,8 @@ function renderSect() {
     </div>
     ${m ? `<div class="row2${m.alive ? "" : " dead"}"><span>${m.alive ? "Учитель" : "Учитель †"}</span><b>${m.title} ${m.name}${m.alive && !m.retired ? `<small>доверие ${Math.round(m.rel ?? 50)}</small>` : m.retired ? `<small>${g("теперь ты сам учишь", "теперь ты сама учишь")}</small>` : ""}</b></div>` : ""}
     ${sc.head ? `<div class="row2${sc.head.gone ? " dead" : ""}"><span>Глава секты</span><b>${sc.head.self ? g("ты сам", "ты сама") : sc.head.gone ? `${sc.head.name} †<small>печать ждёт преемника</small>` : `${sc.head.name}<small>${yw(Math.max(0, l.age - (sc.head.since ?? l.age)))} у печати${sc.head.peer === "rival" ? (sc.head.gender === "f" ? " · твоя соперница" : " · твой соперник") : sc.head.peer === "friend" ? (sc.head.gender === "f" ? " · твоя подруга" : " · твой друг") : ""}${sc.heirApparent ? " · ты — названный преемник" : ""}</small>`}</b></div>` : ""}
-    ${frd.map(p => `<div class="row2${p.alive ? "" : " dead"}"><span>${p.kind === "friend" ? "Друг" : "Соперник"}</span><b>${p.name}${p.alive ? ` · ${R[p.rank]?.name}` : " †"}</b></div>`).join("")}
+    ${frd.map(p => `<div class="row2${p.alive ? "" : " dead"}"><span>${p.kind === "friend" ? "Друг" : "Соперник"}</span><b>${p.name}${p.alive ? ` · ${R[p.rank]?.name}<small>дар: ${S.talentWord(S.peerTalent(p))}${sc.headHeir === p.name ? " · преемник главы" : ""}</small>` : " †"}</b></div>`).join("")}
+    ${succHtml}
     <div class="row2"><span>Союзники</span><b>${names(sd.allies)}</b></div>
     <div class="row2"><span>Враги</span><b>${names(sd.enemies)}</b></div>
     ${sc.war ? `<div class="note" style="border-color:var(--red);background:#e06a6a14">Война с ${G.sectById(data, sc.war.with)?.name} — ещё ~${yw(Math.max(1, sc.war.until - l.age))}. Беды ×${data.sects.config?.warHazard ?? 1.2}, вклад ×${data.sects.config?.warContribMul ?? 1.5}.</div>` : ""}
@@ -589,6 +597,7 @@ function renderDeath() {
     <p class="dim small">${R.longer != null ? `Из родившихся в этом краю дольше живут около ${String(R.longer).replace(".", ",")}%. ` : ""}${R.diff >= 0 ? `Это на ${yw(R.diff)} больше` : `Это на ${yw(-R.diff)} меньше`}, чем живут смертные в краю «${gx.regionName}» (${R.expect}).</p>
     ${row("Самый счастливый год", `${yw(R.happiest.age)}${R.happiest.why ? ` · ${R.happiest.why}` : ""}`)}
     ${row("Кто попрощался", R.farewell)}
+    ${gx.sectSucc?.name ? row("Печать главы", `${gx.sectSucc.name} (${gx.sectSucc.who}, дар: ${gx.sectSucc.word}) — ${gx.sectSucc.will ? "по твоей воле" : "выбрал совет"}`) : ""}
     ${row("Дар с детства", R.talent)}
     ${row("На что ушли взрослые годы", R.years.join(" · "))}
     ${R.pattern ? `<div class="pattern"><div class="lbl">Узор этой жизни</div><div class="pname serif">${R.pattern.name}</div><div class="dim small">${R.pattern.text}</div>
@@ -691,6 +700,7 @@ document.body.addEventListener("click", e => {
   if (d.sw) { const r = G.switchPath(data, s, d.sw); log(r.msg, r.ok ? "awaken" : "info"); return done(); }
   if (d.t) { const r = G.learnTechnique(data, s, d.t); log(r.msg, r.ok ? "cult" : "info"); return done(); }
   if (d.clan) { const r = d.clan === "donate" ? CL.donate(data, s) : d.clan === "scroll" ? CL.buyScroll(data, s) : CL.take(data, s); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.succ !== undefined) { const r = S.appointSuccessor(data, s, +d.succ); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.sect === "pill") { log(S.sectPill(data, s) ? "Секта выдала пилюлю за вклад." : "Не хватает 贡献.", "sect"); return done(); }
   if (d.sect === "leave") { if (confirm("Уйти из секты? Вернуться в неё будет нельзя, выученное останется.")) { S.leaveSect(data, s, "leave"); done(); } return; }
 });
