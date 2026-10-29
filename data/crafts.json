@@ -68,8 +68,8 @@
   },
   "business": {
     "_note": "Своё дело (craft.js → bizYear). Доход в год = income × lvlMul[ур.] × (1 + min(growthCap, лет × growth)) × (1 + kidBonus × детей в деле, до kidMax) × workMul в фокусе «Работа». Раз в upYears лет шанс upChance подняться на уровень. Беда (risk в год): у малого дела — закрытие, у крепкого и знаменитого — 70% уровень вниз, 30% закрытие. Продажа — cost × sellShare × lvlMul. Переходит к ребёнку-наследнику.",
-    "minAge": 18, "lvlMul": [1, 1.5, 2.1], "lvlNames": ["малое", "крепкое", "знаменитое"], "growth": 0.04, "growthCap": 0.8,
-    "kidBonus": 0.15, "kidMax": 3, "workMul": 1.2, "upYears": 12, "upChance": 0.35, "sellShare": 0.6,
+    "minAge": 18, "lvlMul": [1, 1.3, 1.65], "lvlNames": ["малое", "крепкое", "знаменитое"], "growth": 0.025, "growthCap": 0.4,
+    "kidBonus": 0.1, "kidMax": 2, "workMul": 1.15, "upYears": 15, "upChance": 0.3, "sellShare": 0.6,
     "kinds": [
       { "id": "stall_own", "name": "Своя лавка", "cost": 60, "income": 5, "risk": 0.006, "text": "Прилавок у рынка и вывеска с твоей фамилией." },
       { "id": "workshop_own", "name": "Своя мастерская", "cost": 110, "income": 7, "risk": 0.006, "need": { "mastery": 30 }, "text": "Нужен опыт в своём ремесле 30." },

@@ -32,10 +32,18 @@ function power(st) { return st.hp * 0.25 + st.atk * 3 + st.def * 2; }
 // Склонность к делу: талант с чжуачжоу, родной край, ремесло родителей. Не одна «лучшая» работа на всех,
 // а любая из близких к лучшей (в пределах 20% ценности) — выбор постоянный для этой жизни (по имени).
 const hashStr = t => { let h = 2166136261; for (const c of String(t)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+// Насколько опасность работы бьёт по этой жизни: культиватор на высокой ступени переживает то, что убьёт простого.
+function hazardWeight(data, s) {
+  const l = s.life, wl = data.world.life;
+  return l.awakened ? (wl.awakenedHazardMult ?? 0.4) * Math.pow(wl.realmHazardDecay ?? 0.7, G.maxTier(data, s)) : 1;
+}
+// Есть ли ступень выше в этом деле (карьерная лестница) — работа с перспективой ценится чуть выше.
+const hasLadder = (data, j) => data.jobs.jobs.some(x => x.need?.from?.jobs.includes(j.id));
 function jobValue(data, s, j) {
   const l = s.life, train = l.craft?.appr?.skill || null;
   const parents = [l.household?.father?.job, l.household?.mother?.job].filter(Boolean);
-  return j.stones * CR.payMul(data, s, j.id) - j.hazard * CR.hazMul(data, s, j.id) * 2000
+  return j.stones * CR.payMul(data, s, j.id) - j.hazard * CR.hazMul(data, s, j.id) * 2000 * hazardWeight(data, s)
+    + (hasLadder(data, j) && CR.jobXp(s, j.id) < 45 ? 1.5 : 0)     // перспектива: дорасти до старшего
     + (l.awakened ? ((j.qiMul || 1) - 1) * 30 : 0)            // на Пути +10% ци ≈ 3 камня в год
     + (train && data.crafts?.jobSkill?.[j.id]?.[train] ? 1 : 0)  // работа качает навык, которому учимся
     + (data.crafts?.talentJobs?.[l.talentId]?.includes(j.id) ? 2 : 0)        // к чему тянуло с детства
@@ -54,6 +62,9 @@ function pickJob(data, s) {
   const near = jobs.filter(j => val(j) >= top - Math.max(1, Math.abs(top) * 0.2)).sort((a, b) => a.id < b.id ? -1 : 1);
   const want = near[hashStr(l.name + (l.generation || 1)) % near.length];
   const cur = jobs.find(j => j.id === l.jobId);
+  // Повышение в своём деле берут сразу, если оно не хуже нынешнего места.
+  const promo = jobs.filter(j => j.need?.from?.jobs.includes(l.jobId)).sort((a, b) => val(b) - val(a))[0];
+  if (promo && cur && val(promo) >= val(cur)) { L.setJob(data, s, promo.id, "self"); pickSpouseJob(data, s); return; }
   // Опытное ремесло не бросают ради малой прибавки (мастерство, craft.js).
   if (want.id !== l.jobId && (!cur || val(want) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, want.id, "self");
   pickSpouseJob(data, s);
