@@ -97,8 +97,16 @@ export function hireReq(data, job) {
   if (job.hire?.req != null) return job.hire.req;
   return Math.max(0, (job.stones - (H.reqFrom ?? 3)) * (H.reqPerStone ?? 4));
 }
+// Вершина лестницы: должность, выше которой в этом деле ничего нет.
+export const isTopRung = (data, job) => !!job?.need?.from && !data.jobs.jobs.some(x => x.need?.from?.jobs.includes(job.id));
 export function hireInfo(data, s, job) {
   const H = C(data)?.hire, L = s.life, req = hireReq(data, job);
+  // Повышение: старшее место освобождается не каждый год. Чем больше опыта сверх порога — тем раньше позовут.
+  if (H && job?.need?.from && job.id !== L.jobId && jobXp(s, job.id) < 10) {
+    const f = job.need.from, best = Math.max(0, ...f.jobs.map(id => jobXp(s, id)));
+    const chance = clamp((isTopRung(data, job) ? H.vacancyTop ?? 0.2 : H.vacancy ?? 0.35) + Math.max(0, best - f.xp) / (H.vacancyPerXp ?? 150), 0, H.vacancyMax ?? 0.85);
+    return { chance, req: f.xp, lv: best, parts: ["место старшего"], vacancy: true };
+  }
   if (!H || !job || job.id === "home" || job.id === L.jobId || req <= 0) return { chance: 1, req, lv: 0, parts: [] };
   const own = jobXp(s, job.id), sk = job.hire?.skill ? skill(s, job.hire.skill) : 0;
   const parts = [];
@@ -405,11 +413,18 @@ export function fromWhy(data, s, job) {
   if (best >= f.xp) return "";
   return `нужен опыт ${f.jobs.map(id => `«${jobById(data, id)?.name || id}»`).join(" или ")} ${f.xp} (сейчас ${Math.floor(best)})`;
 }
-// Повышение переносит часть опыта: старшина артели не начинает учеником.
+// Повышение переносит большую часть опыта (PROMO_KEEP): старшина артели не начинает учеником,
+// и новое место с более высоким жалованием не платит меньше прежнего.
+const PROMO_KEEP = 0.8;
+export function promoXp(data, s, job) {
+  const f = job?.need?.from, own = jobXp(s, job?.id); if (!f) return own;
+  return Math.max(own, Math.max(0, ...f.jobs.map(id => jobXp(s, id))) * PROMO_KEEP);
+}
+// Множитель заработка с учётом опыта, который перейдёт при повышении (для выбора и для списка работ).
+export function payMulFor(data, s, job) { return C(data) && job && job.id !== "home" ? rankOf(data, promoXp(data, s, job)).pay : 1; }
 export function promote(data, s, job) {
   const f = job?.need?.from; if (!f) return false;
-  const c = st(s), best = Math.max(0, ...f.jobs.map(id => jobXp(s, id)));
-  c.mastery[job.id] = Math.max(c.mastery[job.id] || 0, best * 0.6);
+  st(s).mastery[job.id] = promoXp(data, s, job);
   return true;
 }
 function ladderOffers(data, s) {
@@ -418,7 +433,7 @@ function ladderOffers(data, s) {
     if (!j.need?.from?.jobs.includes(L.jobId) || L.flags["offer:" + j.id] != null) continue;
     if (fromWhy(data, s, j) || !jobEligible(data, s, j)) continue;
     L.flags["offer:" + j.id] = L.age;
-    logLine(s, `Старшие зовут тебя на место «${j.name}» — ${j.stones} камн./год. Оно в списке работ.`, "family");
+    logLine(s, `Ты дорос(ла) до места «${j.name}» — ${j.stones} камн./год. Старших мест мало: просись, пока не возьмут.`, "family");
   }
 }
 

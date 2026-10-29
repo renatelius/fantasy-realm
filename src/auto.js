@@ -42,7 +42,7 @@ const hasLadder = (data, j) => data.jobs.jobs.some(x => x.need?.from?.jobs.inclu
 function jobValue(data, s, j) {
   const l = s.life, train = l.craft?.appr?.skill || null;
   const parents = [l.household?.father?.job, l.household?.mother?.job].filter(Boolean);
-  return j.stones * CR.payMul(data, s, j.id) - j.hazard * CR.hazMul(data, s, j.id) * 2000 * hazardWeight(data, s)
+  return j.stones * CR.payMulFor(data, s, j) - j.hazard * CR.hazMul(data, s, j.id) * 2000 * hazardWeight(data, s)
     + (hasLadder(data, j) && CR.jobXp(s, j.id) < 45 ? 1.5 : 0)     // перспектива: дорасти до старшего
     + (l.awakened ? ((j.qiMul || 1) - 1) * 30 : 0)            // на Пути +10% ци ≈ 3 камня в год
     + (train && data.crafts?.jobSkill?.[j.id]?.[train] ? 1 : 0)  // работа качает навык, которому учимся
@@ -63,8 +63,10 @@ function pickJob(data, s) {
   const want = near[hashStr(l.name + (l.generation || 1)) % near.length];
   const cur = jobs.find(j => j.id === l.jobId);
   // Повышение в своём деле берут сразу, если оно не хуже нынешнего места.
-  const promo = jobs.filter(j => j.need?.from?.jobs.includes(l.jobId)).sort((a, b) => val(b) - val(a))[0];
-  if (promo && cur && val(promo) >= val(cur)) { L.setJob(data, s, promo.id, "self"); pickSpouseJob(data, s); return; }
+  // (шанс на повышение — «место освободилось» — не отсекает: просятся каждый год, пока не возьмут)
+  const promo = data.jobs.jobs.filter(j => j.need?.from?.jobs.includes(l.jobId) && L.jobEligible(data, s, j, "self") && !CR.refusedNow(s, j.id))
+    .sort((a, b) => jobValue(data, s, b) - jobValue(data, s, a))[0];
+  if (promo && cur && jobValue(data, s, promo) >= jobValue(data, s, cur)) { const r = L.setJob(data, s, promo.id, "self"); if (r.ok) { pickSpouseJob(data, s); return; } }
   // Опытное ремесло не бросают ради малой прибавки (мастерство, craft.js).
   if (want.id !== l.jobId && (!cur || val(want) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, want.id, "self");
   pickSpouseJob(data, s);
