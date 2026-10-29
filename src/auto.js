@@ -16,6 +16,7 @@ import * as C from "./combat.js";
 import * as L from "./life.js";
 import * as S from "./sect.js";
 import * as CL from "./clan.js";
+import * as CR from "./craft.js";
 
 const TYPE_VALUE = {
   neigong: t => (t.qiMultiplier || 1) * 10,
@@ -31,8 +32,11 @@ function power(st) { return st.hp * 0.25 + st.atk * 3 + st.def * 2; }
 function pickJob(data, s) {
   const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self"));
   if (!jobs.length) return;
-  const best = jobs.reduce((a, b) => (b.stones - b.hazard * 2000 > a.stones - a.hazard * 2000 ? b : a));
-  if (best.id !== s.life.jobId) L.setJob(data, s, best.id, "self");
+  // Мастерство (craft.js): опытное ремесло платит больше — менять его стоит только ради заметной прибавки.
+  const val = j => j.stones * CR.payMul(data, s, j.id) - j.hazard * CR.hazMul(data, s, j.id) * 2000;
+  const best = jobs.reduce((a, b) => (val(b) > val(a) ? b : a));
+  const cur = jobs.find(j => j.id === s.life.jobId);
+  if (best.id !== s.life.jobId && (!cur || val(best) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, best.id, "self");
   if (s.life.spouse) {
     const sj = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "spouse"));
     const b2 = sj.reduce((a, b) => (b.stones > a.stones ? b : a), sj[0]);
@@ -54,8 +58,13 @@ function pickFocus(data, s) {
 }
 
 function pickChildren(data, s) {
-  s.life.children.forEach((c, i) => {
-    if (c.alive && L.childAge(s, c) >= 6 && c.task !== "help") L.setChildTask(data, s, i, "help");
+  // Старший живой ребёнок — в мастерскую, если родителю есть чему учить; остальные помогают по дому.
+  const l = s.life, teach = l.jobId && l.jobId !== "home" && CR.jobXp(s, l.jobId) >= 20;
+  const eldest = l.children.findIndex(c => c.alive && L.childAge(s, c) >= 6);
+  l.children.forEach((c, i) => {
+    if (!c.alive || L.childAge(s, c) < 6) return;
+    const want = teach && i === eldest ? "workshop" : "help";
+    if (c.task !== want) L.setChildTask(data, s, i, want);
   });
 }
 
@@ -169,6 +178,7 @@ export function autoYear(data, s, rng = Math.random) {
   flushAdventures(s, say);
   pickJob(data, s); pickChildren(data, s); pickFocus(data, s);
   CL.autoClan(data, s, rng);
+  CR.autoCraft(data, s, rng);
   if ((l.sect?.standing ?? 100) < 35) S.giveAlms(data, s);
   if (!l.awakened) return;
   pickPath(data, s, say);

@@ -6,7 +6,7 @@ import * as G from "../src/game.js";
 import * as L from "../src/life.js";
 import * as A from "../src/auto.js";
 
-const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin"];
+const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts"];
 const data = Object.fromEntries(names.map(n => [n, JSON.parse(fs.readFileSync(new URL(`../data/${n}.json`, import.meta.url), "utf8"))]));
 L.setYearHook((d, s, r) => A.autoYear(d, s, r));
 const N = +process.argv[2] || 200;

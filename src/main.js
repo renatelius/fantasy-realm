@@ -6,6 +6,7 @@ import * as A from "./auto.js";
 import * as KF from "./family.js";
 import * as CL from "./clan.js";
 import * as S from "./sect.js";
+import * as CR from "./craft.js";
 import { drawScene, drawAvatar, drawYanMap } from "./pixel.js";
 
 const $ = id => document.getElementById(id);
@@ -17,7 +18,7 @@ const n01 = v => Math.max(0, Math.min(100, v));
 const pct = (a, b) => (a / b * 100);
 const yw = n => L.yearsW(n), stw = n => L.stonesW(n);
 
-const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin"];
+const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts"];
 const data = Object.fromEntries(await Promise.all(names.map(async n => [n, await (await fetch(`data/${n}.json`)).json()])));
 const by = (arr, id) => arr.find(x => x.id === id);
 const GRADE = Object.fromEntries(data.techniques.grades.map(g => [g.id, g]));
@@ -377,6 +378,45 @@ function renderFocus() {
     ${s.settings.autoPlay && !small ? `<div class="note">Авторежим: фокус, ремесло и дела детей выбираются сами.</div>` : ""}`);
 }
 
+// ───────── ремесло: мастерство, алхимия, кузня, ученичество, снаряжение (craft.js) ─────────
+const crOpen = { "cr-alch": false, "cr-smith": false };
+document.addEventListener("toggle", e => { if (e.target.id in crOpen) crOpen[e.target.id] = e.target.open; }, true);
+function renderCraft() {
+  const l = s.life, el = $("craft");
+  if (!data.crafts || !l.alive || l.age < 6) { setHTML(el, ""); setHidden(el, true); return; }
+  setHidden(el, false);
+  const c = CR.st(s), K = data.crafts.skills;
+  const track = (v, col) => `<div class="track" style="margin-top:4px"><i style="width:${n01(v)}%;background:${col}"></i></div>`;
+  const job = L.jobById(data, l.jobId), jx = CR.jobXp(s, l.jobId), rk = CR.rankOf(data, jx), nx = CR.nextRank(data, jx);
+  const jobRow = job && job.id !== "home"
+    ? `<div class="row2"><span>Ремесло</span><b>${job.name} · ${rk.name.toLowerCase()} <small>опыт ${Math.floor(jx)}/100 · заработок ×${rk.pay}${rk.hazard < 1 ? ` · риск −${Math.round((1 - rk.hazard) * 100)}%` : ""}${nx ? ` · до «${nx.name.toLowerCase()}» ещё ${Math.ceil(nx.min - jx)}` : ""}</small>${track(jx, "var(--gold)")}</b></div>`
+    : `<div class="row2"><span>Ремесло</span><b>${l.age < data.jobs.workAge ? `с ${data.jobs.workAge} лет` : "дом и двор"}<small>опыт копится в работе, больше всего — в фокусе «Работа»</small></b></div>`;
+  const skillRow = k => `<div class="row2"><span>${K[k].name}</span><b>${CR.skillRank(data, CR.skill(s, k))} · ${Math.floor(CR.skill(s, k))}/100${track(CR.skill(s, k), k === "alchemy" ? "var(--jade)" : "var(--hp)")}</b></div>`;
+  const gearRow = (lbl, it) => `<div class="row2"><span>${lbl}</span><b>${it ? CR.itemName(it) : "—"}${it ? `<small>${[it.atk ? `удар ×${CR.itemStats(it).atk.toFixed(2)}` : "", it.hp ? `тело ×${CR.itemStats(it).hp.toFixed(2)}` : "", it.def ? `защита ×${CR.itemStats(it).def.toFixed(2)}` : "", it.crit ? `крит +${(CR.itemStats(it).crit * 100).toFixed(1)}%` : ""].filter(Boolean).join(" · ")}</small>` : ""}</b></div>`;
+  const beast = l.beast && data.crafts.beasts[l.beast];
+  const appr = c.appr ? `<div class="note">Ученичество: ${c.appr.teacher} · ${K[c.appr.skill].name.toLowerCase()} · ещё ${yw(c.appr.years)}.</div>`
+    : l.age >= data.crafts.apprentice.minAge ? `<div class="chips">${Object.keys(K).map(k => { const can = CR.canApprentice(data, s, k);
+        return `<button data-cr="appr" data-k="${k}" ${can.ok ? "" : `disabled title="${can.why}"`}>В ученики: ${K[k].name.toLowerCase()}<small class="fxh">${stw(CR.apprenticeCost(data, s, k))}${l.sect ? " · в секте" : ""} · ${data.crafts.apprentice.years} г. по +${data.crafts.apprentice.xpPerYear}${can.ok ? "" : ` · ${can.why}`}</small></button>`; }).join("")}</div>` : "";
+  const list = k => {
+    const lv = CR.skill(s, k);
+    const rs = data.crafts.recipes.filter(r => r.skill === k && !r.special && r.min <= lv + 20 && (!r.awakened || l.awakened));
+    const rows = rs.map(r => { const can = CR.canCraft(data, s, r), cost = CR.recipeCost(data, s, r);
+      const what = r.slot ? [r.atk ? `удар ×${r.atk}` : "", r.hp ? `тело ×${r.hp}` : "", r.def ? `защита ×${r.def}` : "", r.crit ? `крит +${r.crit * 100}%` : ""].filter(Boolean).join(" · ") + " при добром качестве" : r.sell ? `на продажу ~${stw(Math.round(r.sell * (0.8 + lv / 100 * 0.6)))}` : r.text;
+      return `<button class="tech" data-cr="make" data-r="${r.id}" ${can.ok ? "" : "disabled"}><b>${K[k].verb}: ${r.name}</b> · ${stw(cost)} · шанс ${Math.round(CR.chance(data, s, r) * 100)}%${can.ok ? "" : ` · ${can.why}`}<small>${what}</small></button>`; }).join("");
+    const buys = k === "smith" ? data.crafts.recipes.filter(r => r.buy).map(r => { const p = CR.buyCost(data, s, r), cur = l.gear?.[r.slot], better = !cur || CR.itemValue({ ...r, q: 1 }) > CR.itemValue(cur);
+      return `<button class="tech" data-cr="buy" data-r="${r.id}" ${better && s.spiritStones >= p && l.age >= 10 ? "" : "disabled"}><b>Купить у кузнеца: ${r.name}</b> · ${stw(p)}${better ? "" : " · у тебя не хуже"}</button>`; }).join("") : "";
+    const left = CR.usesLeft(data, s, k), cheap = K[k].regionCheap?.includes(l.regionId);
+    return `<div class="dim small">${K[k].place[0].toUpperCase() + K[k].place.slice(1)}: попыток в этом году — ${left}. Неудача тоже учит.${cheap ? ` Здесь ${k === "alchemy" ? "травы" : "руда"} дешевле.` : ""}${k === "alchemy" ? " Неудача может кончиться взрывом." : ""}</div>${rows}${buys}`;
+  };
+  setHTML(el, `<h2>Ремесло и мастерство</h2>
+    ${jobRow}${skillRow("alchemy")}${skillRow("smith")}
+    ${gearRow("Оружие", l.gear?.weapon)}${gearRow("Защита", l.gear?.armor)}
+    ${beast ? `<div class="row2"><span>Спутник</span><b>${beast.name}<small>${beast.text}</small></b></div>` : ""}
+    ${l.age < 10 ? `<div class="dim small" style="margin-top:6px">С 10 лет можно варить и ковать, с ${data.crafts.apprentice.minAge} — идти в ученики. Дети учатся ремеслу родителя в «мастерской».</div>` : `${appr}
+    <details id="cr-alch"${crOpen["cr-alch"] ? " open" : ""}><summary>Котёл · ${K.alchemy.name.toLowerCase()}</summary>${list("alchemy")}</details>
+    <details id="cr-smith"${crOpen["cr-smith"] ? " open" : ""}><summary>Горн · ${K.smith.name.toLowerCase()}</summary>${list("smith")}</details>`}`);
+}
+
 // ───────── семья: показатели дома, лента перемен, живые родители, братья и сёстры ─────────
 const arrow = v => v > 0 ? `<i class="tr up" title="за последние годы выросло">↑</i>` : v < 0 ? `<i class="tr down" title="за последние годы упало">↓</i>` : `<i class="tr" title="без перемен">→</i>`;
 const freshChip = p => p?.fresh && s.life.age - p.fresh.a <= 1 ? `<span class="fx fresh">${p.fresh.t}</span>` : "";
@@ -669,7 +709,7 @@ function render() {
   if (spin === "path") { renderPath(); return; }
   if (spin) { renderSpin(spin); return; }
   if (phase === "cert") { renderCert(); return; }
-  renderHeader(); renderPass(); renderStats(); renderCult(); renderSect(); renderFocus(); renderFamily(); renderClan(); renderPeers(); renderMap();
+  renderHeader(); renderPass(); renderStats(); renderCult(); renderSect(); renderFocus(); renderCraft(); renderFamily(); renderClan(); renderPeers(); renderMap();
   renderEvent(); renderDeath(); renderTree(); renderTechs();
   const key = [l.age, l.alive, l.spouse?.name, l.children.length, s.realmIndex, l.awakened, l.eraId].join("|");
   if (key !== lastSceneKey) { lastSceneKey = key; drawScene($("scene"), data, { ...s, tier: l.awakened ? G.tierOf(data, s) : 0 }); setHTML($("scene-cap"), sceneCaption(l)); }
@@ -709,6 +749,7 @@ document.body.addEventListener("click", e => {
   if (d.copy) { navigator.clipboard?.writeText(summaryText(s.life.legacy)); b.textContent = "Скопировано"; return; }
   if (d.focus) { L.setFocus(data, s, d.focus); return done(); }
   if (d.job) { const r = L.setJob(data, s, d.job, d.who); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.cr) { const r = d.cr === "make" ? CR.craft(data, s, d.r) : d.cr === "buy" ? CR.buy(data, s, d.r) : CR.apprentice(data, s, d.k); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.child !== undefined) { L.setChildTask(data, s, +d.child, d.task); return done(); }
   if (d.sw) { const r = G.switchPath(data, s, d.sw); log(r.msg, r.ok ? "awaken" : "info"); return done(); }
   if (d.t) { const r = G.learnTechnique(data, s, d.t); log(r.msg, r.ok ? "cult" : "info"); return done(); }

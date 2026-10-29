@@ -13,6 +13,7 @@ import * as G from "./game.js";
 import * as KF from "./family.js";
 import * as CL from "./clan.js";
 import * as S from "./sect.js";
+import * as CR from "./craft.js";
 
 const pick = (a, rng) => a[Math.floor(rng() * a.length)];
 // Число + слово в нужной форме: 1 год / 2 года / 5 лет, 1 камень / 2 камня / 5 камней.
@@ -129,6 +130,7 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
       const d = defaultJob(data, s);
       if (d) L.jobId = d.id;
     }
+    CR.inherit(data, s, prev, child, cand.kind === "child");
     if (L.awakened) {
       if (!L.soulId) L.soulId = rollSoul(data, rng)?.id || null;
       // Ребёнок жил своей жизнью, пока ты играл(а) за родителя: путь, ступень, секта — его.
@@ -480,6 +482,7 @@ export function die(data, s, cause, rng = Math.random) {
     kinTree: snapKin(s), sectSucc: S.deathSuccession(data, s),
     epitaph: epitaph(data, s), words: finalWords(data, s, rng),
     familyTechs: [...new Set([...(s.familyTechs || []), ...s.ownedTechniques])],
+    craft: CR.snapshot(s), gear: L.gear ? { ...L.gear } : null,
   };
   try { entry.report = deathReport(data, s, entry); } catch (e) { entry.report = null; }
   L.legacy = entry; s.lineage.push(entry);
@@ -505,6 +508,7 @@ function matches(data, s, r = {}) {
   if (r.noSect && L.sect) return false;
   if (r.inSect && !L.sect) return false;
   if (r.elder && L.age < 0.7 * lifespan(data, s)) return false;
+  if (!CR.matches(data, s, r)) return false;
   return KF.matches(data, s, r) && CL.matches(data, s, r) && S.matches(data, s, r);
 }
 function eligible(data, s, e) {
@@ -840,7 +844,7 @@ export function setChildTask(data, s, idx, task) {
   if (!c?.alive) return { ok: false, msg: "Нет такого ребёнка." };
   if (!(data.jobs?.childTasks || []).some(t => t.id === task)) return { ok: false, msg: "Нет такого занятия." };
   c.task = task;
-  const names = { home: "остаётся дома", help: "помогает по дому", letters: "учит грамоту" };
+  const names = { home: "остаётся дома", help: "помогает по дому", letters: "учит грамоту", workshop: "учится ремеслу в мастерской" };
   logLine(s, `${c.name} ${names[task] || task}.`, "family");
   return { ok: true };
 }
@@ -930,6 +934,7 @@ function applyEffects(data, s, ef = {}, rng = Math.random) {
   S.applyEffects(data, s, ef, rng);
   KF.applyEffects(data, s, ef, rng);
   CL.applyEffects(data, s, ef, rng);
+  CR.applyEffects(data, s, ef, rng);
   if (ef.sect && !L.sect && L.awakened) S.joinSect(data, s, ef.sect, ef.sectRank ?? 1, rng);
   if (ef.scroll && L.awakened) { const t = G.luckyScroll(data, s, rng); logLine(s, t ? `Свиток в руках: «${t.name}». Теперь он и в родовой библиотеке.` : "Свиток оказался пустым: всё это ты уже знаешь.", "luck"); }
   if (ef.sectTech && L.sect) {
@@ -1010,7 +1015,7 @@ const KIN_W = ef => (ef.harmony || 0) * 0.3 + (ef.famWealth || 0) * 0.4 + (ef.re
   + (ef.sectTreasury || 0) * 0.03 + (ef.sectFortify ? 3 : 0) + (ef.sectDeclareWar ? -2 : 0) + (ef.sectTruce ? 2 : 0) + (ef.sectAlly ? 5 : 0) + (ef.discipleNew ? 4 : 0) + (ef.discipleTrain ? 3 : 0)
   + (ef.discipleLoss ? -4 : 0) + (ef.sectGrudge || 0) * -4 + (ef.sectGrudgeClear ? 4 : 0);
 function choiceScore(c, mode) {
-  const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef);
+  const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef) + CR.scoreFx(ef);
   const riskN = (mode === "safe" || mode === "best") ? 3 : 1;
   return f(c.effects || {}) + (c.bonus ? c.bonus.p * f(c.bonus.effects) : 0) + (c.risk ? c.risk.p * f(c.risk.effects) * riskN : 0);
 }
@@ -1054,12 +1059,13 @@ function yearPass(data, s, rng) {
   let pay = 0;
   if (J && L.age >= J.workAge) {
     const own = jobById(data, L.jobId), sp = L.spouse && jobById(data, L.spouse.jobId);
-    pay = (own?.stones || 0) + (sp?.stones || 0);
+    pay = (own?.stones || 0) * CR.payMul(data, s, L.jobId) + (sp?.stones || 0);
     pay += L.children.filter(c => c.alive && childAge(s, c) >= J.childHelpAge && c.task === "help").length * (J.childHelpStones || 0);
     pay = Math.round(pay * (focus?.payMul ?? 1) * (phyY?.payMul ?? 1) * (tal?.payMul ?? 1));
     if (pay) s.spiritStones += pay;
     if (pay && L.age % 5 === 0) logLine(s, `Год работы (${focus?.name || "дом"}): ${stonesW(pay)}.`, "family");
   }
+  CR.yearCraft(data, s, rng);
   for (const c of L.children) {
     if (c.alive && c.task === "letters" && childAge(s, c) >= 6 && rng() < 0.12 * CL.lettersMul(data, s)) {
       L.stats.connections = clamp(L.stats.connections + 1, 0, 30);
@@ -1095,7 +1101,7 @@ function yearPass(data, s, rng) {
     const t = G.luckyScroll(data, s, rng);
     if (t) logLine(s, `Старый друг из цзянху переписал для тебя «${t.name}» — по дружбе, не по уставу.`, "luck");
   }
-  const jobHaz = (jobById(data, L.jobId)?.hazard || 0) + (L.spouse ? (jobById(data, L.spouse.jobId)?.hazard || 0) * 0.3 : 0);
+  const jobHaz = (jobById(data, L.jobId)?.hazard || 0) * CR.hazMul(data, s, L.jobId) + (L.spouse ? (jobById(data, L.spouse.jobId)?.hazard || 0) * 0.3 : 0);
   const yishu = G.slottedTechs(data, s).yishu;
   const phy = by(W.physiques, L.physiqueId);
   let hz = (wealth.hazard + jobHaz) * by(W.regions, L.regionId).hazardMult * by(W.eras, L.eraId).hazardMult * (focus?.hazardMul ?? 1) * (phy?.hazard || 1) * (tal?.hazard || 1) * (1 - (yishu?.hazardCut || 0))

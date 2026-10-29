@@ -7,7 +7,7 @@ import * as L from "../src/life.js";
 import { newState } from "../src/state.js";
 
 const rd = n => JSON.parse(fs.readFileSync(new URL(`../data/${n}.json`, import.meta.url)));
-const data = Object.fromEntries(["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "sects", "kin"].map(n => [n, rd(n)]));
+const data = Object.fromEntries(["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "sects", "kin", "crafts"].map(n => [n, rd(n)]));
 const N = +process.argv[2] || 400, speed = process.argv[3] || "normal";
 function rngFrom(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const med = a => a.length ? a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)] : NaN;

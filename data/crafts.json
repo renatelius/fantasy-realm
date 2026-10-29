@@ -1,0 +1,68 @@
+{
+  "_note": "Ремёсла (src/craft.js). mastery — опыт в текущем ремесле (0–100), ranks — звания и множители заработка/риска. skills — алхимия и кузнечное дело: растут от работы (jobSkill), ученичества, варки/ковки и событий. Шанс успеха = base + (навык − min) / perPoint, в пределах [minChance, maxChance]. Пилюли алхимика стоят долю цены рыночной пилюли (pillShare). Снаряжение — два слота (weapon, armor), множители боя умножаются на качество. Наследник получает снаряжение предка как реликвию и опыт мастерской (детское занятие workshop).",
+  "ranks": [
+    { "min": 0, "name": "Ученик", "pay": 1.0, "hazard": 1.0 },
+    { "min": 20, "name": "Подмастерье", "pay": 1.35, "hazard": 0.9 },
+    { "min": 45, "name": "Мастер", "pay": 1.9, "hazard": 0.8 },
+    { "min": 75, "name": "Великий мастер", "pay": 2.8, "hazard": 0.7 }
+  ],
+  "gain": {
+    "base": 4, "cap": 100, "soft": 115, "floor": 0.25,
+    "focus": { "work": 1.6, "family": 0.8, "practice": 0.4, "rest": 0.3, "sect": 0.3 },
+    "workshopChild": 3, "workshopCap": 30, "heirShare": 0.25,
+    "brewXp": 2, "failXp": 1.5
+  },
+  "jobSkill": { "alchemist": { "alchemy": 1 }, "herb": { "alchemy": 0.4 }, "physician": { "alchemy": 0.5 }, "smith": { "smith": 1 }, "garrison": { "smith": 0.2 } },
+  "skills": {
+    "alchemy": { "name": "Алхимия", "verb": "Сварить", "place": "котёл", "regionCheap": ["qinglong", "kunlun", "penglai"], "regionMul": 0.75 },
+    "smith": { "name": "Кузнечное дело", "verb": "Выковать", "place": "горн", "regionCheap": ["liangzhou", "hedu", "kunlun"], "regionMul": 0.75 }
+  },
+  "chance": { "base": 0.45, "perPoint": 80, "minChance": 0.1, "maxChance": 0.95, "explode": 0.08 },
+  "usesPerYear": { "base": 1, "per": 30, "max": 4 },
+  "apprentice": {
+    "minAge": 12, "years": 3, "xpPerYear": 7, "baseCost": 25, "costPerPoint": 2, "sectMul": 0.5, "cap": 60,
+    "teachers": {
+      "alchemy": ["старый алхимик Лу с обожжёнными бровями", "травница Мэй, что лечит весь квартал", "даос-алхимик из горного скита"],
+      "smith": ["кузнец Тэ, у которого молот тяжелее тебя", "оружейник гарнизона, бывший солдат", "мастер клинков с одним глазом"]
+    }
+  },
+  "ranksSkill": [
+    { "min": 0, "name": "новичок" },
+    { "min": 15, "name": "знающий" },
+    { "min": 35, "name": "умелый" },
+    { "min": 55, "name": "мастер" },
+    { "min": 80, "name": "великий мастер" }
+  ],
+  "recipes": [
+    { "id": "salve", "skill": "alchemy", "name": "Мазь от ушибов", "min": 0, "cost": 4, "sell": 10, "text": "Продаётся на рынке." },
+    { "id": "sleep_brew", "skill": "alchemy", "name": "Отвар спокойного сна", "min": 12, "cost": 7, "sell": 18, "text": "Продаётся лекарям." },
+    { "id": "qi_pill", "skill": "alchemy", "name": "Пилюля сбора ци", "min": 15, "awakened": true, "pillShare": 0.35, "qiPct": 0.12, "perYear": 1, "text": "+12% ци к следующему слою (одна в год: чаще жилы не принимают)." },
+    { "id": "break_pill", "skill": "alchemy", "name": "Пилюля прорыва", "min": 30, "awakened": true, "pillShare": 0.5, "pill": 1, "perYear": 2, "text": "Своя пилюля к прорыву — вдвое дешевле рыночной." },
+    { "id": "heal_pill", "skill": "alchemy", "name": "Пилюля исцеления", "min": 40, "cost": 25, "years": 1, "perLife": 4, "text": "Залечивает старые раны: срок +1 год." },
+    { "id": "long_pill", "skill": "alchemy", "name": "Пилюля долголетия", "min": 75, "awakened": true, "pillShare": 1.5, "costAdd": 80, "years": 4, "perLife": 3, "text": "Редкая: срок +4 года (не больше трёх за жизнь)." },
+
+    { "id": "tools", "skill": "smith", "name": "Серпы и подковы", "min": 0, "cost": 3, "sell": 8, "text": "Продаётся крестьянам." },
+    { "id": "knife", "skill": "smith", "slot": "weapon", "name": "Кованый нож", "min": 0, "cost": 6, "atk": 1.04, "buy": true },
+    { "id": "sword", "skill": "smith", "slot": "weapon", "name": "Железный меч", "min": 15, "cost": 15, "atk": 1.08, "buy": true },
+    { "id": "saber", "skill": "smith", "slot": "weapon", "name": "Закалённая сабля", "min": 35, "cost": 40, "atk": 1.14, "crit": 0.01 },
+    { "id": "spirit_blade", "skill": "smith", "slot": "weapon", "name": "Духовный клинок", "min": 55, "awakened": true, "cost": 120, "atk": 1.22, "crit": 0.02 },
+    { "id": "sky_blade", "skill": "smith", "slot": "weapon", "name": "Клинок, рассекающий небо", "min": 80, "awakened": true, "cost": 300, "atk": 1.32, "crit": 0.03 },
+    { "id": "quilt", "skill": "smith", "slot": "armor", "name": "Стёганая куртка", "min": 0, "cost": 6, "hp": 1.05, "buy": true },
+    { "id": "leather", "skill": "smith", "slot": "armor", "name": "Кожаный доспех", "min": 15, "cost": 15, "hp": 1.08, "def": 1.04, "buy": true },
+    { "id": "scale", "skill": "smith", "slot": "armor", "name": "Чешуйчатый доспех", "min": 35, "cost": 40, "hp": 1.12, "def": 1.08 },
+    { "id": "spirit_mail", "skill": "smith", "slot": "armor", "name": "Духовная кольчуга", "min": 55, "awakened": true, "cost": 120, "hp": 1.18, "def": 1.12 },
+    { "id": "turtle", "skill": "smith", "slot": "armor", "name": "Доспех чёрной черепахи", "min": 80, "awakened": true, "cost": 300, "hp": 1.25, "def": 1.18 },
+    { "id": "meteor_blade", "skill": "smith", "slot": "weapon", "name": "Клинок из небесного железа", "special": true, "atk": 1.18, "crit": 0.02 }
+  ],
+  "buyMul": 3,
+  "quality": [
+    { "min": 0, "name": "грубый", "q": 0.7 },
+    { "min": 0.95, "name": "добрый", "q": 1.0 },
+    { "min": 1.1, "name": "отменный", "q": 1.25 }
+  ],
+  "beasts": {
+    "fox": { "name": "Духовная лиса", "atk": 1.04, "hp": 1.03, "text": "Лиса ходит за тобой и чует засаду раньше тебя." },
+    "crane": { "name": "Белый журавль", "hp": 1.06, "text": "Журавль кричит перед бедой." },
+    "tiger": { "name": "Тигрёнок с полосой на лбу", "atk": 1.07, "text": "Тигрёнок растёт быстрее, чем ты успеваешь его кормить." }
+  }
+}

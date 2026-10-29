@@ -12,7 +12,7 @@
   "childTasks": [
     { "id": "home", "name": "дом" },
     { "id": "help", "name": "помощь" },
-    { "id": "letters", "name": "грамота" }
+    { "id": "letters", "name": "грамота" }, { "id": "workshop", "name": "мастерская" }
   ],
   "jobs": [
     { "id": "home", "name": "Дом и двор", "stones": 0, "hazard": 0 },

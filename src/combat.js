@@ -9,6 +9,7 @@
 import { qiRequired, slottedTechs, realmsOf, pathOf, techUsable, techAccess, luckyScroll, talentOf, pathSpeedMul, pathPassives, tierOf } from "./game.js";
 import { die, stonesW } from "./life.js";
 import { onAdventureWin } from "./sect.js";
+import { gearStats } from "./craft.js";
 
 export function globalLevel(data, s) {
   let L = s.layer - 1;
@@ -22,10 +23,11 @@ export function playerStats(data, s) {
   const body = s.life && data.world.physiques?.find(x => x.id === s.life.physiqueId);
   const pc = pathOf(data, s).combat || {}; // путь тела крепче, путь духа бьёт сильнее, но хрупок
   const pp = pathPassives(data, s); // эффекты всех путей: тело — здоровье/защита, ци — удар
-  const hp = pp.hp * p.hpBase * g * (sl.body?.hpMult || 1) * (body?.hpMult || 1) * (pc.hp || 1);
-  const atk = pp.atk * p.atkBase * g * (sl.martial?.atkMult || 1) * (sl.body?.atkMult || 1) * (sl.anqi?.atkMult || 1) * (body?.atkMult || 1) * (pc.atk || 1) * (talentOf(data, s)?.atkMult || 1);
-  const def = pp.def * p.defBase * g * (sl.body?.defMult || 1) * (sl.martial?.defMult || 1) * (body?.defMult || 1) * (pc.def || 1);
-  const crit = p.critChance + (sl.qinggong?.critAdd || 0) + (sl.martial?.critAdd || 0) + (sl.anqi?.critAdd || 0) + (body?.critAdd || 0) + (pc.crit || 0);
+  const gs = gearStats(data, s); // оружие, доспех, духовный зверь (craft.js)
+  const hp = pp.hp * p.hpBase * g * (sl.body?.hpMult || 1) * (body?.hpMult || 1) * (pc.hp || 1) * gs.hp;
+  const atk = pp.atk * p.atkBase * g * (sl.martial?.atkMult || 1) * (sl.body?.atkMult || 1) * (sl.anqi?.atkMult || 1) * (body?.atkMult || 1) * (pc.atk || 1) * (talentOf(data, s)?.atkMult || 1) * gs.atk;
+  const def = pp.def * p.defBase * g * (sl.body?.defMult || 1) * (sl.martial?.defMult || 1) * (body?.defMult || 1) * (pc.def || 1) * gs.def;
+  const crit = p.critChance + (sl.qinggong?.critAdd || 0) + (sl.martial?.critAdd || 0) + (sl.anqi?.critAdd || 0) + (body?.critAdd || 0) + (pc.crit || 0) + gs.crit;
   return { hp, atk, def, crit };
 }
 
