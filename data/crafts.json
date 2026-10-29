@@ -66,6 +66,19 @@
     "seal": ["yamen", "broker", "tea", "capital_runner"],
     "flute": ["tea", "inn", "cook", "ferry"]
   },
+  "business": {
+    "_note": "Своё дело (craft.js → bizYear). Доход в год = income × lvlMul[ур.] × (1 + min(growthCap, лет × growth)) × (1 + kidBonus × детей в деле, до kidMax) × workMul в фокусе «Работа». Раз в upYears лет шанс upChance подняться на уровень. Беда (risk в год): у малого дела — закрытие, у крепкого и знаменитого — 70% уровень вниз, 30% закрытие. Продажа — cost × sellShare × lvlMul. Переходит к ребёнку-наследнику.",
+    "minAge": 18, "lvlMul": [1, 1.5, 2.1], "lvlNames": ["малое", "крепкое", "знаменитое"], "growth": 0.04, "growthCap": 0.8,
+    "kidBonus": 0.15, "kidMax": 3, "workMul": 1.2, "upYears": 12, "upChance": 0.35, "sellShare": 0.6,
+    "kinds": [
+      { "id": "stall_own", "name": "Своя лавка", "cost": 60, "income": 5, "risk": 0.006, "text": "Прилавок у рынка и вывеска с твоей фамилией." },
+      { "id": "workshop_own", "name": "Своя мастерская", "cost": 110, "income": 7, "risk": 0.006, "need": { "mastery": 30 }, "text": "Нужен опыт в своём ремесле 30." },
+      { "id": "tea_own", "name": "Чайный дом", "cost": 140, "income": 8, "risk": 0.005, "perk": { "conn": 0.3 }, "text": "Сюда приходят за чаем и за новостями. Связи↑." },
+      { "id": "pharmacy", "name": "Аптека", "cost": 160, "income": 10, "risk": 0.004, "need": { "skill": { "alchemy": 30 } }, "perk": { "haz": 0.93 }, "text": "Нужна алхимия 30. Беды семьи −7%." },
+      { "id": "inn_own", "name": "Постоялый двор", "cost": 220, "income": 13, "risk": 0.008, "perk": { "conn": 0.2 }, "text": "Комнаты, кухня, конюшня — и все слухи тракта." },
+      { "id": "escort_own", "name": "Своё эскортное бюро", "cost": 280, "income": 17, "risk": 0.012, "need": { "mastery": 40, "jobs": ["escort", "head_escort", "bodyguard"] }, "text": "Нужен опыт в эскорте 40. Флаг бюро — твоё имя." }
+    ]
+  },
   "buyMul": 3,
   "quality": [
     { "min": 0, "name": "грубый", "q": 0.7 },

@@ -368,10 +368,11 @@ function renderFocus() {
   const f = birthFacts(l);
   const small = l.age < 6;
   const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self"));
-  const lockedJobs = data.jobs.jobs.filter(j => j.need && (!j.awakened || l.awakened) && L.jobEligible(data, s, { ...j, need: null }, "self") && L.jobNeedWhy(data, s, j));
+  const lockedJobs = data.jobs.jobs.filter(j => j.need && (!j.awakened || l.awakened) && L.jobEligible(data, s, { ...j, need: null }, "self") && L.jobNeedWhy(data, s, j)
+    && (!j.need.from || j.need.from.jobs.some(id => id === l.jobId || CR.jobXp(s, id) > 0))); // лестница: видны ступени своего дела
   const jobChips = l.age >= data.jobs.workAge && jobs.length ? `<div class="lbl" style="margin-top:10px">Ремесло</div>
-    <select class="jobsel" data-who="self" ${s.settings.autoPlay ? "disabled" : ""}>${jobs.slice().sort((a, b) => b.stones - a.stones).map(j => `<option value="${j.id}" ${j.id === l.jobId ? "selected" : ""}>${j.name} — ${Math.round(j.stones * CR.payMul(data, s, j.id))} камн./год${CR.jobXp(s, j.id) >= 20 ? ` · ${CR.rankOf(data, CR.jobXp(s, j.id)).name.toLowerCase()}` : ""}${l.awakened && j.qiMul ? ` · ци +${Math.round((j.qiMul - 1) * 100)}%` : ""}${j.hazard ? " · риск" : ""}${j.id === l.jobId ? "" : CR.refusedNow(s, j.id) ? " · отказали, снова через год" : (ch => ch < 1 ? ` · шанс ${Math.round(ch * 100)}%` : "")(CR.hireChance(data, s, j))}</option>`).join("")}${lockedJobs.map(j => `<option disabled>${j.name} — ${L.jobNeedWhy(data, s, j)}</option>`).join("")}</select>
-    ${(() => { const cj = L.jobById(data, l.jobId); return cj?.text ? `<div class="dim small" style="margin-top:4px">${cj.text}</div>` : ""; })()}
+    <select class="jobsel" data-who="self" ${s.settings.autoPlay ? "disabled" : ""}>${jobs.slice().sort((a, b) => b.stones - a.stones).map(j => `<option value="${j.id}" ${j.id === l.jobId ? "selected" : ""}>${j.name} — ${Math.round(j.stones * CR.payMul(data, s, j.id))} камн./год${CR.jobXp(s, j.id) >= 20 ? ` · ${CR.rankOf(data, CR.jobXp(s, j.id)).name.toLowerCase()}` : ""}${l.awakened && j.qiMul ? ` · ци +${Math.round((j.qiMul - 1) * 100)}%` : ""}${j.perk?.tag ? ` · ${j.perk.tag}` : ""}${j.hazard ? " · риск" : ""}${j.id === l.jobId ? "" : CR.refusedNow(s, j.id) ? " · отказали, снова через год" : (ch => ch < 1 ? ` · шанс ${Math.round(ch * 100)}%` : "")(CR.hireChance(data, s, j))}</option>`).join("")}${lockedJobs.map(j => `<option disabled>${j.name} — ${L.jobNeedWhy(data, s, j)}</option>`).join("")}</select>
+    ${(() => { const cj = L.jobById(data, l.jobId); return cj?.text || cj?.perk?.tag ? `<div class="dim small" style="margin-top:4px">${cj.text || ""}${cj.perk?.tag ? ` <span class="fx">${cj.perk.tag}</span>` : ""}</div>` : ""; })()}
     <div class="dim small" style="margin-top:4px">Шанс, что возьмут, растёт с опытом в этом деле (или навыком алхимии и ковки), талантом, ремеслом родителей и связями. Отказали — снова через год.</div>` : "";
   setHTML(el, `<h2>Фокус этого года</h2>
     <div class="dim">${stage(l)[0].toUpperCase() + stage(l).slice(1)} · ${f.region.name} · ${f.era.name}</div>
@@ -382,7 +383,7 @@ function renderFocus() {
 }
 
 // ───────── ремесло: мастерство, алхимия, кузня, ученичество, снаряжение (craft.js) ─────────
-const crOpen = { "cr-alch": false, "cr-smith": false };
+const crOpen = { "cr-alch": false, "cr-smith": false, "cr-biz": false };
 document.addEventListener("toggle", e => { if (e.target.id in crOpen) crOpen[e.target.id] = e.target.open; }, true);
 function renderCraft() {
   const l = s.life, el = $("craft");
@@ -397,6 +398,12 @@ function renderCraft() {
   const skillRow = k => `<div class="row2"><span>${K[k].name}</span><b>${CR.skillRank(data, CR.skill(s, k))} · ${Math.floor(CR.skill(s, k))}/100${track(CR.skill(s, k), k === "alchemy" ? "var(--jade)" : "var(--hp)")}</b></div>`;
   const gearRow = (lbl, it) => `<div class="row2"><span>${lbl}</span><b>${it ? CR.itemName(it) : "—"}${it ? `<small>${[it.atk ? `удар ×${CR.itemStats(it).atk.toFixed(2)}` : "", it.hp ? `тело ×${CR.itemStats(it).hp.toFixed(2)}` : "", it.def ? `защита ×${CR.itemStats(it).def.toFixed(2)}` : "", it.crit ? `крит +${(CR.itemStats(it).crit * 100).toFixed(1)}%` : ""].filter(Boolean).join(" · ")}</small>` : ""}</b></div>`;
   const beast = l.beast && data.crafts.beasts[l.beast];
+  const B = data.crafts.business, bz = l.biz && CR.bizKind(data, l.biz.id);
+  const bizHtml = !B || l.age < B.minAge ? "" : bz
+    ? `<div class="row2"><span>Своё дело</span><b>${bz.name} · ${B.lvlNames[(l.biz.lvl || 1) - 1]}<small>~${stw(CR.bizIncome(data, s))} в год · ${yw(l.age - l.biz.since)} · детей в деле: ${l.children.filter(c => c.alive && c.task === "biz").length}${l.focusId === "work" ? " · фокус «Работа» +20%" : ""}</small></b></div>
+       <div class="chips" style="justify-content:flex-end"><button data-cr="bizsell" ${s.settings.autoPlay ? "disabled" : ""}>Продать дело · ${stw(CR.bizSellPrice(data, s))}</button></div>`
+    : `<details id="cr-biz"${crOpen["cr-biz"] ? " open" : ""}><summary>Своё дело · открыть</summary><div class="dim small">Доход каждый год сверх работы, растёт с годами. Дети в «семейном деле» прибавляют по 15%. Может прогореть. Переходит к ребёнку-наследнику.</div>${B.kinds.map(k => { const why = CR.bizNeedWhy(data, s, k);
+        return `<button class="tech" data-cr="bizopen" data-r="${k.id}" ${why ? "disabled" : ""}><b>${k.name}</b> · ${stw(k.cost)} · ~${stw(k.income)} в год${why ? ` · ${why}` : ""}<small>${k.text}</small></button>`; }).join("")}</details>`;
   const appr = c.appr ? `<div class="note">Ученичество: ${c.appr.teacher} · ${K[c.appr.skill].name.toLowerCase()} · ещё ${yw(c.appr.years)}.</div>`
     : l.age >= data.crafts.apprentice.minAge ? `<div class="chips">${Object.keys(K).map(k => { const can = CR.canApprentice(data, s, k);
         return `<button data-cr="appr" data-k="${k}" ${can.ok ? "" : `disabled title="${can.why}"`}>В ученики: ${K[k].name.toLowerCase()}<small class="fxh">${stw(CR.apprenticeCost(data, s, k))}${l.sect ? " · в секте" : ""} · ${data.crafts.apprentice.years} г. по +${data.crafts.apprentice.xpPerYear}${can.ok ? "" : ` · ${can.why}`}</small></button>`; }).join("")}</div>` : "";
@@ -414,6 +421,7 @@ function renderCraft() {
   setHTML(el, `<h2>Ремесло и мастерство</h2>
     ${jobRow}${skillRow("alchemy")}${skillRow("smith")}
     ${gearRow("Оружие", l.gear?.weapon)}${gearRow("Защита", l.gear?.armor)}
+    ${bizHtml}
     ${beast ? `<div class="row2"><span>Спутник</span><b>${beast.name}<small>${beast.text}</small></b></div>` : ""}
     ${l.age < 10 ? `<div class="dim small" style="margin-top:6px">С 10 лет можно варить и ковать, с ${data.crafts.apprentice.minAge} — идти в ученики. Дети учатся ремеслу родителя в «мастерской».</div>` : `${appr}
     <details id="cr-alch"${crOpen["cr-alch"] ? " open" : ""}><summary>Котёл · ${K.alchemy.name.toLowerCase()}</summary>${list("alchemy")}</details>
@@ -440,11 +448,11 @@ function renderFamily() {
     const lbl = `${x.born < 0 ? "Старш." : "Младш."} ${x.gender === "m" ? "брат" : "сестра"}`;
     rows.push(kinRow(lbl, x, a, x.alive && a >= W.time.awakeningAge ? L.childSummary(data, s, x) : x.physiqueName ? `тело «${x.physiqueName}»` : ""));
   }
-  if (l.spouse) rows.push(`<div class="row2"><span>${l.spouse.gender === "m" ? "Супруг" : "Супруга"}</span><b>${l.spouse.name}${freshChip(l.spouse)}<small>${[L.jobById(data, l.spouse.jobId)?.name, L.genesText(data, l.spouse), l.spouse.clan ? `дом ${l.spouse.clan}` : ""].filter(Boolean).join(" · ")}</small></b></div>`);
+  if (l.spouse) rows.push(`<div class="row2"><span>${l.spouse.gender === "m" ? "Супруг" : "Супруга"}</span><b>${l.spouse.name}${freshChip(l.spouse)}<small>${[L.jobById(data, l.spouse.jobId)?.name && L.jobById(data, l.spouse.jobId).name + CR.spouseRankTag(data, s), L.genesText(data, l.spouse), l.spouse.clan ? `дом ${l.spouse.clan}` : ""].filter(Boolean).join(" · ")}</small></b></div>`);
   l.children.forEach((c, i) => {
     const a = L.childAge(s, c);
-    const tasks = c.alive && a >= 6 ? `<div class="chips" style="justify-content:flex-end;margin:4px 0 0">${data.jobs.childTasks.map(t => `<button class="${(c.task || "home") === t.id ? "on" : ""}" data-child="${i}" data-task="${t.id}">${t.name}</button>`).join("")}</div>` : "";
-    rows.push(kinRow(c.gender === "m" ? "Сын" : "Дочь", c, a, c.alive ? L.childSummary(data, s, c) : "", c.alive && a < 16 ? tasks : ""));
+    const tasks = c.alive && a >= 6 ? `<div class="chips" style="justify-content:flex-end;margin:4px 0 0">${data.jobs.childTasks.filter(t => t.id !== "biz" || l.biz).map(t => `<button class="${(c.task || "home") === t.id ? "on" : ""}" data-child="${i}" data-task="${t.id}">${t.name}</button>`).join("")}</div>` : "";
+    rows.push(kinRow(c.gender === "m" ? "Сын" : "Дочь", c, a, c.alive ? [L.childSummary(data, s, c), a >= 16 && c.jobId ? L.jobById(data, c.jobId)?.name : ""].filter(Boolean).join(" · ") : "", c.alive && a < 16 ? tasks : ""));
   });
   const ch = (f.changes || []).slice(-5).reverse().map(x => `<li><span class="a">${yw(x.a)}</span><span>${x.t}</span></li>`).join("");
   const ty = data.kin?.family?.trendYears || 5;
@@ -752,7 +760,10 @@ document.body.addEventListener("click", e => {
   if (d.copy) { navigator.clipboard?.writeText(summaryText(s.life.legacy)); b.textContent = "Скопировано"; return; }
   if (d.focus) { L.setFocus(data, s, d.focus); return done(); }
   if (d.job) { const r = L.setJob(data, s, d.job, d.who); if (!r.ok && !r.refused) log(r.msg, "info"); return done(); }
-  if (d.cr) { const r = d.cr === "make" ? CR.craft(data, s, d.r) : d.cr === "buy" ? CR.buy(data, s, d.r) : CR.apprentice(data, s, d.k); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.cr) {
+    if (d.cr === "bizsell" && !confirm("Продать своё дело? Наследнику оно не достанется.")) return;
+    const r = d.cr === "make" ? CR.craft(data, s, d.r) : d.cr === "buy" ? CR.buy(data, s, d.r) : d.cr === "bizopen" ? CR.openBiz(data, s, d.r) : d.cr === "bizsell" ? CR.sellBiz(data, s) : CR.apprentice(data, s, d.k);
+    if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.child !== undefined) { L.setChildTask(data, s, +d.child, d.task); return done(); }
   if (d.sw) { const r = G.switchPath(data, s, d.sw); log(r.msg, r.ok ? "awaken" : "info"); return done(); }
   if (d.t) { const r = G.learnTechnique(data, s, d.t); log(r.msg, r.ok ? "cult" : "info"); return done(); }

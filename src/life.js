@@ -482,7 +482,7 @@ export function die(data, s, cause, rng = Math.random) {
     kinTree: snapKin(s), sectSucc: S.deathSuccession(data, s),
     epitaph: epitaph(data, s), words: finalWords(data, s, rng),
     familyTechs: [...new Set([...(s.familyTechs || []), ...s.ownedTechniques])],
-    craft: CR.snapshot(s), gear: L.gear ? { ...L.gear } : null,
+    craft: CR.snapshot(s), gear: L.gear ? { ...L.gear } : null, biz: L.biz ? { ...L.biz, years: L.age - L.biz.since } : null,
   };
   try { entry.report = deathReport(data, s, entry); } catch (e) { entry.report = null; }
   L.legacy = entry; s.lineage.push(entry);
@@ -838,6 +838,7 @@ export function jobNeedWhy(data, s, job) {
   if (n.sect && !L.sect) return "только для учеников секты";
   if (n.sectRank != null && (!L.sect || (L.sect.rank ?? 0) < n.sectRank)) return `с ранга «${data.sects?.ranks?.[n.sectRank]?.name || "выше"}»`;
   if (n.tier != null && (!L.awakened || G.maxTier(data, s) < n.tier)) return `со ${n.tier + 1}-й ступени пути`;
+  const fw = CR.fromWhy(data, s, job); if (fw) return fw;
   for (const [k, v] of Object.entries(n.skill || {})) if (CR.skill(s, k) < v) return `нужен навык «${(data.crafts?.skills?.[k]?.name || k).toLowerCase()}» ${v}`;
   return "";
 }
@@ -854,7 +855,7 @@ export function setChildTask(data, s, idx, task) {
   if (!c?.alive) return { ok: false, msg: "Нет такого ребёнка." };
   if (!(data.jobs?.childTasks || []).some(t => t.id === task)) return { ok: false, msg: "Нет такого занятия." };
   c.task = task;
-  const names = { home: "остаётся дома", help: "помогает по дому", letters: "учит грамоту", workshop: "учится ремеслу в мастерской" };
+  const names = { home: "остаётся дома", help: "помогает по дому", letters: "учит грамоту", workshop: "учится ремеслу в мастерской", biz: "помогает в семейном деле" };
   logLine(s, `${c.name} ${names[task] || task}.`, "family");
   return { ok: true };
 }
@@ -887,7 +888,8 @@ export function setJob(data, s, id, who = "self", rng = Math.random) {
       }
     }
     s.life.jobId = id;
-    logLine(s, `Ты взял(а) работу: ${job.name}${hi.chance < 1 ? ` — взяли с ${Math.round(hi.chance * 100)}% шансом` : ""}.`, "family");
+    if (CR.promote(data, s, job)) logLine(s, `Повышение: теперь ты — ${job.name.toLowerCase()}. ${job.stones} камн./год${job.perk?.tag ? `, ${job.perk.tag}` : ""}.`, "family");
+    else logLine(s, `Ты взял(а) работу: ${job.name}${hi.chance < 1 ? ` — взяли с ${Math.round(hi.chance * 100)}% шансом` : ""}.`, "family");
   }
   return { ok: true };
 }
@@ -1086,7 +1088,7 @@ function yearPass(data, s, rng) {
   let pay = 0;
   if (J && L.age >= J.workAge) {
     const own = jobById(data, L.jobId), sp = L.spouse && jobById(data, L.spouse.jobId);
-    pay = (own?.stones || 0) * CR.payMul(data, s, L.jobId) + (sp?.stones || 0);
+    pay = (own?.stones || 0) * CR.payMul(data, s, L.jobId) + (sp?.stones || 0) * CR.spousePayMul(data, s);
     pay += L.children.filter(c => c.alive && childAge(s, c) >= J.childHelpAge && c.task === "help").length * (J.childHelpStones || 0);
     pay = Math.round(pay * (focus?.payMul ?? 1) * (phyY?.payMul ?? 1) * (tal?.payMul ?? 1));
     if (pay) s.spiritStones += pay;
@@ -1112,7 +1114,7 @@ function yearPass(data, s, rng) {
     KF.famNote(data, s, kid, `В семье ${kid.gender === "m" ? "родился сын" : "родилась дочь"} — ${kid.name}. Телосложение «${kid.physiqueName}»${kid.phyFrom === "self" ? " — в тебя" : kid.phyFrom === "spouse" ? ` — в ${L.spouse.gender === "m" ? "отца" : "мать"}` : ""}.`, "birth");
   }
   const wealth = by(W.wealth, L.wealthId);
-  for (const c of L.children) if (c.alive && childAge(s, c) < 16 && rng() < wealth.hazard * 0.8) {
+  for (const c of L.children) if (c.alive && childAge(s, c) < 16 && rng() < wealth.hazard * 0.8 * CR.hazardMul(data, s)) {
     c.alive = false; c.diedAt = L.age; c.deathAge = childAge(s, c);
     KF.famNote(data, s, c, gtext(`Умер(ла) твой ребёнок ${c.name}: детская лихорадка не пощадила.`, c.gender), "death");
     CL.addTablet(data, s, { name: c.name, gender: c.gender, gen: (L.generation || 1) + 1, role: c.gender === "m" ? "сын" : "дочь", age: c.deathAge });
@@ -1132,7 +1134,7 @@ function yearPass(data, s, rng) {
   const yishu = G.slottedTechs(data, s).yishu;
   const phy = by(W.physiques, L.physiqueId);
   let hz = (wealth.hazard + jobHaz) * by(W.regions, L.regionId).hazardMult * by(W.eras, L.eraId).hazardMult * (focus?.hazardMul ?? 1) * (phy?.hazard || 1) * (tal?.hazard || 1) * (1 - (yishu?.hazardCut || 0))
-    * KF.hazardMul(data, s) * CL.feudHazardMul(data, s) * S.hazardMul(data, s);
+    * KF.hazardMul(data, s) * CL.feudHazardMul(data, s) * S.hazardMul(data, s) * CR.hazardMul(data, s);
   if (L.awakened) hz *= wl.awakenedHazardMult * Math.pow(wl.realmHazardDecay ?? 0.5, G.maxTier(data, s)) * (G.pathOf(data, s).hazardMul ?? 1);
   if (L.age < 5) hz *= wl.infantHazardMult;
   const span = lifespan(data, s);

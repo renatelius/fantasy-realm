@@ -40,10 +40,12 @@ function jobValue(data, s, j) {
     + (train && data.crafts?.jobSkill?.[j.id]?.[train] ? 1 : 0)  // работа качает навык, которому учимся
     + (data.crafts?.talentJobs?.[l.talentId]?.includes(j.id) ? 2 : 0)        // к чему тянуло с детства
     + (j.region ? 1 : 0)                                          // местное ремесло: в родном краю знают
-    + (parents.includes(j.name) ? 1.5 : 0);                       // ремесло родителей
+    + (parents.includes(j.name) ? 1.5 : 0)                        // ремесло родителей
+    + CR.perkValue(j.perk, l.awakened) * 0.6;                     // польза кроме камней: связи, лад, находки, бой
 }
 function pickJob(data, s) {
   const l = s.life;
+  if (l.age < (data.jobs.workAge || 12)) return; // в младенчестве «работу» не выбирают
   // Куда не возьмут (шанс < 25%) или уже отказали в этом году — туда не идём; ценность × шанс найма.
   const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self") && (j.id === l.jobId || (!CR.refusedNow(s, j.id) && CR.hireChance(data, s, j) >= 0.25)));
   if (!jobs.length) return;
@@ -54,11 +56,18 @@ function pickJob(data, s) {
   const cur = jobs.find(j => j.id === l.jobId);
   // Опытное ремесло не бросают ради малой прибавки (мастерство, craft.js).
   if (want.id !== l.jobId && (!cur || val(want) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, want.id, "self");
-  if (l.spouse) {
-    const sj = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "spouse"));
-    const b2 = sj.reduce((a, b) => (b.stones > a.stones ? b : a), sj[0]);
-    if (b2 && b2.id !== l.spouse.jobId) L.setJob(data, s, b2.id, "spouse");
-  }
+  pickSpouseJob(data, s);
+}
+// Супруг: своя склонность (талант, если есть, и имя — вместо «самого доходного для всех»), опыт держит на месте.
+function pickSpouseJob(data, s) {
+  const l = s.life, sp = l.spouse; if (!sp) return;
+  const sj = data.jobs.jobs.filter(j => j.id !== "home" && L.jobEligible(data, s, j, "spouse"));
+  if (!sj.length) return;
+  const val = j => j.stones * CR.spouseRankPay(data, s, j.id) - j.hazard * 2000 + (data.crafts?.talentJobs?.[sp.talentId]?.includes(j.id) ? 2 : 0) + CR.perkValue(j.perk, false) * 0.4;
+  const top = Math.max(...sj.map(val));
+  const near = sj.filter(j => val(j) >= top - Math.max(1.5, Math.abs(top) * 0.3)).sort((a, b) => a.id < b.id ? -1 : 1);
+  const want = near[hashStr(sp.name) % near.length], cur = sj.find(j => j.id === sp.jobId);
+  if (want.id !== sp.jobId && (!cur || val(want) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, want.id, "spouse");
 }
 
 function pickFocus(data, s) {
@@ -80,7 +89,7 @@ function pickChildren(data, s) {
   const eldest = l.children.findIndex(c => c.alive && L.childAge(s, c) >= 6);
   l.children.forEach((c, i) => {
     if (!c.alive || L.childAge(s, c) < 6) return;
-    const want = teach && i === eldest ? "workshop" : "help";
+    const want = teach && i === eldest ? "workshop" : l.biz ? "biz" : "help";
     if (c.task !== want) L.setChildTask(data, s, i, want);
   });
 }

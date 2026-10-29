@@ -9,7 +9,7 @@
 //   Ученичество: плата один раз, затем years лет по xpPerYear в навык; в секте — за полцены. Выше cap учитель не учит.
 //   Мастерская (детское занятие workshop): ребёнок учится ремеслу родителя; наследник начинает с этим опытом + heirShare опыта родителя.
 import * as G from "./game.js";
-import { logLine, stonesW, yearsW, lifespan, childAge, jobById, jobEligible } from "./life.js";
+import { logLine, stonesW, yearsW, lifespan, childAge, jobById, jobEligible, defaultJob, gtext } from "./life.js";
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const C = data => data.crafts || null;
@@ -70,6 +70,11 @@ export function yearCraft(data, s, rng = Math.random) {
     const got = addMastery(data, s, L.jobId, g.base * f);
     for (const [k, share] of Object.entries(cfg.jobSkill[L.jobId] || {})) addSkill(data, s, k, got * share);
   }
+  applyPerks(data, s, rng);
+  bizYear(data, s, rng);
+  spouseYear(data, s);
+  kidsJobs(data, s, rng);
+  ladderOffers(data, s);
   if (c.appr) {
     addSkill(data, s, c.appr.skill, cfg.apprentice.xpPerYear);
     c.appr.years -= 1;
@@ -88,6 +93,7 @@ export function yearCraft(data, s, rng = Math.random) {
 // Чем меньше опыта в этом деле (или навыка из job.hire.skill), тем реже берут. Талант, ремесло родителей и связи помогают.
 export function hireReq(data, job) {
   const H = C(data)?.hire; if (!H || !job || job.id === "home") return 0;
+  if (job.need?.from) return 0; // повышение: берут, если опыта хватает (fromWhy)
   if (job.hire?.req != null) return job.hire.req;
   return Math.max(0, (job.stones - (H.reqFrom ?? 3)) * (H.reqPerStone ?? 4));
 }
@@ -229,6 +235,8 @@ export function gearStats(data, s) {
   for (const it of [L.gear?.weapon, L.gear?.armor]) { const x = itemStats(it); out.atk *= x.atk; out.hp *= x.hp; out.def *= x.def; out.crit += x.crit; }
   const b = L.beast && C(data)?.beasts?.[L.beast];
   if (b) { out.atk *= b.atk || 1; out.hp *= b.hp || 1; }
+  const jp = jobById(data, L.jobId)?.perk; // стража, эскорт, охотники: служба закаляет
+  if (jp) { out.atk *= jp.atk || 1; out.hp *= jp.hp || 1; }
   return out;
 }
 
@@ -248,6 +256,17 @@ export function applyEffects(data, s, ef = {}, rng = Math.random) {
   if (ef.qiLoss && L.awakened) s.qi = Math.floor(s.qi * (1 - ef.qiLoss));
   if (ef.layerLoss && L.awakened && s.layer > 1) { s.layer = Math.max(1, s.layer - ef.layerLoss); s.qi = 0; logLine(s, `Ци повернула вспять: ты откатился(ась) на слой ${s.layer}.`, "death"); }
   if (ef.apprentice) apprentice(data, s, ef.apprentice, rng, true);
+  if (ef.jobLoss && L.jobId && L.jobId !== "home") {
+    const was = jobById(data, L.jobId), d = defaultJob(data, s);
+    L.jobId = d && d.id !== was?.id ? d.id : "home"; markRefused(s, was?.id);
+    logLine(s, `Тебя прогнали с места «${was?.name || "работа"}». Теперь: ${jobById(data, L.jobId)?.name || "дом и двор"}.`, "family");
+  }
+  if (ef.biz && L.biz) {
+    const B = C(data).business, k = bizKind(data, L.biz.id);
+    if (ef.biz === "up" && L.biz.lvl < B.lvlMul.length) { L.biz.lvl++; logLine(s, `«${k?.name}» теперь ${B.lvlNames[L.biz.lvl - 1]}.`, "family"); }
+    else if (ef.biz === "down") { if (L.biz.lvl > 1) { L.biz.lvl--; logLine(s, `«${k?.name}» сдало: теперь ${B.lvlNames[L.biz.lvl - 1]}.`, "family"); } }
+    else if (ef.biz === "close") { logLine(s, `«${k?.name}» закрыто.`, "family"); L.biz = null; }
+  }
 }
 export function matches(data, s, r = {}) {
   const L = s.life, fl = L.flags || {};
@@ -260,12 +279,15 @@ export function matches(data, s, r = {}) {
   if (r.hasGear && !L.gear?.[r.hasGear]) return false;
   if (r.noBeast && L.beast) return false;
   if (r.minStonesHave != null && s.spiritStones < r.minStonesHave) return false;
+  if (r.hasBiz && !L.biz) return false;
+  if (r.noBiz && L.biz) return false;
   return true;
 }
 // Оценка эффектов для авторежима (life.js → choiceScore).
 export function scoreFx(ef = {}) {
   const xp = Object.values(ef.craftXp || {}).reduce((a, b) => a + b, 0);
-  return xp * 0.4 + (ef.gear ? 6 : 0) + (ef.beast ? 7 : 0) + (ef.gearLoss ? -6 : 0) + (ef.stonesPct || 0) * 40 + (ef.qiLoss || 0) * -12 + (ef.layerLoss || 0) * -18 + (ef.apprentice ? 5 : 0);
+  return xp * 0.4 + (ef.gear ? 6 : 0) + (ef.beast ? 7 : 0) + (ef.gearLoss ? -6 : 0) + (ef.stonesPct || 0) * 40 + (ef.qiLoss || 0) * -12 + (ef.layerLoss || 0) * -18 + (ef.apprentice ? 5 : 0)
+    + (ef.jobLoss ? -8 : 0) + (ef.biz === "up" ? 6 : ef.biz === "down" ? -6 : ef.biz === "close" ? -12 : 0);
 }
 
 // ───────── наследие ─────────
@@ -284,6 +306,10 @@ export function inherit(data, s, prev, node, isChild) {
     for (const [k, v] of Object.entries(prev.craft.skills || {})) c.skills[k] = Math.min(40, (c.skills[k] || 0) + v * g.heirShare);
   }
   for (const slot of ["weapon", "armor"]) if (prev?.gear?.[slot]) L.gear[slot] = { ...prev.gear[slot], relic: true };
+  if (isChild && prev?.biz && bizKind(data, prev.biz.id)) {
+    L.biz = { id: prev.biz.id, lvl: prev.biz.lvl || 1, since: L.age - Math.min(20, prev.biz.years || 0), total: 0 };
+    logLine(s, `Наследство: «${bizKind(data, prev.biz.id).name}» (${C(data).business.lvlNames[L.biz.lvl - 1]}) теперь твоё.`, "family");
+  }
   if (L.age >= (data.jobs?.workAge || 12)) {
     const best = Object.entries(c.mastery).filter(([id]) => jobEligible(data, s, jobById(data, id))).sort((a, b) => b[1] - a[1])[0];
     if (best && best[1] >= 10) L.jobId = best[0];
@@ -294,6 +320,7 @@ export function inherit(data, s, prev, node, isChild) {
 export function autoCraft(data, s, rng = Math.random) {
   if (!C(data) || !s.life?.alive) return;
   const L = s.life, c = st(s), A = C(data).apprentice;
+  autoBiz(data, s);
   // Ученичество: в навык своего ремесла или, на Пути, в алхимию (свои пилюли).
   if (!c.appr && L.age >= A.minAge && L.age <= 45) {
     const own = Object.keys(C(data).jobSkill[L.jobId] || {}).find(k => skill(s, k) < A.cap);
@@ -330,5 +357,168 @@ export function autoCraft(data, s, rng = Math.random) {
   if (L.age >= 14) for (const slot of ["weapon", "armor"]) {
     const r = R.filter(x => x.slot === slot && x.buy && buyCost(data, s, x) <= s.spiritStones * 0.25 && itemValue({ ...x, q: 1 }) > itemValue(L.gear[slot])).pop();
     if (r) buy(data, s, r.id);
+  }
+}
+
+// ───────── польза работы (jobs.json → perk) ─────────
+//   haz — беды семьи ×; conn / karma / dao — шанс +1 в год; harmony — лад в доме за год; find — находки (камни, навык);
+//   deal / bounty — сделка или награда (камни от min до max); scroll — свиток (на Пути); atk / hp — бой (gearStats).
+export const bizKind = (data, id) => C(data)?.business?.kinds?.find(k => k.id === id) || null;
+function perks(data, s) {
+  const L = s.life; return [jobById(data, L?.jobId)?.perk, L?.biz && bizKind(data, L.biz.id)?.perk].filter(Boolean);
+}
+export function hazardMul(data, s) { return perks(data, s).reduce((m, p) => m * (p.haz || 1), 1); }
+export function perkValue(p, aw) {
+  if (!p) return 0;
+  let v = (1 - (p.haz || 1)) * 25 + (p.conn || 0) * 4 + (p.karma || 0) * 2 + (p.dao || 0) * 6 + (p.harmony || 0) * 0.6;
+  if (p.find) v += p.find.p * ((p.find.stones || 0) + ((p.find.alchemy || 0) + (p.find.smith || 0)) * 1.5);
+  for (const k of ["deal", "bounty"]) if (p[k]) v += p[k].p * (p[k].min + p[k].max) / 2 * 0.7; // разово и не каждый год — ценится ниже жалования
+  if (aw) v += (p.scroll || 0) * 60 + ((p.atk || 1) - 1) * 60 + ((p.hp || 1) - 1) * 40;
+  return v;
+}
+const roll = (rng, a, b) => a + Math.floor(rng() * (b - a + 1));
+function applyPerks(data, s, rng) {
+  const L = s.life, J = data.jobs; if (!J || L.age < J.workAge) return;
+  const st0 = L.stats, job = jobById(data, L.jobId);
+  for (const p of perks(data, s)) {
+    if (p.conn && rng() < p.conn) st0.connections = clamp(st0.connections + 1, 0, 30);
+    if (p.karma && rng() < p.karma) st0.karma = clamp(st0.karma + 1, -20, 20);
+    if (p.dao && rng() < p.dao) st0.daoHeart = clamp(st0.daoHeart + 1, -5, 20);
+    if (p.harmony && L.fam) L.fam.harmony = clamp((L.fam.harmony ?? 55) + p.harmony, 0, 100);
+    if (p.find && rng() < p.find.p) {
+      const f = p.find; if (f.stones) s.spiritStones += f.stones;
+      for (const k of ["alchemy", "smith"]) if (f[k]) addSkill(data, s, k, f[k]);
+      logLine(s, `${job?.name || "Работа"}: удачная находка${f.stones ? ` — ${stonesW(f.stones)}` : ""}${f.alchemy ? ", редкие травы" : ""}${f.smith ? ", шкуры и руда" : ""}.`, "luck");
+    }
+    if (p.deal && rng() < p.deal.p) { const v = roll(rng, p.deal.min, p.deal.max); s.spiritStones += v; logLine(s, `${job?.name || "Дело"}: выгодная сделка, +${stonesW(v)}.`, "luck"); }
+    if (p.bounty && rng() < p.bounty.p) { const v = roll(rng, p.bounty.min, p.bounty.max); s.spiritStones += v; logLine(s, `Награда за голову разбойника: +${stonesW(v)}.`, "adv"); }
+    if (p.scroll && L.awakened && rng() < p.scroll) { const tt = G.luckyScroll(data, s, rng); if (tt) logLine(s, `Среди пыльных полок нашёлся свиток «${tt.name}».`, "luck"); }
+  }
+}
+
+// ───────── карьерная лестница (jobs.json → need.from) ─────────
+// Должность открывает опыт на ступень ниже. Кто уже служил на этой должности (опыт ≥ 10), может вернуться без проверки.
+export function fromWhy(data, s, job) {
+  const f = job?.need?.from; if (!f) return "";
+  if (jobXp(s, job.id) >= 10) return "";
+  const best = Math.max(0, ...f.jobs.map(id => jobXp(s, id)));
+  if (best >= f.xp) return "";
+  return `нужен опыт ${f.jobs.map(id => `«${jobById(data, id)?.name || id}»`).join(" или ")} ${f.xp} (сейчас ${Math.floor(best)})`;
+}
+// Повышение переносит часть опыта: старшина артели не начинает учеником.
+export function promote(data, s, job) {
+  const f = job?.need?.from; if (!f) return false;
+  const c = st(s), best = Math.max(0, ...f.jobs.map(id => jobXp(s, id)));
+  c.mastery[job.id] = Math.max(c.mastery[job.id] || 0, best * 0.6);
+  return true;
+}
+function ladderOffers(data, s) {
+  const L = s.life; if (!L.jobId || L.jobId === "home") return;
+  for (const j of data.jobs.jobs) {
+    if (!j.need?.from?.jobs.includes(L.jobId) || L.flags["offer:" + j.id] != null) continue;
+    if (fromWhy(data, s, j) || !jobEligible(data, s, j)) continue;
+    L.flags["offer:" + j.id] = L.age;
+    logLine(s, `Старшие зовут тебя на место «${j.name}» — ${j.stones} камн./год. Оно в списке работ.`, "family");
+  }
+}
+
+// ───────── своё дело (crafts.json → business) ─────────
+export function bizNeedWhy(data, s, k) {
+  const B = C(data).business, L = s.life, n = k.need || {};
+  if (L.age < B.minAge) return `с ${B.minAge} лет`;
+  if (L.biz) return "у тебя уже есть дело";
+  if (n.mastery != null) {
+    const ids = n.jobs || [L.jobId];
+    const best = Math.max(0, ...ids.filter(id => id && id !== "home").map(id => jobXp(s, id)));
+    if (best < n.mastery) return n.jobs ? `нужен опыт ${n.jobs.map(id => `«${jobById(data, id)?.name || id}»`).join(" или ")} ${n.mastery}` : `нужен опыт в своём ремесле ${n.mastery}`;
+  }
+  for (const [kk, v] of Object.entries(n.skill || {})) if (skill(s, kk) < v) return `нужна ${C(data).skills[kk].name.toLowerCase()} ${v}`;
+  if (s.spiritStones < k.cost) return "не хватает камней";
+  return "";
+}
+const bizKids = s => (s.life.children || []).filter(c => c.alive && c.task === "biz" && childAge(s, c) >= 10).length;
+export function bizIncome(data, s) {
+  const L = s.life, b = L.biz, k = b && bizKind(data, b.id), B = C(data)?.business; if (!k) return 0;
+  const yrs = Math.max(0, L.age - b.since);
+  return Math.round(k.income * B.lvlMul[(b.lvl || 1) - 1] * (1 + Math.min(B.growthCap, yrs * B.growth))
+    * (1 + B.kidBonus * Math.min(B.kidMax, bizKids(s))) * (L.focusId === "work" ? B.workMul : 1));
+}
+export function bizSellPrice(data, s) {
+  const b = s.life.biz, k = b && bizKind(data, b.id), B = C(data).business;
+  return k ? Math.round(k.cost * B.sellShare * B.lvlMul[(b.lvl || 1) - 1]) : 0;
+}
+export function openBiz(data, s, id) {
+  const k = bizKind(data, id); if (!k) return { ok: false, msg: "Такого дела нет." };
+  const why = bizNeedWhy(data, s, k); if (why) return { ok: false, msg: `Не выйдет: ${why}.` };
+  s.spiritStones -= k.cost; s.life.biz = { id, lvl: 1, since: s.life.age, total: 0 };
+  const m = `Ты открыл(а) своё дело: «${k.name}» за ${stonesW(k.cost)}.`; logLine(s, m, "family"); return { ok: true, msg: m };
+}
+export function sellBiz(data, s) {
+  const b = s.life.biz, k = b && bizKind(data, b.id); if (!k) return { ok: false, msg: "Дела нет." };
+  const v = bizSellPrice(data, s); s.spiritStones += v; s.life.biz = null;
+  const m = `«${k.name}» продано за ${stonesW(v)}.`; logLine(s, m, "family"); return { ok: true, msg: m };
+}
+function bizYear(data, s, rng) {
+  const L = s.life, b = L.biz; if (!b) return;
+  const k = bizKind(data, b.id), B = C(data).business; if (!k) { L.biz = null; return; }
+  const inc = bizIncome(data, s); s.spiritStones += inc; b.total = (b.total || 0) + inc;
+  const yrs = L.age - b.since;
+  if (yrs > 0 && yrs % 10 === 0) logLine(s, `«${k.name}»: ${stonesW(inc)} в год, за всё время — ${stonesW(b.total)}.`, "family");
+  if (yrs > 0 && yrs % B.upYears === 0 && b.lvl < B.lvlMul.length && rng() < B.upChance) { b.lvl++; logLine(s, `«${k.name}» разрослось: теперь оно ${B.lvlNames[b.lvl - 1]}.`, "luck"); }
+  if (rng() < k.risk) {
+    if (b.lvl > 1 && rng() < 0.7) { b.lvl--; logLine(s, `Тяжёлый год для «${k.name}»: долги и пустые полки. Теперь оно ${B.lvlNames[b.lvl - 1]}.`, "family"); }
+    else { logLine(s, `«${k.name}» прогорело: долги съели всё. Дело закрыто.`, "death"); L.biz = null; }
+  }
+}
+function autoBiz(data, s) {
+  const L = s.life, B = C(data)?.business; if (!B || L.biz) return;
+  if (L.age < B.minAge + 4 || L.age > 0.75 * lifespan(data, s)) return;
+  const k = B.kinds.filter(x => !bizNeedWhy(data, s, x) && s.spiritStones >= x.cost * (L.awakened ? 3 : 2)).sort((a, b) => b.cost - a.cost)[0];
+  if (k) openBiz(data, s, k.id);
+}
+
+// ───────── супруг и взрослые дети ─────────
+export const spouseXp = (s, id) => s.life?.spouse?.xp?.[id] || 0;
+export const spouseRankPay = (data, s, id) => C(data) && id && id !== "home" ? rankOf(data, spouseXp(s, id)).pay : 1;
+export const spousePayMul = (data, s) => spouseRankPay(data, s, s.life?.spouse?.jobId);
+export function spouseRankTag(data, s) {
+  const sp = s.life?.spouse; if (!C(data) || !sp?.jobId || sp.jobId === "home") return "";
+  const x = spouseXp(s, sp.jobId); return x >= 20 ? ` · ${rankOf(data, x).name.toLowerCase()}` : "";
+}
+function spouseYear(data, s) {
+  const sp = s.life.spouse; if (!sp?.jobId || sp.jobId === "home") return;
+  sp.xp ??= {}; const cur = sp.xp[sp.jobId] || 0, g = C(data).gain;
+  sp.xp[sp.jobId] = clamp(cur + softGain(data, cur, g.base * 0.8), 0, g.cap);
+  const a = rankOf(data, cur), b = rankOf(data, sp.xp[sp.jobId]);
+  if (a !== b) logLine(s, `${sp.gender === "m" ? "Супруга" : "Супругу"} теперь зовут «${b.name.toLowerCase()}» в деле «${jobById(data, sp.jobId)?.name}».`, "family");
+}
+const hashStr = t => { let h = 2166136261; for (const ch of String(t)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+function childJobPick(data, s, ch) {
+  const L = s.life, T = C(data).talentJobs || {}, h = hashStr(ch.name);
+  const list = (data.jobs?.jobs || []).filter(j => j.id !== "home" && !j.awakened && !j.need && (!j.region || j.region.includes(L.regionId)) && (!j.wealth || j.wealth.includes(L.wealthId)));
+  const sib = id => L.children.filter(x => x !== ch && x.alive && x.jobId === id).length; // братья и сёстры расходятся по разным делам
+  let best = null, bv = -1e9;
+  list.forEach((j, i) => {
+    const v = j.stones - j.hazard * 1500 + (ch.craft?.jobs?.[j.id] || 0) * 0.3 + (T[ch.talentId]?.includes(j.id) ? 4 : 0) + (j.id === L.jobId ? 3 : 0) - sib(j.id) * 2.5 + ((h >>> (i % 24)) & 7);
+    if (v > bv) { bv = v; best = j; }
+  });
+  return best;
+}
+// Взрослые дети (16+) встают к своему делу: мастерская, талант, ремесло родителя. Опыт растёт, бывают повышения;
+// неженатые живут с тобой и отдают в дом пятую часть заработка. Наследник продолжает своё дело (inherit → node.craft.jobs).
+function kidsJobs(data, s, rng) {
+  const L = s.life;
+  for (const ch of L.children) {
+    if (!ch.alive || ch.sect || childAge(s, ch) < 16) continue;
+    ch.craft ??= { jobs: {}, skills: {} };
+    if (!ch.jobId) { const j = childJobPick(data, s, ch); if (j) { ch.jobId = j.id; logLine(s, gtext(`${ch.name} встал(а) к своему делу: ${j.name}.`, ch.gender), "family"); } }
+    if (!ch.jobId) continue;
+    const x = ch.craft.jobs[ch.jobId] || 0; ch.craft.jobs[ch.jobId] = Math.min(70, x + 3 * (1 - x / 115));
+    const up = data.jobs.jobs.find(j => j.need?.from?.jobs.includes(ch.jobId) && !j.awakened && ch.craft.jobs[ch.jobId] >= j.need.from.xp && (!j.region || j.region.includes(L.regionId)));
+    if (up && rng() < 0.25) {
+      ch.craft.jobs[up.id] = Math.max(ch.craft.jobs[up.id] || 0, ch.craft.jobs[ch.jobId] * 0.6); ch.jobId = up.id;
+      logLine(s, gtext(`${ch.name} пошёл(ла) в гору: теперь ${up.name.toLowerCase()}.`, ch.gender), "family");
+    }
+    if (!ch.spouse) { const h = Math.round((jobById(data, ch.jobId)?.stones || 0) * 0.2); if (h) s.spiritStones += h; }
   }
 }
