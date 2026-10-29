@@ -1,9 +1,9 @@
-// Род（宗族）: живёт дольше одной жизни — s.clans[«фамилия@край»].
-//   名望 (rep) → ярус: безвестный → уважаемый → знатный → великий клан культиваторов (kin.json → clan.tiers).
+// Род: живёт дольше одной жизни — s.clans[«фамилия@край»].
+//   известность (rep) → ярус: безвестный → уважаемый → знатный → великий клан культиваторов (kin.json → clan.tiers).
 //   Казна: доход рода по ярусу + взносы (duesShare заработка, устав «Общий котёл» — больше).
-//   Казна даёт ресурсы, НЕ ци: часть цены пилюли (pillDiscount), подарок наследнику, свиток 中乘 в родовую библиотеку.
+//   Казна даёт ресурсы, НЕ ци: часть цены пилюли (pillDiscount), подарок наследнику, свиток средняя колесница в родовую библиотеку.
 //   Соседние дома: отношения −100..100; ниже feudAt — вражда (набеги, беды ×feudHazard), от allyRel — союз (сваты, подарки).
-//   Зал предков 祠堂: таблички всех жизней рода (и «новых судеб» той же фамилии в том же краю — дальняя ветвь) и близких.
+//   Зал предков: таблички всех жизней рода (и «новых судеб» той же фамилии в том же краю — дальняя ветвь) и близких.
 // Наследник продолжает род; новая судьба — свой род или дальняя ветвь уже известного.
 import * as G from "./game.js";
 import * as L from "./life.js";
@@ -64,7 +64,7 @@ export function startClan(data, s, mode, rng = Math.random) {
     const t = tierIdx(data, c), grant = Math.min(Math.round((c.treasury || 0) * (C.heirShare ?? 0.15)), C.heirCap?.[t] ?? 0);
     if (grant > 0) { c.treasury -= grant; s.spiritStones += grant; }
     L0.clanKey = key; c.lives = (c.lives || 0) + 1;
-    L.logLine(s, `Род ${c.surname}: ${tierName(data, c)}, 名望 ${Math.round(c.rep)}.${grant ? ` Казна рода выделила наследнику ${L.stonesW(grant)}.` : ""}`, "clan");
+    L.logLine(s, `Род ${c.surname}: ${tierName(data, c)}, известность ${Math.round(c.rep)}.${grant ? ` Казна рода выделила наследнику ${L.stonesW(grant)}.` : ""}`, "clan");
   } else if (c) {
     L0.clanKey = key; L0.clanBranch = "far"; c.lives = (c.lives || 0) + 1;
     L.logLine(s, `Ты родился(ась) в дальней ветви рода ${c.surname} из края «${region}»: ${tierName(data, c)}. На табличках Зала предков есть и твои прежние жизни.`, "clan");
@@ -124,7 +124,7 @@ function setRel(data, s, n, d, why = "") {
   const C = cfg(data); if (!n) return;
   const was = n.feud;
   n.rel = clamp(Math.round(n.rel + d), -100, 100);
-  if (!n.feud && n.rel <= (C.feudAt ?? -60)) { n.feud = true; n.since = s.life.generation || 1; F.famNote(data, s, null, `Между родом ${s.life.surname} и домом ${n.name}（${n.han}）началась вражда${why}.`, "feud", "clan"); }
+  if (!n.feud && n.rel <= (C.feudAt ?? -60)) { n.feud = true; n.since = s.life.generation || 1; F.famNote(data, s, null, `Между родом ${s.life.surname} и домом ${n.name} началась вражда${why}.`, "feud", "clan"); }
   else if (was && n.rel > (C.feudEndAt ?? -30)) { n.feud = false; F.famNote(data, s, null, `Вражда с домом ${n.name} утихла.`, "peace", "clan"); }
 }
 function awakenedKin(s) {
@@ -138,7 +138,7 @@ export function clanYear(data, s, rng = Math.random, pay = 0) {
   const dues = pay > 0 ? Math.round(pay * rfx(data, c, "duesShare", C.duesShare ?? 0.1)) : 0;
   if (dues > 0) { s.spiritStones = Math.max(0, s.spiritStones - dues); }
   c.treasury = Math.round((c.treasury || 0) + dues + (C.baseIncome?.[t0] ?? 0) + (c.treasury || 0) * rfx(data, c, "interest", 0));
-  // 名望: живые культиваторы рода, новые ступени, медленное забвение.
+  // известность: живые культиваторы рода, новые ступени, медленное забвение.
   c.rep += Math.min(C.repAwakenCap ?? 4, (C.repPerAwakened ?? 0.15) * awakenedKin(s));
   if (L0.awakened) { const mt = G.maxTier(data, s); if (mt > (L0.clanTierSeen ?? 0)) { c.rep += (C.repPerTier ?? 4) * (mt - (L0.clanTierSeen ?? 0)); L0.clanTierSeen = mt; } }
   c.rep = Math.max(0, c.rep - c.rep * (C.repDecay ?? 0.01));
@@ -240,7 +240,7 @@ function marryInto(data, s, n, rng, how) {
   const sp = L.makeSpouse(data, s, "arranged", rng);
   sp.surname = n.name; sp.name = `${n.name} ${sp.name.split(" ").slice(1).join(" ")}`; sp.clan = n.id;
   L0.spouse = sp;
-  F.famNote(data, s, sp, `Ты сочетался(ась) браком ${how}: ${sp.name} из дома ${n.name}（${n.han}）.`, "marriage");
+  F.famNote(data, s, sp, `Ты сочетался(ась) браком ${how}: ${sp.name} из дома ${n.name}.`, "marriage");
   return true;
 }
 export function applyEffects(data, s, ef = {}, rng = Math.random) {

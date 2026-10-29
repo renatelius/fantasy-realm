@@ -256,7 +256,7 @@ export function birthBlurb(data, s) {
   const sib = h?.siblings?.length
     ? ` В доме уже ${h.siblings.map(x => `${x.rel} ${x.gender === "m" ? "брат" : "сестра"} ${x.name.split(" ").pop()}, ${yearsW(x.age)}${x.physiqueName ? `, телосложение «${x.physiqueName}»` : ""}`).join("; ")}.`
     : " Ты первый ребёнок в этом дворе.";
-  return gtext(`В ${era.name} ты родился(ась) ${who}, телосложение «${phy.name}»（${phy.han}）, ${region.kind} — ${region.name}（${region.han}）. Семья: ${wealth.name.toLowerCase()}. Мать ${h?.mother.name}, ${yearsW(h?.mother.age)}, ${h?.mother.job}; отец ${h?.father.name}, ${yearsW(h?.father.age)}, ${h?.father.job}.${sib} Корни ещё спят: проверка в ${W.time.awakeningAge} лет.`, L.gender);
+  return gtext(`В ${era.name} ты родился(ась) ${who}, телосложение «${phy.name}», ${region.kind} — ${region.name}. Семья: ${wealth.name.toLowerCase()}. Мать ${h?.mother.name}, ${yearsW(h?.mother.age)}, ${h?.mother.job}; отец ${h?.father.name}, ${yearsW(h?.father.age)}, ${h?.father.job}.${sib} Корни ещё спят: проверка в ${W.time.awakeningAge} лет.`, L.gender);
 }
 export function acceptBirth(s) {
   if (!s.life || s.life.phase === "play") return;
@@ -283,10 +283,10 @@ export function finishRoot(data, s, rng = Math.random) {
     L.soulId = soul?.id || null;
   }
   s.pathId = bestPath(data, s);
-  if (phy?.capAge) logLine(s, `Старейшина нащупал холод в жилах: «${phy.han}». Без ${phy.capLayer}-го слоя первой ступени дольше ${phy.capAge} лет не прожить. Путь — единственное лекарство.`, "death");
+  if (phy?.capAge) logLine(s, `Старейшина нащупал холод в жилах: «${phy.name}». Без ${phy.capLayer}-го слоя первой ступени дольше ${phy.capAge} лет не прожить. Путь — единственное лекарство.`, "death");
   const soul = W.souls?.find(x => x.id === L.soulId);
   const tail = r.root.qiMult > 0 ? "Путь ци открыт." : "Корней нет, как у большинства людей. Путь ци закрыт — но есть тело" + (soul?.mult ? " и душа." : ".");
-  logLine(s, `Проверка корней в ${yearsW(L.age)}: ${rootText(data, L)}. Такая жила выпадает 1 из ${L.rootOdds}.${soul ? ` Душа: ${soul.name}（${soul.han}）.` : ""} ${tail}`, "awaken");
+  logLine(s, `Проверка корней в ${yearsW(L.age)}: ${rootText(data, L)}. Такая жила выпадает 1 из ${L.rootOdds}.${soul ? ` Душа: ${soul.name}.` : ""} ${tail}`, "awaken");
   return L;
 }
 
@@ -317,7 +317,7 @@ export function choosePath(data, s, id) {
   if (!o?.ok) return { ok: false, msg: o ? `Путь закрыт: ${o.why}.` : "Нет такого пути." };
   if (s.realmIndex > 0 || s.layer > 1) return { ok: false, msg: "Путь уже выбран: назад дороги нет." };
   s.pathId = id;
-  logLine(s, `Ты вступил(а) на ${o.path.name}（${o.path.han}）. Первая ступень — «${o.path.realms[0].name}».`, "awaken");
+  logLine(s, `Ты вступил(а) на ${o.path.name}. Первая ступень — «${o.path.realms[0].name}».`, "awaken");
   return { ok: true };
 }
 // «Девять тёмных жил»: потолок срока снимается, когда общий слой (ступень*9 + слой) дорос до capLayer.
@@ -712,7 +712,7 @@ export function ensureKin(data, s, rng = Math.random) {
 }
 
 // ───── Наследование: у ребёнка двое родителей ─────
-// Как в ранобэ (凡人修仙传 и др.): корни идут по крови, но не наверняка. У двух родителей с корнями ребёнок
+// Как в ранобэ («Смертный путь к бессмертию» и др.): корни идут по крови, но не наверняка. У двух родителей с корнями ребёнок
 // с корнями чаще, у двух смертных — реже. Сила корня (число стихий) тянется к среднему родителей, чаще вниз:
 // чистый корень хрупок. Стихии — из стихий отца и матери, иногда своя. Пара стихий родителей изредка
 // сплавляется в мутацию (Огонь+Вода → Гром, Металл+Вода → Лёд). Особое телосложение — дар неба, а не крови:
@@ -911,11 +911,11 @@ function applyEffects(data, s, ef = {}, rng = Math.random) {
   if (ef.karma) st.karma = clamp(st.karma + ef.karma, -20, 20);
   if (ef.connections) st.connections = clamp(st.connections + ef.connections, 0, 30);
   if (ef.years) L.ageShift += ef.years;
-  if (ef.zhuazhou && !L.talentId) { // 抓周: 60% — то, что положили ближе, иначе что угодно
+  if (ef.zhuazhou && !L.talentId) { // чжуачжоу: 60% — то, что положили ближе, иначе что угодно
     const T = data.world.talents || [], near = T.find(x => x.id === ef.zhuazhou);
     const t = near && rng() < 0.6 ? near : T[Math.floor(rng() * T.length)];
     if (t) { L.talentId = t.id; for (const [k, v] of Object.entries(t.start || {})) st[k] = (st[k] || 0) + v;
-      logLine(s, `抓周: ${near && t !== near ? "мимо положенного — " : ""}${t.item}（${t.han}）. ${t.text}`, "birth"); }
+      logLine(s, `Чжуачжоу: ${near && t !== near ? "мимо положенного — " : ""}${t.item}. ${t.text}`, "birth"); }
   }
   if (ef.legacy) L.legacyBonus += ef.legacy;
   if (ef.tech) { // техника в подарок: учится бесплатно и встаёт в слот, если лучше пустого
@@ -1291,6 +1291,6 @@ export function deathReport(data, s, entry) {
   ].filter(Boolean).join("\n");
   return {
     bio, expect, diff: L.age - expect, longer: longer == null ? null : Math.round(longer * 1000) / 10,
-    happiest: hy, farewell: bye.join(", "), years, pattern: pat, stars, notes: L.notes || [], talent: tal ? `${tal.item}（${tal.han}）` : null, share,
+    happiest: hy, farewell: bye.join(", "), years, pattern: pat, stars, notes: L.notes || [], talent: tal ? `${tal.item}` : null, share,
   };
 }

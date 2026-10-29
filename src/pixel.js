@@ -146,11 +146,11 @@ export function drawYanMap(c, regions, cur) {
   for (let y = 18; y < 42; y += 4) for (let x = 226; x < 252; x += 4) if (R() < 0.7) px(ctx, x, y, 2, 2, "#3a4a54");
   // стёртое Чжао: пустое пятно с тушью
   ctx.fillStyle = "#0f151a"; ctx.beginPath(); ctx.ellipse(Wd * 0.52, Ht * 0.36, 16, 10, 0.3, 0, 7); ctx.fill();
-  ctx.fillStyle = "#5a6a74"; ctx.font = "9px serif"; ctx.fillText("赵?", Wd * 0.52 - 8, Ht * 0.36 + 3);
+  ctx.fillStyle = "#5a6a74"; ctx.font = "9px serif"; ctx.fillText("?", Wd * 0.52 - 8, Ht * 0.36 + 3);
   for (const r of regions) {
     const x = r.x / 100 * Wd, y = r.y / 100 * Ht, on = r.id === cur.id;
     ctx.fillStyle = on ? "#3ecf9f" : "#6a7a84"; ctx.beginPath(); ctx.arc(x, y, on ? 4 : 2, 0, 7); ctx.fill();
     if (on) { ctx.strokeStyle = "#3ecf9f"; ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.stroke(); }
-    ctx.fillStyle = on ? "#e6ecef" : "#6a7a84"; ctx.font = `${on ? "bold " : ""}8px sans-serif`; ctx.fillText(r.han, x + (on ? 11 : 5), y + 3);
+    ctx.fillStyle = on ? "#e6ecef" : "#6a7a84"; ctx.font = `${on ? "bold 8" : "7"}px sans-serif`; ctx.fillText(r.short || r.name, x + (on ? 11 : 5), y + 3);
   }
 }

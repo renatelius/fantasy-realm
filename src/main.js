@@ -86,21 +86,21 @@ const cap = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 const fxChips = p => L.physiqueEffects(p).map(e => `<span class="fx ${e.good ? "" : "bad"}">${e.t}</span>`).join("");
 // Доля одним форматом: от 10% — целые проценты, реже — с десятой (1,6%). Раньше часть была «31%», часть «1 из 64».
 const oneIn = (arr, x) => { const p = share(arr, x) * 100; return `${p >= 10 ? p.toFixed(0) : p.toFixed(1).replace(".", ",")}%`; };
-const dots = i => "●".repeat(i + 1) + "○".repeat(Math.max(0, 4 - i));
+const dots = i => Array.from({ length: 5 }, (_, k) => `<i class="dot${k <= i ? " on" : ""}"></i>`).join("");
 
 // ───────── рулетки ─────────
 const SPIN = {
   region: { title: "Где ты родишься", sub: "Небо бросает жребий по всей Великой Янь. Ты не выбираешь.", list: () => W.regions, cur: l => l.regionId,
-    label: r => `${r.name}<small>${r.han}</small>`, after: "spinPhysique",
-    result: r => `<div class="big">${r.name}（${r.han}）</div><div class="dim">${cap(r.kind)}. Здесь рождается ${Math.round(share(W.regions, r) * 100)}% младенцев Янь. ${jpick(J.region[r.id] || J.region.any, s.life.name)}</div>` },
+    label: r => `${r.name}`, after: "spinPhysique",
+    result: r => `<div class="big">${r.name}</div><div class="dim">${cap(r.kind)}. Здесь рождается ${Math.round(share(W.regions, r) * 100)}% младенцев Янь. ${jpick(J.region[r.id] || J.region.any, s.life.name)}</div>` },
   physique: { title: "Телосложение", sub: "Повитуха щупает кости. Мастера скажут потом, что видели всё сразу.", list: () => W.physiques, cur: l => l.physiqueId,
-    label: p => `<span class="${p.bad ? "bad-n" : share(W.physiques, p) < 0.04 ? "rare-n" : ""}">${p.name}</span><small>${p.han}</small>`, after: "cert",
-    result: p => `<div class="big ${p.bad ? "bad-n" : ""}">${p.name}（${p.han}）</div><div class="dim">${L.gtext(p.text, s.life.gender)} ${p.bad ? "Тяжёлое тело." : ""} Выпадает ${oneIn(W.physiques, p)}.</div><div style="margin-top:6px">${fxChips(p) || `<span class="fx">без особенностей</span>`}</div>` },
+    label: p => `<span class="${p.bad ? "bad-n" : share(W.physiques, p) < 0.04 ? "rare-n" : ""}">${p.name}</span>`, after: "cert",
+    result: p => `<div class="big ${p.bad ? "bad-n" : ""}">${p.name}</div><div class="dim">${L.gtext(p.text, s.life.gender)} ${p.bad ? "Тяжёлое тело." : ""} Выпадает ${oneIn(W.physiques, p)}.</div><div style="margin-top:6px">${fxChips(p) || `<span class="fx">без особенностей</span>`}</div>` },
   root: { title: "Пробуждение корней", sub: "Шестнадцать лет. Старейшина кладёт твою ладонь на камень проверки. Вся деревня делает вид, что не смотрит.", list: () => W.roots, cur: l => l.rootId,
     label: r => r.name, after: "play",
     result: () => { const l = s.life, r = by(W.roots, l.rootId), soul = W.souls?.find(x => x.id === l.soulId);
       return `<div class="big ${r.qiMult ? "" : "bad-n"}">${L.rootText(data, l)}</div><div class="dim">${r.qiMult ? `Множитель ци ×${r.qiMult}.` : "Путь ци закрыт. Так рождается большинство — и большинство не знает, что есть другие пути."} Такая жила выпадает 1 из ${l.rootOdds}. ${jpick(J.root[r.id] || [], l.name + l.age)}</div>
-      ${soul ? `<div style="margin-top:8px"><span class="lbl">Душа</span> <b class="${soul.mult ? "rare-n" : ""}">${soul.name}（${soul.han}）</b><div class="dim small">${soul.text}${soul.mult ? " Путь духа открыт." : ""}</div></div>` : ""}`; } },
+      ${soul ? `<div style="margin-top:8px"><span class="lbl">Душа</span> <b class="${soul.mult ? "rare-n" : ""}">${soul.name}</b><div class="dim small">${soul.text}${soul.mult ? " Путь духа открыт." : ""}</div></div>` : ""}`; } },
 };
 
 function renderSpin(kind) {
@@ -158,11 +158,11 @@ function renderPath() {
       [p.daoHeartMul, `дао-сердце ×${p.daoHeartMul} к прорыву`, true], [p.id === "body", "лет меньше", false]]
       .filter(x => x[0]).map(([, t, good]) => `<span class="fx ${good ? "" : "bad"}">${t}</span>`).join("");
     return `<div class="pcard ${o.ok ? "" : "off"} ${o.path.id === best ? "best" : ""}">
-      <div class="lbl">${p.han}</div><div class="pname serif">${p.name}</div>
+      <div class="lbl">Путь</div><div class="pname serif">${p.name}</div>
       <div class="dim small">${p.text}</div>
       <div class="small" style="margin:8px 0 4px">Скорость: <b>×${o.mult.toFixed(2)}</b>${o.path.id === best ? ` · <b style="color:var(--jade)">лучший для тебя</b>` : ""}</div>
       <div>${fx}</div>
-      <ol class="rl">${p.realms.map(r => `<li class="${r.legend ? "leg" : ""}">${r.name} <small>${r.han} · до ${r.maxAge} лет</small></li>`).join("")}</ol>
+      <ol class="rl">${p.realms.map(r => `<li class="${r.legend ? "leg" : ""}">${r.name} <small>до ${r.maxAge} лет</small></li>`).join("")}</ol>
       ${o.ok ? `<button class="pink" data-path="${p.id}">Вступить</button>` : `<span class="fx bad">закрыт: ${o.why}</span>`}
     </div>`;
   }).join("");
@@ -179,7 +179,7 @@ function renderCert() {
   const sib = h?.siblings?.length ? h.siblings.map(x => `${x.rel === "старш." ? "старш." : "младш."} ${x.gender === "m" ? "брат" : "сестра"}, ${x.age}`).join("; ") : "нет";
   const peers = (l.peers || []).map((p, i) => `<div class="row2"><b style="text-align:left">${p.name}</b><span>${p.region} · ${p.gender === "m" ? "М" : "Ж"} · ${p.wealth.toLowerCase()}</span></div>`).join("");
   setHTML($("cert"), `<div class="reg"><div class="reg-h">Регистрация рождения<small>${docNo(l)}</small></div><div class="reg-b">
-    <div class="seal">${by(W.regions, l.regionId).han[0]}</div>
+    <div class="seal">${by(W.regions, l.regionId).name[0]}</div>
     <div class="lbl">Имя</div><div class="big-name">${l.name}</div>
     <div>${L.birthBlurb(data, s)}</div>
     <div class="dim small" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">Чтобы прожить жизнь до ожидаемого срока, нужно около ${Math.round(f.expect * 0.15 * W.time.yearSeconds / 60 + 3)} минут на ×1 (детство идёт быстрее). Закроешь вкладку — жизнь подождёт в этом браузере.</div>
@@ -188,12 +188,12 @@ function renderCert() {
       <div>Край рождения<b>${f.region.name}</b></div>
       <div>Место<b>${cap(f.region.kind)}</b></div>
       <div>Достаток семьи<b><span class="dots">${dots(f.wIdx)}</span><br>${f.wealth.name}</b></div>
-      <div>Возраст родителей<b>Мать ${h?.mother.age} · Отец ${h?.father.age}</b></div>
-      <div>Работа родителей<b>Мать: ${h?.mother.job} · Отец: ${h?.father.job}</b></div>
+      <div>Возраст родителей<b>Мать ${h?.mother.age}<br>Отец ${h?.father.age}</b></div>
+      <div>Работа родителей<b>Мать: ${h?.mother.job}<br>Отец: ${h?.father.job}</b></div>
       <div>Дом<b>${cap(h?.house) || "—"}</b></div>
       <div>Вера дома<b>${cap(jpick(W.creeds, l.name))}</b></div>
       <div>Ожидаемый срок<b>${yw(f.expect)}</b></div>
-      <div>Телосложение<b>${f.phy.name}（${f.phy.han}）</b><span style="text-transform:none;letter-spacing:0">${fxChips(f.phy)}</span></div>
+      <div>Телосложение<b>${f.phy.name}</b><span style="text-transform:none;letter-spacing:0">${fxChips(f.phy)}</span></div>
       <div>Риск умереть до 5 лет<b>${(f.inf * 100).toFixed(1)}%</b></div>
       <div>Эпоха<b>${f.era.name}</b></div>
     </div>
@@ -252,11 +252,11 @@ function renderPass() {
     <div class="dim small">${stage(l)}${l.awakened ? " · " + G.realmsOf(data, s)[s.realmIndex].name : ""}</div></div></div>
     <div class="kv"><span>Пол</span><b>${g("мужской", "женский")}</b>
       <span>Край</span><b>${f.region.name}</b>
-      <span>Тело</span><b title="${L.physiqueEffects(f.phy).map(e => e.t).join(", ")}" class="${f.phy.bad ? "bad-n" : ""}">${f.phy.name} ${f.phy.han}<br>${fxChips(f.phy)}</b>
+      <span>Тело</span><b title="${L.physiqueEffects(f.phy).map(e => e.t).join(", ")}" class="${f.phy.bad ? "bad-n" : ""}">${f.phy.name}<br>${fxChips(f.phy)}</b>
       <span>Род</span><b><span class="dots">${dots(f.wIdx)}</span> ${f.wealth.name.toLowerCase()}</b>
       <span>Корни</span><b>${l.rootRevealed ? L.rootText(data, l) : `спят до ${W.time.awakeningAge} лет`}</b>
       ${l.soulId ? `<span>Душа</span><b>${W.souls?.find(x => x.id === l.soulId)?.name || "—"}</b>` : ""}
-      ${l.awakened ? `<span>Путь</span><b style="color:var(--jade)">${G.pathOf(data, s).name} ${G.pathOf(data, s).han}</b>` : ""}
+      ${l.awakened ? `<span>Путь</span><b style="color:var(--jade)">${G.pathOf(data, s).name}</b>` : ""}
       ${CL.clanOf(s) ? `<span>Клан</span><b>род ${l.surname} · ${CL.tierName(data, CL.clanOf(s))}</b>` : ""}
       ${l.sect ? `<span>Секта</span><b>${G.sectById(data, l.sect.id)?.name} · ${G.sectRankName(s, data)}</b>` : ""}
       <span>Ремесло</span><b>${L.jobById(data, l.jobId)?.name || (l.age < 6 ? "ещё не учится" : "пока нет")}</b>
@@ -287,9 +287,9 @@ function newbieHint(o) {
   const techs = [...new Set(data.enemies.enemies.map(e => C.enemyTech(data, s, e)).filter(Boolean).map(t => `«${t.name}»`))];
   const h = C.combatHint(data, s, t => G.techCost(data, s, t));
   const type = h.tech && data.techniques.types.find(x => x.id === h.tech.type);
-  const what = h.tech ? `Выучи «${h.tech.name}» (${type.han}) за ${stw(h.cost)}${s.spiritStones < h.cost ? ` — не хватает ${h.cost - s.spiritStones}: поработай год-другой` : " — хватает уже сейчас"}.` : "Подходящих техник на этой ступени нет: копи камни на пилюлю и прорвись.";
+  const what = h.tech ? `Выучи «${h.tech.name}» (${type.name.toLowerCase()}) за ${stw(h.cost)}${s.spiritStones < h.cost ? ` — не хватает ${h.cost - s.spiritStones}: поработай год-другой` : " — хватает уже сейчас"}.` : "Подходящих техник на этой ступени нет: копи камни на пилюлю и прорвись.";
   const why = techs.length ? `Враги здесь бьют техниками: ${techs.join(", ")}. ` : "";
-  const slots = h.empty ? ` Пустых боевых слотов: ${h.empty} из 2 (招式, 外功).` : "";
+  const slots = h.empty ? ` Пустых боевых слотов: ${h.empty} из 2 (приёмы, закал тела).` : "";
   return `<div class="note" style="border-color:var(--gold);background:#d9b45a12">Шанс победы ниже 60%. ${why}${what}${slots} Список — «Техники» справа.</div>`;
 }
 function renderCult() {
@@ -415,7 +415,7 @@ function renderFamily() {
     ${rows.join("") || `<div class="dim">Один(а) под небом.</div>`}`);
 }
 
-// ───────── род: 名望, казна, устав, соседи, Зал предков ─────────
+// ───────── род: известность, казна, устав, соседи, Зал предков ─────────
 let hallOpen = false;
 document.addEventListener("toggle", e => { if (e.target.id === "hall") hallOpen = e.target.open; }, true);
 function renderClan() {
@@ -425,7 +425,7 @@ function renderClan() {
   const C = data.kin.clan, t = CL.tierIdx(data, c), tr = KF.trends(data, s), nt = C.tiers[t + 1];
   const rules = c.rules.map(id => CL.ruleDef(data, id)).filter(Boolean).map(r => `<div class="row2"><span>${r.name}</span><b class="dim small" style="font-weight:400">${r.text}</b></div>`).join("");
   const nb = c.rivals.slice().sort((a, b) => b.rel - a.rel).map(n => { const w = CL.relWord(data, n);
-    return `<div class="row2"><span>Дом ${n.name} <small class="dim">${n.han}</small></span><b><span class="fx ${n.feud || n.rel <= -15 ? "bad" : ""}">${w}</span><small>${C.tiers[n.tier]?.name || ""}</small></b></div>`; }).join("");
+    return `<div class="row2"><span>Дом ${n.name}</span><b><span class="fx ${n.feud || n.rel <= -15 ? "bad" : ""}">${w}</span><small>${C.tiers[n.tier]?.name || ""}</small></b></div>`; }).join("");
   const cost = CL.scrollCost(data, s), canS = CL.canBuyScroll(data, s), head = CL.isHead(s), wait = CL.takeWait(data, s);
   const dis = !l.alive || !!l.pending ? "disabled" : "";
   const amt = Math.max(10, Math.floor(s.spiritStones * (C.donateShare ?? 0.2)));
@@ -433,7 +433,7 @@ function renderClan() {
   const tablets = c.tablets.slice().reverse().map(x => `<li class="${x.life ? "life" : ""}">${x.life ? "★ " : ""}<b>${x.name}</b> · ${L.gtext(x.role, x.gender)}${x.age != null ? ` · ${yw(x.age)}` : ""}${x.realm ? ` · ${x.realm}` : ""}${x.sect ? ` · ${x.sect}` : ""}${x.cause ? `<small>${x.cause}</small>` : ""}</li>`).join("");
   setHTML(el, `<h2>Род ${c.surname} <small>${CL.tierName(data, c)}</small></h2>
     <div class="fammet">
-      <div>名望<b>${Math.round(c.rep)} ${arrow(tr.r)}</b><small>${nt ? `до «${nt.name}» ещё ${Math.max(1, Math.ceil(nt.rep - c.rep))}` : "выше некуда"}</small></div>
+      <div>Известность<b>${Math.round(c.rep)} ${arrow(tr.r)}</b><small>${nt ? `до «${nt.name}» ещё ${Math.max(1, Math.ceil(nt.rep - c.rep))}` : "выше некуда"}</small></div>
       <div>Казна<b>${Math.floor(c.treasury)}</b><small>${share ? `платит ${share}% цены пилюли` : g("пилюли — сам", "пилюли — сама")}</small></div>
       <div>Глава<b>${CL.headName(s).split(" ").slice(1).join(" ") || CL.headName(s)}</b><small>${head ? "это ты" : "старший в доме"}</small></div>
     </div>
@@ -441,14 +441,14 @@ function renderClan() {
     <div class="lbl" style="margin-top:8px">Соседние дома</div>${nb}
     <div class="btns">
       <button data-clan="donate" ${dis || s.spiritStones < amt ? "disabled" : ""}>Взнос в казну · ${stw(amt)}</button>
-      <button data-clan="scroll" ${dis || !canS ? "disabled" : ""}>${cost != null ? `Свиток 中乘 в библиотеку · ${stw(cost)} из казны` : "Свитки — с «уважаемого рода»"}</button>
+      <button data-clan="scroll" ${dis || !canS ? "disabled" : ""}>${cost != null ? `Свиток средней колесницы в библиотеку · ${stw(cost)} из казны` : "Свитки — с «уважаемого рода»"}</button>
       ${head ? `<button data-clan="take" ${dis || wait ? "disabled" : ""}>${wait ? `Из казны — через ${wait} г.` : "Взять из казны (глава)"}</button>` : ""}
     </div>
-    <details id="hall"${hallOpen ? " open" : ""}><summary>Зал предков 祠堂 · табличек: ${c.tablets.length}</summary><ul class="tree tablets">${tablets || `<li class="dim">Табличек ещё нет.</li>`}</ul></details>
+    <details id="hall"${hallOpen ? " open" : ""}><summary>Зал предков · табличек: ${c.tablets.length}</summary><ul class="tree tablets">${tablets || `<li class="dim">Табличек ещё нет.</li>`}</ul></details>
     <div class="dim small" style="margin-top:6px">Род живёт дольше одной жизни: наследник получает часть казны, «новая судьба» с той же фамилией в том же краю — дальняя ветвь. Казна даёт ресурсы, а не ци: «род — это история, а не сила».</div>`);
 }
 
-// ───────── секта: ранг, 贡献, учитель, соученики, отношения ─────────
+// ───────── секта: ранг, вклад, учитель, соученики, отношения ─────────
 function renderSect() {
   const el = $("sect"), l = s.life, sc = l.sect;
   if (!l.alive || !sc) {
@@ -470,7 +470,7 @@ function renderSect() {
   const HPn = hd?.self ? S.headPanel(data, s) : null;
   const powerHtml = HPn ? `<div class="lbl" style="margin-top:10px">Власть главы</div>
     <div class="fammet">
-      <div>Казна секты<b>${HPn.treasury}</b><small>+${HPn.income.stones} камн. и +${HPn.income.contrib} 贡献 в год</small></div>
+      <div>Казна секты<b>${HPn.treasury}</b><small>+${HPn.income.stones} камн. и +${HPn.income.contrib} вклада в год</small></div>
       <div>Ворота<b>${HPn.fort ? "укреплены" : "обычные"}</b><small>${HPn.fort ? `ещё ${yw(HPn.fort)}` : "в войну беды сильнее"}</small></div>
       <div>Обида совета<b>${HPn.grudge}</b><small>${HPn.grudge ? "старейшины помнят" : "чисто"}</small></div>
     </div>
@@ -481,12 +481,12 @@ function renderSect() {
     ${cands.map(c => `<div class="row2"><span>${c.who}</span><b>${c.name}<small>дар: ${c.word}${c.cur ? " · названный преемник" : ""}</small>${c.cur ? "" : `<button data-succ="${c.i}" ${dis || s.settings.autoPlay ? "disabled" : ""}>Назначить</button>`}</b></div>`).join("")}`
     : sc.heirApparent ? `<div class="note">${hd?.regent ? `Печать завещана тебе. Пока ты не войдёшь в «${G.realmForTier(data, s, R[R.length - 1].tier).name}», правит регент ${hd.name}.` : `Глава назвал тебя преемником. Когда печать освободится, она ждёт тебя (нужна ступень «${G.realmForTier(data, s, R[R.length - 1].tier).name}»).`}</div>`
     : sc.headHeir ? `<div class="dim small" style="margin-top:4px">Преемник главы — ${sc.headHeir}.</div>` : "";
-  setHTML(el, `<h2>${sd.name} <small>${sd.han} · ${G.sectRankName(s, data)}${sc.lay ? " (мирской)" : ""}</small></h2>
+  setHTML(el, `<h2>${sd.name} <small>${G.sectRankName(s, data)}${sc.lay ? " (мирской)" : ""}</small></h2>
     <div class="dim small">${sd.desc || ""}</div>
     <div class="rankchain">${chain}</div>${need}
     <div class="dim small">Твой дар: ${S.talentWord(S.myTalent(data, s))} — по нему глава выбирает преемника.</div>
     <div class="fammet">
-      <div>贡献<b>${Math.floor(sc.contrib)}</b><small>+${S.contribYear(data, s)} в год${l.focusId === "sect" ? " (служба)" : ""}</small></div>
+      <div>Вклад<b>${Math.floor(sc.contrib)}</b><small>+${S.contribYear(data, s)} в год${l.focusId === "sect" ? " (служба)" : ""}</small></div>
       <div>Заслуги<b>${Math.floor(sc.merit)}</b><small>для рангов, не тратятся</small></div>
       <div>Положение<b>${Math.round(sc.standing)}</b><small>${sc.standing < 20 ? "на волоске" : sc.standing < 45 ? "косятся" : "в чести"}</small></div>
     </div>
@@ -499,10 +499,10 @@ function renderSect() {
     ${sc.war ? `<div class="note" style="border-color:var(--red);background:#e06a6a14">Война с ${G.sectById(data, sc.war.with)?.name} — ещё ~${yw(Math.max(1, sc.war.until - l.age))}. Беды ×${S.fortified(s) ? "меньше (ворота укреплены)" : data.sects.config?.warHazard ?? 1.2}, вклад ×${data.sects.config?.warContribMul ?? 1.5}.${HPn?.war != null ? ` Шанс победы ~${HPn.war}%.` : ""}</div>` : ""}
     <div style="margin-top:6px">${rules}</div>
     <div class="btns">
-      <button data-sect="pill" ${dis || sc.contrib < pc ? "disabled" : ""}>Пилюля за ${pc} 贡献</button>
+      <button data-sect="pill" ${dis || sc.contrib < pc ? "disabled" : ""}>Пилюля за ${pc} вклада</button>
       <button data-sect="leave" ${dis}>Уйти из секты</button>
     </div>
-    <div class="dim small" style="margin-top:6px">贡献 — за год в секте, «Службу секте» (фокус), задания и победы. Техники секты можно оплатить 贡献 вместо камней.</div>`);
+    <div class="dim small" style="margin-top:6px">Вклад — за год в секте, «Службу секте» (фокус), задания и победы. Техники секты можно оплатить вкладом вместо камней.</div>`);
 }
 
 function peerStatus(p, i) {
@@ -543,7 +543,7 @@ function renderMap() {
 // Подсказка к варианту: в какую сторону он тянет (без точных чисел) и есть ли шанс/риск.
 const FXN = { stones: "камни", karma: "карма", daoHeart: "дао-сердце", connections: "связи", qiPct: "ци", years: "срок", legacy: "наследие", pill: "пилюля" };
 // Родня, род, секта: числа — стрелкой, флаги — словом (good = не красная плашка).
-const KIN_FX = { harmony: "лад", famWealth: "достаток", rep: "名望", treasury: "казна", contrib: "贡献", sectStanding: "положение", masterRel: "учитель", rivalRel: "соседи", allyRel: "союзник", parentYears: "годы родителю", sectTreasury: "казна секты" };
+const KIN_FX = { harmony: "лад", famWealth: "достаток", rep: "известность", treasury: "казна", contrib: "вклад", sectStanding: "положение", masterRel: "учитель", rivalRel: "соседи", allyRel: "союзник", parentYears: "годы родителю", sectTreasury: "казна секты" };
 const KIN_FLAGS = { sectTrial: ["испытание", true], allyMarriage: ["брак союза", true], rivalMarriage: ["брак мира", true], feudEnd: ["мир", true], warEnd: ["перемирие", true], sibSect: ["родня в секту", true], clanRule: ["устав", true], sibMarry: ["свадьба", true],
   parentDeath: ["смерть родителя", false], spouseLeave: ["уход супруга", false], sectLeave: ["уход из секты", false], sectExpel: ["изгнание", false], masterDeath: ["смерть учителя", false], masterLost: ["учитель изгнан", false], peerFriendLost: ["друг отвернётся", false], sectWait: ["отсрочка", false],
   sectFortify: ["стены", true], sectTruce: ["мир сект", true], sectAlly: ["союз сект", true], discipleNew: ["ученик", true], discipleTrain: ["выучка", true], sectGrudgeClear: ["совет простит", true],
@@ -638,22 +638,22 @@ function techLine(t) {
     t.qiMultiplier ? `ци ×${t.qiMultiplier}${eff}` : "", t.breakAdd ? `прорыв +${Math.round(t.breakAdd * 100)}%` : "", t.forgeMult ? `закалка ×${t.forgeMult}` : "", t.hpMult ? `тело ×${t.hpMult}` : "", t.atkMult ? `удар ×${t.atkMult}` : "", t.defMult ? `защита ×${t.defMult}` : "", t.critAdd ? `крит +${Math.round(t.critAdd * 100)}%` : "", t.hazardCut ? `риск −${Math.round(t.hazardCut * 100)}%` : "", t.pillMul ? `пилюля ×${t.pillMul}` : ""].filter(Boolean).join(" · ");
   const needRealm = !own && (t.minRealm || 0) > G.tierOf(data, s);
   const acc = G.techAccess(data, s, t), cost = G.techCost(data, s, t);
-  const SRC = { family: "из родовой библиотеки · бесплатно", market: `рынок · ${stw(cost)}`, sect: `секта · ${stw(cost)} или ${S.contribCost(data, s, t)} 贡献` };
+  const SRC = { family: "из родовой библиотеки · бесплатно", market: `рынок · ${stw(cost)}`, sect: `секта · ${stw(cost)} или ${S.contribCost(data, s, t)} вклада` };
   const st = own ? (act ? "в работе" : "изучена") : acc.ok ? SRC[acc.src] : `🔒 ${acc.why}`;
   const dis = !s.life.alive || !!s.life.pending || act || needRealm || !s.life.awakened || !G.techUsable(data, s, t) || !acc.ok;
-  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.han} · ${st}${needRealm ? ` · нужна ступень «${G.realmForTier(data, s, t.minRealm).name}»` : ""}<small>${bits}. ${t.text}</small></button>`;
+  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.name.toLowerCase()} · ${st}${needRealm ? ` · нужна ступень «${G.realmForTier(data, s, t.minRealm).name}»` : ""}<small>${bits}. ${t.text}</small></button>`;
 }
 function renderTechs() {
   const det = $("techs").closest("details"); if (!det.open) return;
   const sd = s.life.sect && G.sectById(data, s.life.sect.id);
-  const head = `<div class="note">Рынок продаёт только 凡功 и 下乘 — втридорога. 中乘 и выше держат секты, кланы и семьи.<br>
+  const head = `<div class="note">Рынок продаёт только мирские техники и нижнюю колесницу — втридорога. Среднюю колесницу и выше держат секты, кланы и семьи.<br>
     Родовая библиотека: <b>${(s.familyTechs || []).length}</b> свитк. (бесплатно потомкам) · ${sd ? `секта <b>${sd.name}</b>, ${G.sectRankName(s, data)}` : "без секты"}.</div>`;
   setHTML($("techs"), head + data.techniques.types.map(type => {
     // После выбора пути чужие техники скрыты; свои — первыми.
     const list = data.techniques.techniques.filter(t => t.type === type.id && (!s.life.awakened || G.techUsable(data, s, t)))
       .sort((a, b) => (G.techAccess(data, s, b).ok - G.techAccess(data, s, a).ok) || (!!b.path - !!a.path) || GRADE[a.grade].rank - GRADE[b.grade].rank);
-    const note = type.id === "neigong" && s.pathId === "body" && s.life.awakened ? `<div class="dim small">Путь тела копит закалку через 外功, не через 内功.</div>` : "";
-    return `<h4 style="margin:12px 0 2px">${type.han} · ${type.name}</h4>${note}` + list.map(techLine).join("");
+    const note = type.id === "neigong" && s.pathId === "body" && s.life.awakened ? `<div class="dim small">Путь тела копит закалку техниками закала тела, а не внутренней работой.</div>` : "";
+    return `<h4 style="margin:12px 0 2px">${type.name}</h4>${note}` + list.map(techLine).join("");
   }).join(""));
 }
 
@@ -719,7 +719,7 @@ document.body.addEventListener("click", e => {
     const r = S.headAction(data, s, d.hp, d.ha); if (!r.ok) log(r.msg, "info"); return done();
   }
   if (d.succ !== undefined) { const r = S.appointSuccessor(data, s, +d.succ); if (!r.ok) log(r.msg, "info"); return done(); }
-  if (d.sect === "pill") { log(S.sectPill(data, s) ? "Секта выдала пилюлю за вклад." : "Не хватает 贡献.", "sect"); return done(); }
+  if (d.sect === "pill") { log(S.sectPill(data, s) ? "Секта выдала пилюлю за вклад." : "Не хватает вклада.", "sect"); return done(); }
   if (d.sect === "leave") { if (confirm("Уйти из секты? Вернуться в неё будет нельзя, выученное останется.")) { S.leaveSect(data, s, "leave"); done(); } return; }
 });
 document.body.addEventListener("change", e => {

@@ -4,8 +4,8 @@
 //   урон = max(1, atk * U(0.9..1.1) - def * 0.5), крит игрока x critMult
 //   награда: камни = enemy.stones * (1 + 0.15*L); ци = qiRewardShare * qiRequired
 //   техника врага: лучшая из enemy.techniques с fromLevel ≤ L; множит hp/atk/def врага.
-//     Враги растут техниками так же, как игрок: кто не учит 招式/外功, тот отстаёт.
-//   поражение: рана (срок −woundYears) и шанс гибели = deathOnLoss * (1/hpMult тела)^2 * (0.7 с 轻功 — успел уйти)
+//     Враги растут техниками так же, как игрок: кто не учит приёмы/закал тела, тот отстаёт.
+//   поражение: рана (срок −woundYears) и шанс гибели = deathOnLoss * (1/hpMult тела)^2 * (0.7 с лёгкое тело — успел уйти)
 import { qiRequired, slottedTechs, realmsOf, pathOf, techUsable, techAccess, luckyScroll, talentOf, pathSpeedMul, pathPassives, tierOf } from "./game.js";
 import { die, stonesW } from "./life.js";
 import { onAdventureWin } from "./sect.js";
@@ -64,7 +64,7 @@ export function adventureOdds(data, s, n = 30, rng = Math.random) {
   return { win, death };
 }
 
-// Подсказка новичку: самая дешёвая доступная боевая техника (招式 / 外功 / 暗器), которая лучше текущей.
+// Подсказка новичку: самая дешёвая доступная боевая техника (приёмы / закал тела / скрытое оружие), которая лучше текущей.
 export function combatHint(data, s, cost) {
   const sl = slottedTechs(data, s), val = t => (t.atkMult || 1) * (t.hpMult || 1) * (t.defMult || 1) * (1 + (t.critAdd || 0));
   const cands = data.techniques.techniques
@@ -83,7 +83,7 @@ export function adventure(data, s, now = Date.now(), rng = Math.random) {
   const cfg = data.enemies.adventure, list = data.enemies.enemies;
   const e = list[Math.floor(rng() * list.length)];
   const r = fight(data, s, e, rng);
-  const et = enemyTech(data, s, e), with_ = et ? ` («${et.name}» ${et.han})` : "";
+  const et = enemyTech(data, s, e), with_ = et ? ` («${et.name}»)` : "";
   if (!r.win) {
     s.losses += 1; s.adventureReadyAt = now + cfg.lossCooldownSec * 1000;
     const body = s.life && data.world.physiques?.find(x => x.id === s.life.physiqueId);
@@ -101,7 +101,7 @@ export function adventure(data, s, now = Date.now(), rng = Math.random) {
   const qi = Math.floor(cfg.qiRewardShare * qiRequired(data, s) * (realmsOf(data, s)[s.realmIndex]?.qiRewardMul ?? 1) * pathSpeedMul(data, s));
   const pill = rng() < cfg.pillDropChance;
   s.wins += 1; s.spiritStones += stones; s.qi = Math.min(qiRequired(data, s), s.qi + qi);
-  onAdventureWin(data, s); // 贡献 секте за победу (с потолком за год)
+  onAdventureWin(data, s); // вклад секте за победу (с потолком за год)
   if (pill) s.pills += 1;
   // Удача: в тайнике врага — свиток тайной техники своего пути.
   const scroll = s.life?.awakened && rng() < (cfg.scrollChance || 0) ? luckyScroll(data, s, rng) : null;

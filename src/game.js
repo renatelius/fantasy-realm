@@ -2,7 +2,7 @@
 // Формулы:
 //   qiRequired(realm, layer) = baseQi * growth^(layer-1)
 //   qiPerSec = (base + perRealm*ярус ступени) * technique.qiMultiplier * life.qiMult * pathSpeedMul (цена нескольких путей)
-//   breakthroughChance = clamp(base - penalty*(layer-1) + pill + дао-сердце + тело + 内功 + слои других путей, min, 0.99)
+//   breakthroughChance = clamp(base - penalty*(layer-1) + pill + дао-сердце + тело + внутренняя работа + слои других путей, min, 0.99)
 
 import { die } from "./life.js";
 import * as CL from "./clan.js";
@@ -146,7 +146,7 @@ export function switchPath(data, s, id, force = false) {
     s.pathSlowUntil = s.life.age + (crossCfg(data).switchSlowYears ?? 0);
   }
   const r = realmsOf(data, s)[s.realmIndex];
-  return { ok: true, msg: `Теперь ты развиваешь ${p.name}（${p.han}）: «${r.name}», слой ${s.layer}.` };
+  return { ok: true, msg: `Теперь ты развиваешь ${p.name}: «${r.name}», слой ${s.layer}.` };
 }
 // Сколько лет медитации до следующего слоя (без приключений). Infinity — если ци не идёт.
 export function yearsToNextLayer(data, s, yearSeconds) {
@@ -163,14 +163,14 @@ export function qiRequired(data, s) {
 export function physiqueOf(data, s) {
   return s.life ? data.world.physiques?.find(x => x.id === s.life.physiqueId) : null;
 }
-// Дар с детства (抓周 в год): мелкие множители — techCostMul, pillMul, payMul, atkMult, hazard.
+// Дар с детства (чжуачжоу в год): мелкие множители — techCostMul, pillMul, payMul, atkMult, hazard.
 export function talentOf(data, s) {
   return s.life?.talentId ? data.world.talents?.find(x => x.id === s.life.talentId) || null : null;
 }
 // ───── Доступ к техникам ─────
-// Рынок продаёт только 凡功/下乘 и втридорога (×1.5). 中乘 и выше — тайна: секта (по рангу), родовая библиотека, удача, друзья.
+// Рынок продаёт только мирские/нижняя колесница и втридорога (×1.5). средняя колесница и выше — тайна: секта (по рангу), родовая библиотека, удача, друзья.
 // Ранги секты (sects.json → ranks): слуга, внешний, внутренний, личный, старший ученик, старейшина, глава — sect.js.
-// Доступ к колесницам: внешний ученик — 中乘, внутренний — 上乘, личный и выше — 绝学; слуге тайны не открывают.
+// Доступ к колесницам: внешний ученик — средняя колесница, внутренний — верхняя колесница, личный и выше — цзюэсюэ; слуге тайны не открывают.
 const MARKET_RANK = 1, MARKET_MUL = 1.5, RANK_NAMES = ["слуга", "внешний ученик", "внутренний ученик", "личный ученик", "старший ученик", "старейшина", "глава"];
 export function sectById(data, id) { return data.sects?.sects?.find(x => x.id === id) || null; }
 export function sectRankIdx(s) { const sc = s.life?.sect; return sc ? (sc.rank ?? 1) : -1; }
@@ -186,7 +186,7 @@ export function techAccess(data, s, t) {
   if (gr <= MARKET_RANK) return { ok: true, src: "market" };
   const my = s.life.sect && sectById(data, s.life.sect.id);
   if (my && t.owner === my.id) {
-    const need = gr - 2; // 中乘 → внешний, 上乘 → внутренний, 绝学 → личный
+    const need = gr - 2; // средняя колесница → внешний, верхняя колесница → внутренний, цзюэсюэ → личный
     if (sectRank(s, data) >= need) return { ok: true, src: "sect" };
     return { ok: false, src: "sect", why: `«${my.name}» учит этому с ранга «${data.sects?.ranks?.[need + 1]?.name || RANK_NAMES[need + 1]}»` };
   }
@@ -201,7 +201,7 @@ export function techCost(data, s, t) {
   const mul = a.src === "market" && s.life ? MARKET_MUL : 1;
   return Math.round((t.cost || 0) * mul * (physiqueOf(data, s)?.techCostMul ?? 1) * (talentOf(data, s)?.techCostMul ?? 1));
 }
-// Находка/подарок: случайная тайная техника своего пути. 中乘 всегда, 上乘 с 2-й ступени, 绝学 с 3-й (редко).
+// Находка/подарок: случайная тайная техника своего пути. средняя колесница всегда, верхняя колесница с 2-й ступени, цзюэсюэ с 3-й (редко).
 export function luckyScroll(data, s, rng = Math.random, ownerFilter = null) {
   const r = tierOf(data, s), w = { 2: 1, 3: r >= 1 ? 0.35 : 0, 4: r >= 2 ? 0.08 : 0 };
   const pool = data.techniques.techniques.filter(t => !s.ownedTechniques.includes(t.id) && techUsable(data, s, t)
@@ -228,7 +228,7 @@ export function focusOf(data, s) {
 
 // Техника своего пути: t.path пусто — общая; иначе только для этого пути.
 export function techUsable(data, s, t) { return !t?.path || t.path === (s.pathId || "qi"); }
-// Сила 内功 с учётом пути: общие на пути духа — вполсилы, на пути тела — ноль (закалка идёт через 外功).
+// Сила внутренняя работа с учётом пути: общие на пути духа — вполсилы, на пути тела — ноль (закалка идёт через закал тела).
 export function neigongMult(data, s, t) {
   if (!t) return 1;
   const p = s.pathId || "qi";
@@ -245,7 +245,7 @@ export function qiPerSecond(data, s) {
   const m = data.realms.meditation;
   const sl = slottedTechs(data, s);
   const f = focusOf(data, s);
-  // Путь тела копит закалку техникой 外功: 1.15 × (1 + 1.2 × (hpMult − 1)) × forgeMult своей техники.
+  // Путь тела копит закалку техникой закал тела: 1.15 × (1 + 1.2 × (hpMult − 1)) × forgeMult своей техники.
   const tech = (s.pathId === "body") ? (sl.body ? bodyForgeMult(data, s, sl.body) : 1.15) : neigongMult(data, s, sl.neigong);
   return (m.qiPerSecondBase + m.qiPerSecondPerRealm * tierOf(data, s)) * tech * pathMult(data, s) * (f?.qiMul ?? 1) * pathSpeedMul(data, s) * pathPassives(data, s).qi;
 }
@@ -343,7 +343,7 @@ export function learnTechnique(data, s, id) {
   const acc = techAccess(data, s, t);
   if (!acc.ok) return { ok: false, msg: `Не учат: ${acc.why}.` };
   const cost = techCost(data, s, t);
-  // Техника своей секты: можно заплатить вкладом 贡献 (sect.js → contribCost), иначе камнями.
+  // Техника своей секты: можно заплатить вкладом (sect.js → contribCost), иначе камнями.
   const cc = acc.src === "sect" ? S.contribCost(data, s, t) : null, sc = s.life?.sect;
   const byContrib = cc != null && sc && (sc.contrib || 0) >= cc;
   if (!byContrib && s.spiritStones < cost) return { ok: false, msg: "Не хватает камней." };
@@ -351,5 +351,5 @@ export function learnTechnique(data, s, id) {
   if (byContrib) sc.contrib -= cc; else s.spiritStones -= cost;
   s.ownedTechniques.push(id);
   const r = equipTechnique(data, s, id);
-  return byContrib ? { ...r, msg: `${r.msg} Оплачено вкладом: ${cc} 贡献.` } : r;
+  return byContrib ? { ...r, msg: `${r.msg} Оплачено вкладом: ${cc}.` } : r;
 }

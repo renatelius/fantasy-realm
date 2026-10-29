@@ -46,7 +46,9 @@ header{position:sticky;top:0;z-index:10;background:#0d1216f2;backdrop-filter:blu
 .pname{font-size:1.35rem;margin:0 0 6px;line-height:1.1}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.8rem;margin-top:8px}
 .kv span{color:var(--dim)} .kv b{font-weight:500}
-.dots{letter-spacing:2px;color:var(--ink)}
+.dots{display:inline-flex;gap:4px;vertical-align:middle}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);box-sizing:border-box}
+.dot.on{background:var(--ink)}
 .mrz{font:11px/1.4 Consolas,monospace;color:#9fb0ba;border-top:1px dashed var(--line);margin-top:10px;padding-top:8px;word-break:break-all}
 
 /* шкалы */
@@ -227,7 +229,7 @@ ul.stars li{margin:4px 0}
     <div class="card" id="peers"></div>
     <div class="card"><h2>Карта жизни <small>1 клетка = 1 год</small></h2><div class="lmap" id="lmap"></div>
       <div class="dim small" style="margin-top:8px">Зелень — прожитые годы, бордо — выборы, золото — проверка корней, нефрит — прорывы. Рамка — сколько живут в твоём краю.</div></div>
-    <details class="card"><summary>Техники · 内功 外功 招式 轻功 医术 暗器</summary><div id="techs"></div></details>
+    <details class="card"><summary>Техники</summary><div id="techs"></div></details>
     <details class="card"><summary>Родовое древо</summary><ul class="tree" id="tree"></ul></details>
   </div>
 </div>

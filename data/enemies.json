@@ -29,7 +29,6 @@
    "techniques": [
     {
      "name": "Клык лунного голода",
-     "han": "月牙噬",
      "fromLevel": 3,
      "atkMult": 1.1,
      "hpMult": 1.05,
@@ -37,7 +36,6 @@
     },
     {
      "name": "Стая теней",
-     "han": "影群",
      "fromLevel": 12,
      "atkMult": 1.225,
      "hpMult": 1.175,
@@ -45,7 +43,6 @@
     },
     {
      "name": "Вой над Бездонью",
-     "han": "无间嚎",
      "fromLevel": 24,
      "atkMult": 1.375,
      "hpMult": 1.3,
@@ -64,7 +61,6 @@
    "techniques": [
     {
      "name": "Ладонь чёрного песка",
-     "han": "黑沙掌",
      "fromLevel": 3,
      "atkMult": 1.11,
      "hpMult": 1.04,
@@ -72,7 +68,6 @@
     },
     {
      "name": "Меч без ножен",
-     "han": "无鞘剑",
      "fromLevel": 12,
      "atkMult": 1.25,
      "hpMult": 1.15,
@@ -80,7 +75,6 @@
     },
     {
      "name": "Стёртая печать",
-     "han": "残印诀",
      "fromLevel": 24,
      "atkMult": 1.4,
      "hpMult": 1.275,
@@ -99,7 +93,6 @@
    "techniques": [
     {
      "name": "Холод горной тени",
-     "han": "山阴寒",
      "fromLevel": 3,
      "atkMult": 1.09,
      "hpMult": 1.075,
@@ -107,7 +100,6 @@
     },
     {
      "name": "Тысяча шёпотов",
-     "han": "千语",
      "fromLevel": 12,
      "atkMult": 1.2,
      "hpMult": 1.2,
@@ -115,7 +107,6 @@
     },
     {
      "name": "Плач стёртого царства",
-     "han": "赵亡泣",
      "fromLevel": 24,
      "atkMult": 1.35,
      "hpMult": 1.35,

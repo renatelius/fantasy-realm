@@ -1,10 +1,9 @@
 {
- "_note": "Секты держат 中乘 и выше в тайне. Ранги (ranks): слуга → внешний (中乘) → внутренний (上乘) → личный (绝学) → старший ученик → старейшина → глава. Повышение: ярус пути (tier) + заслуги (merit, копятся из 贡献) + испытание (карточки sect_trial_N). 贡献 (contrib) — тратится на техники секты (1 贡献 = config.contrib.stonePerContrib камней) и пилюли. paths — каким путям секта открыта; rules — устав (ruleDefs); allies/enemies — отношения, из них — войны сект. Логика — src/sect.js.",
+ "_note": "Секты держат средняя колесница и выше в тайне. Ранги (ranks): слуга → внешний (средняя колесница) → внутренний (верхняя колесница) → личный (цзюэсюэ) → старший ученик → старейшина → глава. Повышение: ярус пути (tier) + заслуги (merit, копятся из вклад) + испытание (карточки sect_trial_N). вклад (contrib) — тратится на техники секты (1 вклад = config.contrib.stonePerContrib камней) и пилюли. paths — каким путям секта открыта; rules — устав (ruleDefs); allies/enemies — отношения, из них — войны сект. Логика — src/sect.js.",
  "sects": [
   {
    "id": "wudang",
    "name": "Удан",
-   "han": "武当",
    "paths": [
     "qi",
     "spirit"
@@ -27,7 +26,6 @@
   {
    "id": "shaolin",
    "name": "Шаолинь",
-   "han": "少林",
    "paths": [
     "body",
     "qi"
@@ -52,7 +50,6 @@
   {
    "id": "emei",
    "name": "Эмэй",
-   "han": "峨眉",
    "paths": [
     "qi",
     "body",
@@ -77,7 +74,6 @@
   {
    "id": "huashan",
    "name": "Хуашань",
-   "han": "华山",
    "paths": [
     "qi"
    ],
@@ -98,7 +94,6 @@
   {
    "id": "kunlun",
    "name": "Куньлунь",
-   "han": "昆仑",
    "paths": [
     "qi",
     "spirit"
@@ -119,7 +114,6 @@
   {
    "id": "kongtong",
    "name": "Кунтун",
-   "han": "崆峒",
    "paths": [
     "body",
     "qi"
@@ -141,7 +135,6 @@
   {
    "id": "beggars",
    "name": "Союз нищих",
-   "han": "丐帮",
    "paths": [
     "body",
     "qi",
@@ -168,7 +161,6 @@
   {
    "id": "qinglong",
    "name": "Секта Цинлун",
-   "han": "青龙门",
    "paths": [
     "qi"
    ],
@@ -188,7 +180,6 @@
   {
    "id": "crane",
    "name": "Лазурный Журавль",
-   "han": "青鹤门",
    "paths": [
     "qi",
     "spirit",
@@ -211,7 +202,6 @@
   {
    "id": "sunmoon",
    "name": "Солнце и Луна",
-   "han": "日月神教",
    "paths": [
     "body",
     "qi",
@@ -240,42 +230,36 @@
   {
    "id": "servant",
    "name": "слуга",
-   "han": "杂役",
    "tier": 0,
    "merit": 0
   },
   {
    "id": "outer",
    "name": "внешний ученик",
-   "han": "外门弟子",
    "tier": 0,
    "merit": 20
   },
   {
    "id": "inner",
    "name": "внутренний ученик",
-   "han": "内门弟子",
    "tier": 1,
    "merit": 80
   },
   {
    "id": "personal",
    "name": "личный ученик",
-   "han": "亲传弟子",
    "tier": 2,
    "merit": 220
   },
   {
    "id": "senior",
    "name": "старший ученик",
-   "han": "首席弟子",
    "tier": 2,
    "merit": 600
   },
   {
    "id": "elder",
    "name": "старейшина",
-   "han": "长老",
    "tier": 2,
    "merit": 2000,
    "years": 25,
@@ -284,7 +268,6 @@
   {
    "id": "head",
    "name": "глава",
-   "han": "掌门",
    "tier": 2,
    "merit": 4000,
    "years": 40,
@@ -322,21 +305,21 @@
   },
   "duels": {
    "name": "Спор школ",
-   "text": "Победы в цзянху — лучший вклад: за приключения 贡献 ×1,5.",
+   "text": "Победы в цзянху — лучший вклад: за приключения вклад ×1,5.",
    "fx": {
     "advContribMul": 1.5
    }
   },
   "retreat": {
    "name": "Затвор",
-   "text": "Гунфу в снегах — тоже служба: в фокусе «Гунфу» 贡献 ×2.",
+   "text": "Гунфу в снегах — тоже служба: в фокусе «Гунфу» вклад ×2.",
    "fx": {
     "practiceContribMul": 2
    }
   },
   "poison": {
    "name": "Яды пограничья",
-   "text": "Опасная жизнь (беды +5%), зато за приключения 贡献 ×2.",
+   "text": "Опасная жизнь (беды +5%), зато за приключения вклад ×2.",
    "fx": {
     "hazardMul": 1.05,
     "advContribMul": 2
@@ -438,7 +421,7 @@
    "nepotismStanding": 10
   },
   "headPowers": {
-   "_note": "Власть главы (sect.js → headPanel / headAction / autoHead) — только пока печать у тебя. Казна: в год incomeBase + incomePerStanding × положение (×warIncomeMul в войну, +tightIncome за каждое ужесточённое правило, × contribMul устава) камней и contribIncome 贡献 тебе. Траты: пилюли ученикам (дар +pillTalent, до talentCap), ворота (fortifyYears лет: беды войны × fortifyHazard от прибавки, победа +fortifyWin), набор ученика (до maxDisciples), «взять себе» (takeShare казны, положение takeStanding, обида совета +1 — карточка «Заговор в совете»). Война: объявить врагу (declareCost), мир (truceCost), союз (allyCost, раз в allyYears, шанс allyBase ± положение). Победа: warBase + стены + allyWin×союзники + discipleWin×(дар учеников − 1) ± положение; трофей warSpoils в казну, 名望 рода +warRep. Поражение: положение, warLossShare казны. Устав: смягчить правило или вписать новое из tightenPool, раз в ruleYears. Кадры: принять родича без испытания, повысить ученика, передать технику (дар +teachTalent, ци −teachQiPct), изгнать соперника (раз в expelYears, раскол splitChance). Род: свиток секты (libraryGrades) в родовую библиотеку раз в libraryYears, риск libraryRisk.",
+   "_note": "Власть главы (sect.js → headPanel / headAction / autoHead) — только пока печать у тебя. Казна: в год incomeBase + incomePerStanding × положение (×warIncomeMul в войну, +tightIncome за каждое ужесточённое правило, × contribMul устава) камней и contribIncome вклад тебе. Траты: пилюли ученикам (дар +pillTalent, до talentCap), ворота (fortifyYears лет: беды войны × fortifyHazard от прибавки, победа +fortifyWin), набор ученика (до maxDisciples), «взять себе» (takeShare казны, положение takeStanding, обида совета +1 — карточка «Заговор в совете»). Война: объявить врагу (declareCost), мир (truceCost), союз (allyCost, раз в allyYears, шанс allyBase ± положение). Победа: warBase + стены + allyWin×союзники + discipleWin×(дар учеников − 1) ± положение; трофей warSpoils в казну, известность рода +warRep. Поражение: положение, warLossShare казны. Устав: смягчить правило или вписать новое из tightenPool, раз в ruleYears. Кадры: принять родича без испытания, повысить ученика, передать технику (дар +teachTalent, ци −teachQiPct), изгнать соперника (раз в expelYears, раскол splitChance). Род: свиток секты (libraryGrades) в родовую библиотеку раз в libraryYears, риск libraryRisk.",
    "startTreasury": 120,
    "incomeBase": 20,
    "incomePerStanding": 0.5,

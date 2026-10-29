@@ -1,12 +1,12 @@
-// Жизнь в секте: ранги, 贡献, наставник 师父, соученики, устав, войны сект, уход и изгнание.
+// Жизнь в секте: ранги, вклад, наставник, соученики, устав, войны сект, уход и изгнание.
 //   L.sect = { id, since, rank, merit, contrib, standing, master, peers, war, lay, lastTrial, head, heirApparent, seatFor }
 //   Глава секты (sc.head) — живой человек: правит, стареет, уходит (смерть, затвор, гибель в войне сект). Печать главы
 //     освобождается только тогда — и только старейшина, выполнивший условия, выходит к испытанию «Печать главы».
 //     Не вышло или не годишься — печать берёт другой (соперник, друг или кто-то из старейшин). Названный преемник — +к шансу.
 //   Ранг (sects.json → ranks): слуга → внешний → внутренний → личный → старший ученик → старейшина → глава.
 //     Повышение: ярус пути ≥ rank.tier, заслуги merit ≥ rank.merit, карма по уставу — и испытание (карточка sect_trial_N).
-//     Доступ к техникам (game.js → sectRank): внешний — 中乘, внутренний — 上乘, личный и выше — 绝学.
-//   贡献 за год: (base + perTier × ярус) × устав × война; в фокусе «Служба секте» ×focusMul + focusAdd.
+//     Доступ к техникам (game.js → sectRank): внешний — средняя колесница, внутренний — верхняя колесница, личный и выше — цзюэсюэ.
+//   вклад за год: (base + perTier × ярус) × устав × война; в фокусе «Служба секте» ×focusMul + focusAdd.
 //     Тратится на техники секты (cost / stonePerContrib) и пилюли (цена / pillDiv). Заслуги (merit) — всё заработанное, не тратятся.
 //   Положение (standing, 0–100): нарушения устава и предательство снижают; ноль — изгнание.
 // Параметры — data/sects.json → config, ranks, ruleDefs.
@@ -65,7 +65,7 @@ export function joinSect(data, s, id, rank = 1, rng = Math.random, quiet = false
   const np = 2 + Math.floor(rng() * 2);
   for (let i = 0; i < np; i++) L0.sect.peers.push(person(data, s, rng, { kind: i === 0 ? "friend" : "rival", rank: clamp(rk + Math.floor(rng() * 2), 0, 4) }));
   if (!quiet) {
-    F.famNote(data, s, null, `Ты вступил(а) в секту ${sd.name}（${sd.han}）: ${R[rk].name}${lay ? " (мирской ученик)" : ""}. Её 中乘 открыты внешним ученикам, 上乘 — внутренним, 绝学 — личным.${L0.sect.master ? ` Наставник — ${L0.sect.master.name}.` : ""}`, "sect", "awaken");
+    F.famNote(data, s, null, `Ты вступил(а) в секту ${sd.name}: ${R[rk].name}${lay ? " (мирской ученик)" : ""}. Её средняя колесница открыта внешним ученикам, верхняя — внутренним, цзюэсюэ — личным.${L0.sect.master ? ` Наставник — ${L0.sect.master.name}.` : ""}`, "sect", "awaken");
     CL.applyEffects(data, s, { rep: 1 + rk });
   }
   return true;
@@ -199,7 +199,7 @@ export function heirSeal(data, s, prev, child, rng = Math.random) {
   const R = ranks(data), top = topRank(data), sd = sectDef(data, s);
   if (child.sectSuccessor) {
     const t = L.gtext(`${prev.name} завещал(а) печать главы тебе`, prev.gender);
-    if (G.maxTier(data, s) >= R[top].tier) takeSeal(data, s, rng, `${t}: теперь ты ${R[top].name}（${R[top].han}）секты ${sd.name}.`);
+    if (G.maxTier(data, s) >= R[top].tier) takeSeal(data, s, rng, `${t}: теперь ты ${R[top].name} секты ${sd.name}.`);
     else {
       sc.rank = Math.max(sc.rank, SUCC(data).heirMinRank ?? 3); sc.heirApparent = true;
       sc.head = { ...newHead(data, s, rng, true), regent: true };
@@ -335,7 +335,7 @@ function doTrial(data, s, rng) {
   sc.lastTrial = s.life.age;
   if (sc.seatFor === topRank(data)) {
     if (!headEligible(data, s)) { appointOther(data, s, rng, "Совет решил, что ты не готов(а) к печати."); return; }
-    if (rng() < trialChance(data, s)) takeSeal(data, s, rng, `Печать главы в твоих руках: теперь ты ${R[topRank(data)].name}（${R[topRank(data)].han}）секты ${sd.name}. Старейшины поклонились — и каждый запомнил, как именно.`);
+    if (rng() < trialChance(data, s)) takeSeal(data, s, rng, `Печать главы в твоих руках: теперь ты ${R[topRank(data)].name} секты ${sd.name}. Старейшины поклонились — и каждый запомнил, как именно.`);
     else appointOther(data, s, rng, "Совет старейшин не отдал тебе печать.");
     return;
   }
@@ -343,7 +343,7 @@ function doTrial(data, s, rng) {
   if (rng() < trialChance(data, s)) {
     sc.rank += 1; sc.seatFor = null;
     if (sc.rank >= 4) sc.master = sc.master?.alive ? { ...sc.master, retired: true } : sc.master;
-    F.famNote(data, s, null, `Испытание пройдено: теперь ты ${R[sc.rank].name}（${R[sc.rank].han}）секты ${sd.name}.${sc.rank === 2 ? " Открыты 上乘." : sc.rank === 3 ? " Открыты 绝学." : ""}`, "rank", "sect");
+    F.famNote(data, s, null, `Испытание пройдено: теперь ты ${R[sc.rank].name} секты ${sd.name}.${sc.rank === 2 ? " Открыта верхняя колесница." : sc.rank === 3 ? " Открыты цзюэсюэ." : ""}`, "rank", "sect");
     CL.applyEffects(data, s, { rep: 2 * sc.rank });
   } else {
     sc.standing = clamp((sc.standing ?? 50) - 3, 0, 100);
@@ -421,7 +421,7 @@ export function onAdventureWin(data, s) {
   const add = Math.max(0, Math.min(v, cap - (sc.advYear || 0)));
   if (add > 0) { sc.advYear = (sc.advYear || 0) + add; addContrib(s, add); }
 }
-// Траты 贡献: техника секты и пилюля.
+// Траты вклад: техника секты и пилюля.
 export function contribCost(data, s, t) { return Math.ceil(G.techCost(data, s, t) / (cfg(data).contrib?.stonePerContrib ?? 4)); }
 export function pillCost(data, s) { return Math.ceil(G.pillPrice(data, s) / (cfg(data).contrib?.pillDiv ?? 4)); }
 export function sectPill(data, s) {
@@ -544,9 +544,9 @@ export function headPanel(data, s) {
   ];
   const war = [];
   if (sc.war) war.push(it("truce", null, `Предложить мир ${G.sectById(data, sc.war.with)?.name} · ${H.truceCost ?? 40}`, `Война кончится сразу; положение ${sc.war.declared ? H.declaredTruceStanding ?? -6 : H.truceStanding ?? -3}.`, T >= (H.truceCost ?? 40), money(H.truceCost ?? 40)));
-  else for (const id of sectEnemies(data, s)) { const x = G.sectById(data, id); war.push(it("war", id, `Объявить войну: ${x.name} · ${H.declareCost ?? 50}`, `Победа — казна +${H.warSpoils ?? 120}, 名望 рода +${H.warRep ?? 6}; поражение — положение и треть казны.`, T >= (H.declareCost ?? 50), money(H.declareCost ?? 50))); }
+  else for (const id of sectEnemies(data, s)) { const x = G.sectById(data, id); war.push(it("war", id, `Объявить войну: ${x.name} · ${H.declareCost ?? 50}`, `Победа — казна +${H.warSpoils ?? 120}, известность рода +${H.warRep ?? 6}; поражение — положение и треть казны.`, T >= (H.declareCost ?? 50), money(H.declareCost ?? 50))); }
   const acd = cdLeft(s, sc.allyAt, H.allyYears ?? 10);
-  for (const x of allyCandidates(data, s).slice(0, 3)) war.push(it("ally", x.id, `Союз: ${x.name} · ${H.allyCost ?? 60}`, `Шанс ~${Math.round(allyChance(data, s) * 100)}%: союзник помогает в войне, 名望 +${H.allyRep ?? 3}.`, T >= (H.allyCost ?? 60) && !acd, acd ? `следующее посольство через ${L.yearsW(acd)}` : money(H.allyCost ?? 60)));
+  for (const x of allyCandidates(data, s).slice(0, 3)) war.push(it("ally", x.id, `Союз: ${x.name} · ${H.allyCost ?? 60}`, `Шанс ~${Math.round(allyChance(data, s) * 100)}%: союзник помогает в войне, известность +${H.allyRep ?? 3}.`, T >= (H.allyCost ?? 60) && !acd, acd ? `следующее посольство через ${L.yearsW(acd)}` : money(H.allyCost ?? 60)));
   const rc = ruleChoices(data, s), rcd = cdLeft(s, sc.ruleAt, H.ruleYears ?? 15);
   const rules = [...rc.soft.map(id => it("soften", id, `Смягчить «${ruleName(data, id)}»`, `${data.sects.ruleDefs[id].text} Правило перестанет действовать; старая гвардия недовольна (положение ${H.softenStanding ?? -8}).`, !rcd, rcd ? `устав менять можно раз в ${L.yearsW(H.ruleYears ?? 15)}: ещё ${L.yearsW(rcd)}` : "")),
     ...rc.tight.map(id => it("tighten", id, `Ужесточить: «${ruleName(data, id)}»`, `${data.sects.ruleDefs[id].text} Строгость — казне +${Math.round((H.tightIncome ?? 0.1) * 100)}% в год; молодые ворчат (положение ${H.tightenStanding ?? -3}).`, !rcd, rcd ? `ещё ${L.yearsW(rcd)}` : ""))];
@@ -558,7 +558,7 @@ export function headPanel(data, s) {
     ...rivalsOf(sc).map((p, i) => it("expel", i, `Изгнать соперника ${p.name}`, `Риск раскола ~${Math.round(((H.splitChance ?? 0.35) + (p.rank >= 5 ? H.splitHighRival ?? 0.15 : 0)) * 100)}%: уйдёт с учениками и частью казны.`, !ecd, ecd ? `после прошлого изгнания совет ещё не остыл: ${L.yearsW(ecd)}` : "")),
   ];
   const lcd = cdLeft(s, sc.libAt, H.libraryYears ?? 10), pool = libPool(data, s);
-  const clan = [it("library", null, "Свиток секты — в родовую библиотеку", `Раз в ${L.yearsW(H.libraryYears ?? 10)}: свиток 中乘/上乘 секты потомкам бесплатно. Узнают (~${Math.round((H.libraryRisk ?? 0.3) * 100)}%) — положение ${H.libraryStanding ?? -12}.`, !lcd && pool.length && CL.clanOf(s), lcd ? `ещё ${L.yearsW(lcd)}` : !pool.length ? "всё нужное уже в библиотеке" : !CL.clanOf(s) ? "нет рода" : "")];
+  const clan = [it("library", null, "Свиток секты — в родовую библиотеку", `Раз в ${L.yearsW(H.libraryYears ?? 10)}: свиток средней или верхней колесницы секты потомкам бесплатно. Узнают (~${Math.round((H.libraryRisk ?? 0.3) * 100)}%) — положение ${H.libraryStanding ?? -12}.`, !lcd && pool.length && CL.clanOf(s), lcd ? `ещё ${L.yearsW(lcd)}` : !pool.length ? "всё нужное уже в библиотеке" : !CL.clanOf(s) ? "нет рода" : "")];
   return { treasury: T, income: treasuryIncome(data, s), fort: fortified(s) ? sc.fortUntil - age : 0, grudge: sc.grudge || 0, war: sc.war ? Math.round(warWinChance(data, s) * 100) : null,
     groups: [{ name: "Казна", items: cash }, { name: "Война и мир", items: war }, { name: "Устав", items: rules }, { name: "Ученики и кадры", items: staff }, { name: "Род", items: clan }].filter(g => g.items.length) };
 }

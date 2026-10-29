@@ -10,7 +10,7 @@
 //   6) приключение — если шанс победы ≥ 55% (поражение ранит и может убить; враги бьют техниками).
 //   0) путь — ступор (до слоя > autoOutYears лет или порог легенды до заката) → открытый путь, где слой
 //      наберётся быстрее всего (хотя бы вдвое быстрее). Застрял и там — снова к самому быстрому. На закате — к порогу легенды.
-//      Пока проигрываем (< 70%), техники 招式/外功/暗器 покупаются первыми и без запаса на пилюлю.
+//      Пока проигрываем (< 70%), техники приёмы/закал тела/скрытое оружие покупаются первыми и без запаса на пилюлю.
 import * as G from "./game.js";
 import * as C from "./combat.js";
 import * as L from "./life.js";
@@ -68,14 +68,14 @@ function winChance(data, s) {
 }
 const COMBAT_FIRST = ["martial", "body", "anqi", "neigong", "qinggong", "yishu"];
 function pickTechniques(data, s, say) {
-  // Враги бьют техниками: если проигрываем — сначала 招式/外功/暗器 и без запаса на пилюлю.
+  // Враги бьют техниками: если проигрываем — сначала приёмы/закал тела/скрытое оружие и без запаса на пилюлю.
   const losing = winChance(data, s) < 0.7;
   const reserve = losing ? 0 : G.pillPrice(data, s);
   const order = losing ? COMBAT_FIRST.map(id => data.techniques.types.find(t => t.id === id)).filter(Boolean) : data.techniques.types;
   for (const type of order) {
-    if (type.id === "neigong" && s.pathId === "body") continue; // телу 内功 не помогает копить закалку
+    if (type.id === "neigong" && s.pathId === "body") continue; // телу внутренняя работа не помогает копить закалку
     const cur = G.slottedTechs(data, s)[type.id];
-    // Ценность с учётом пути: 内功 — по реальной силе на этом пути и прорыву; 外功 на пути тела — ещё и закалка.
+    // Ценность с учётом пути: внутренняя работа — по реальной силе на этом пути и прорыву; закал тела на пути тела — ещё и закалка.
     const base = TYPE_VALUE[type.id] || (() => 0);
     const val = type.id === "neigong" ? (t => G.neigongMult(data, s, t) * 10 + (t.path ? (t.breakAdd || 0) * 50 : 0))
       : type.id === "body" && s.pathId === "body" ? (t => base(t) + G.bodyForgeMult(data, s, t) * 8) : base;
@@ -89,7 +89,7 @@ function pickTechniques(data, s, say) {
     if (!cands.length) continue;
     const t = cands[0];
     const r = G.learnTechnique(data, s, t.id);
-    if (r.ok) say(`Освоено: «${t.name}» (${type.han}).`);
+    if (r.ok) say(`Освоено: «${t.name}» (${type.name.toLowerCase()}).`);
   }
 }
 
@@ -134,7 +134,7 @@ function doBreakthroughs(data, s, say, rng) {
     // Порог легенды: только на закате (с oldAgeStart − 3% срока, сейчас 75% — терять нечего), с пилюлей и шансом ≥ 4%.
     if (G.legendGate(data, s) && (s.life.age < ((data.world.life.oldAgeStart ?? 0.88) - 0.03) * L.lifespan(data, s) || withPill < 0.04 || (s.pills < 1 && s.spiritStones < G.pillPrice(data, s)))) break;
     const wantPill = withPill - raw >= 0.08 || raw < 0.6 || G.legendGate(data, s);
-    if (wantPill && s.pills < 1 && !S.sectPill(data, s)) G.buyPill(data, s); // сначала пилюля за 贡献
+    if (wantPill && s.pills < 1 && !S.sectPill(data, s)) G.buyPill(data, s); // сначала пилюля за вклад
     const use = wantPill && s.pills >= 1;
     const before = `${G.realmsOf(data, s)[s.realmIndex].name} ${s.layer}`;
     const r = G.breakthrough(data, s, use, rng);
