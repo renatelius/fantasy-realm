@@ -882,7 +882,7 @@ export function setJob(data, s, id, who = "self", rng = Math.random) {
       if (CR.refusedNow(s, id)) return { ok: false, refused: true, msg: `«${job.name}»: в этом году тебе уже отказали. Попробуй через год.` };
       if (rng() >= hi.chance) {
         CR.markRefused(s, id);
-        const why = hi.vacancy ? "место пока занято — освободится не скоро" : hi.lv < hi.req ? "сказали, что нужен человек с опытом" : "взяли своего человека";
+        const why = hi.lost ? "о тебе ещё помнят старую историю" : hi.vacancy ? "место пока занято — освободится не скоро" : hi.lv < hi.req ? "сказали, что нужен человек с опытом" : "взяли своего человека";
         const m = `Тебя не взяли на работу «${job.name}» (шанс был ${Math.round(hi.chance * 100)}%): ${why}. Снова — через год.`;
         if (!hi.vacancy || !s.settings?.autoPlay) logLine(s, m, "family"); // авторежим просится каждый год — не засоряем летопись
         return { ok: false, refused: true, msg: m };

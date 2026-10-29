@@ -71,6 +71,7 @@ export function yearCraft(data, s, rng = Math.random) {
     for (const [k, share] of Object.entries(cfg.jobSkill[L.jobId] || {})) addSkill(data, s, k, got * share);
   }
   applyPerks(data, s, rng);
+  holdYear(data, s, rng);
   bizYear(data, s, rng);
   spouseYear(data, s);
   kidsJobs(data, s, rng);
@@ -101,8 +102,11 @@ export function hireReq(data, job) {
 export const isTopRung = (data, job) => !!job?.need?.from && !data.jobs.jobs.some(x => x.need?.from?.jobs.includes(job.id));
 export function hireInfo(data, s, job) {
   const H = C(data)?.hire, L = s.life, req = hireReq(data, job);
+  // Место недавно потеряно (job.hold) — обратно не зовут, пока не забудут.
+  const lost = L.flags?.["lost:" + job?.id];
+  if (H && lost != null && job.id !== L.jobId && L.age - lost < (H.holdCooldown ?? 6)) return { chance: 0, req, lv: 0, parts: ["место недавно потеряно"], vacancy: true, lost: true };
   // Повышение: старшее место освобождается не каждый год. Чем больше опыта сверх порога — тем раньше позовут.
-  if (H && job?.need?.from && job.id !== L.jobId && jobXp(s, job.id) < 10) {
+  if (H && job?.need?.from && job.id !== L.jobId && (jobXp(s, job.id) < 10 || lost != null)) { // потерявший место ждёт вакансию, как все
     const f = job.need.from, best = Math.max(0, ...f.jobs.map(id => jobXp(s, id)));
     const chance = clamp((isTopRung(data, job) ? H.vacancyTop ?? 0.2 : H.vacancy ?? 0.35) + Math.max(0, best - f.xp) / (H.vacancyPerXp ?? 150), 0, H.vacancyMax ?? 0.85);
     return { chance, req: f.xp, lv: best, parts: ["место старшего"], vacancy: true };
@@ -536,4 +540,17 @@ function kidsJobs(data, s, rng) {
     }
     if (!ch.spouse) { const h = Math.round((jobById(data, ch.jobId)?.stones || 0) * 0.2); if (h) s.spiritStones += h; }
   }
+}
+
+// ───────── удержать вершину (jobs.json → hold) ─────────
+// На вершине дела не сидят вечно: соперник, скандал, разорение. Назад — на ступень ниже, опыт остаётся.
+function holdYear(data, s, rng) {
+  const L = s.life, job = jobById(data, L.jobId), h = job?.hold;
+  if (!h || !job.need?.from || rng() >= h.p) return;
+  const back = job.need.from.jobs.map(id => jobById(data, id)).filter(j => j && jobEligible(data, s, { ...j, need: null }))
+    .sort((a, b) => jobXp(s, b.id) - jobXp(s, a.id))[0];
+  L.flags["lost:" + job.id] = L.age;
+  L.jobId = back?.id || "home";
+  const why = h.why?.length ? h.why[Math.floor(rng() * h.why.length)] : "место отдали другому";
+  logLine(s, `Ты больше не ${job.name.toLowerCase()}: ${why}. Снова — ${back ? back.name.toLowerCase() : "дом и двор"}; вернуть имя можно не раньше чем через ${yearsW(C(data).hire.holdCooldown ?? 6)}.`, "family");
 }

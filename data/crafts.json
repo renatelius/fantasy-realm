@@ -55,9 +55,9 @@
     { "id": "meteor_blade", "skill": "smith", "slot": "weapon", "name": "Клинок из небесного железа", "special": true, "atk": 1.18, "crit": 0.02 }
   ],
   "hire": {
-    "_note": "Шанс найма = base + (уровень − порог) / scale в пределах [min, max]. Уровень = max(опыт в этой работе, навык из job.hire.skill) + талант + ремесло родителей + связи (до connCap). Порог = job.hire.req или (камни − reqFrom) × reqPerStone. Порог 0 — берут всегда. Отказ — снова через год. Повышение (need.from): место освобождается с шансом vacancy в год (vacancyTop — для вершины лестницы) + (опыт сверх порога) / vacancyPerXp, не больше vacancyMax.",
+    "_note": "Шанс найма = base + (уровень − порог) / scale в пределах [min, max]. Уровень = max(опыт в этой работе, навык из job.hire.skill) + талант + ремесло родителей + связи (до connCap). Порог = job.hire.req или (камни − reqFrom) × reqPerStone. Порог 0 — берут всегда. Отказ — снова через год. Повышение (need.from): место освобождается с шансом vacancy в год (vacancyTop — для вершины лестницы) + (опыт сверх порога) / vacancyPerXp, не больше vacancyMax. Вершину можно потерять: job.hold.p в год — назад на ступень ниже (опыт остаётся), вернуться можно не раньше чем через holdCooldown лет и снова через «место освободилось».",
     "base": 0.75, "scale": 40, "min": 0.08, "max": 0.97, "reqFrom": 3, "reqPerStone": 4, "talent": 10, "parents": 10, "connCap": 10,
-    "vacancy": 0.3, "vacancyTop": 0.12, "vacancyPerXp": 200, "vacancyMax": 0.85
+    "vacancy": 0.3, "vacancyTop": 0.12, "vacancyPerXp": 200, "vacancyMax": 0.85, "holdCooldown": 10
   },
   "talentJobs": {
     "sword": ["escort", "gate_guard", "garrison", "caravan", "beast_hunter", "wuguan", "hunter"],
