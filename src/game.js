@@ -241,13 +241,15 @@ export function bodyForgeMult(data, s, t) {
   if (!t) return 1;
   return 1.15 * (1 + 1.2 * ((t.hpMult || 1) - 1)) * (techUsable(data, s, t) ? (t.forgeMult || 1) : 1);
 }
+// Работа культиватора (jobs.json → qiMul): двор секты, скит, вольная тропа — ци идёт быстрее.
+export function jobQiMul(data, s) { const L = s.life, j = L?.awakened && data.jobs?.jobs?.find(x => x.id === L.jobId); return (j && j.qiMul) || 1; }
 export function qiPerSecond(data, s) {
   const m = data.realms.meditation;
   const sl = slottedTechs(data, s);
   const f = focusOf(data, s);
   // Путь тела копит закалку техникой закал тела: 1.15 × (1 + 1.2 × (hpMult − 1)) × forgeMult своей техники.
   const tech = (s.pathId === "body") ? (sl.body ? bodyForgeMult(data, s, sl.body) : 1.15) : neigongMult(data, s, sl.neigong);
-  return (m.qiPerSecondBase + m.qiPerSecondPerRealm * tierOf(data, s)) * tech * pathMult(data, s) * (f?.qiMul ?? 1) * pathSpeedMul(data, s) * pathPassives(data, s).qi;
+  return (m.qiPerSecondBase + m.qiPerSecondPerRealm * tierOf(data, s)) * tech * pathMult(data, s) * (f?.qiMul ?? 1) * jobQiMul(data, s) * pathSpeedMul(data, s) * pathPassives(data, s).qi;
 }
 
 // Порог легенды: переход из 9-го слоя в ступень с legend. Шанс ×legendChanceMul,

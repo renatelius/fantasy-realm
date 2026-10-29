@@ -84,6 +84,31 @@ export function yearCraft(data, s, rng = Math.random) {
   }
 }
 
+// ───────── найм (life.js → setJob) ─────────
+// Чем меньше опыта в этом деле (или навыка из job.hire.skill), тем реже берут. Талант, ремесло родителей и связи помогают.
+export function hireReq(data, job) {
+  const H = C(data)?.hire; if (!H || !job || job.id === "home") return 0;
+  if (job.hire?.req != null) return job.hire.req;
+  return Math.max(0, (job.stones - (H.reqFrom ?? 3)) * (H.reqPerStone ?? 4));
+}
+export function hireInfo(data, s, job) {
+  const H = C(data)?.hire, L = s.life, req = hireReq(data, job);
+  if (!H || !job || job.id === "home" || job.id === L.jobId || req <= 0) return { chance: 1, req, lv: 0, parts: [] };
+  const own = jobXp(s, job.id), sk = job.hire?.skill ? skill(s, job.hire.skill) : 0;
+  const parts = [];
+  let lv = Math.max(own, sk);
+  if (lv > 0) parts.push(sk > own ? `${(C(data).skills[job.hire.skill]?.name || "навык").toLowerCase()} ${Math.floor(sk)}` : `опыт ${Math.floor(own)}`);
+  if ((C(data).talentJobs?.[L.talentId] || []).includes(job.id)) { lv += H.talent ?? 10; parts.push("талант"); }
+  const parents = [L.household?.father?.job, L.household?.mother?.job].filter(Boolean);
+  if (parents.includes(job.name)) { lv += H.parents ?? 10; parts.push("ремесло родителей"); }
+  const cn = Math.min(H.connCap ?? 10, L.stats?.connections || 0); if (cn > 0) { lv += cn; parts.push(`связи +${cn}`); }
+  const chance = clamp((H.base ?? 0.75) + (lv - req) / (H.scale ?? 40), H.min ?? 0.08, H.max ?? 0.97);
+  return { chance, req, lv, parts };
+}
+export const hireChance = (data, s, job) => hireInfo(data, s, job).chance;
+export function refusedNow(s, id) { return s.life?.craft?.refused?.[id] === s.life?.age; }
+export function markRefused(s, id) { const c = st(s); c.refused ??= {}; c.refused[id] = s.life.age; }
+
 // ───────── варка и ковка ─────────
 export const recipe = (data, id) => C(data)?.recipes.find(r => r.id === id);
 export function usesLeft(data, s, k) {

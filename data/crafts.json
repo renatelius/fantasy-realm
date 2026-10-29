@@ -12,7 +12,7 @@
     "workshopChild": 3, "workshopCap": 30, "heirShare": 0.25,
     "brewXp": 2, "failXp": 1.5
   },
-  "jobSkill": { "alchemist": { "alchemy": 1 }, "herb": { "alchemy": 0.4 }, "physician": { "alchemy": 0.5 }, "smith": { "smith": 1 }, "garrison": { "smith": 0.2 } },
+  "jobSkill": { "alchemist": { "alchemy": 1 }, "herb": { "alchemy": 0.4 }, "physician": { "alchemy": 0.5 }, "smith": { "smith": 1 }, "garrison": { "smith": 0.2 }, "beast_hunter": { "alchemy": 0.3, "smith": 0.3 }, "spirit_smith": { "smith": 1 } },
   "skills": {
     "alchemy": { "name": "Алхимия", "verb": "Сварить", "place": "котёл", "regionCheap": ["qinglong", "kunlun", "penglai"], "regionMul": 0.75 },
     "smith": { "name": "Кузнечное дело", "verb": "Выковать", "place": "горн", "regionCheap": ["liangzhou", "hedu", "kunlun"], "regionMul": 0.75 }
@@ -54,6 +54,18 @@
     { "id": "turtle", "skill": "smith", "slot": "armor", "name": "Доспех чёрной черепахи", "min": 80, "awakened": true, "cost": 300, "hp": 1.25, "def": 1.18 },
     { "id": "meteor_blade", "skill": "smith", "slot": "weapon", "name": "Клинок из небесного железа", "special": true, "atk": 1.18, "crit": 0.02 }
   ],
+  "hire": {
+    "_note": "Шанс найма = base + (уровень − порог) / scale в пределах [min, max]. Уровень = max(опыт в этой работе, навык из job.hire.skill) + талант + ремесло родителей + связи (до connCap). Порог = job.hire.req или (камни − reqFrom) × reqPerStone. Порог 0 — берут всегда. Отказ — снова через год.",
+    "base": 0.75, "scale": 40, "min": 0.08, "max": 0.97, "reqFrom": 3, "reqPerStone": 4, "talent": 10, "parents": 10, "connCap": 10
+  },
+  "talentJobs": {
+    "sword": ["escort", "gate_guard", "garrison", "caravan", "beast_hunter", "wuguan", "hunter"],
+    "brush": ["scribe", "teacher", "yamen", "tea"],
+    "abacus": ["broker", "stall", "inn", "mill"],
+    "herb": ["herb", "physician", "alchemist", "snow_lotus_picker", "monk_kitchen"],
+    "seal": ["yamen", "broker", "tea", "capital_runner"],
+    "flute": ["tea", "inn", "cook", "ferry"]
+  },
   "buyMul": 3,
   "quality": [
     { "min": 0, "name": "грубый", "q": 0.7 },

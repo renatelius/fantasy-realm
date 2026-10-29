@@ -829,7 +829,17 @@ export function jobEligible(data, s, job, who = "self") {
   if (job.region && !job.region.includes(L.regionId)) return false;
   if (job.wealth && !job.wealth.includes(L.wealthId) && job.id !== "home") return false;
   if (job.awakened && (who !== "self" || !L.awakened)) return false;
+  if (job.need && (who !== "self" || jobNeedWhy(data, s, job))) return false;
   return true;
+}
+// Чего не хватает для работы (jobs.json → need): секта, ранг в секте, ступень пути, навык ремесла. Пустая строка — всё есть.
+export function jobNeedWhy(data, s, job) {
+  const n = job?.need, L = s.life; if (!n || !L) return "";
+  if (n.sect && !L.sect) return "только для учеников секты";
+  if (n.sectRank != null && (!L.sect || (L.sect.rank ?? 0) < n.sectRank)) return `с ранга «${data.sects?.ranks?.[n.sectRank]?.name || "выше"}»`;
+  if (n.tier != null && (!L.awakened || G.maxTier(data, s) < n.tier)) return `со ${n.tier + 1}-й ступени пути`;
+  for (const [k, v] of Object.entries(n.skill || {})) if (CR.skill(s, k) < v) return `нужен навык «${(data.crafts?.skills?.[k]?.name || k).toLowerCase()}» ${v}`;
+  return "";
 }
 export function setFocus(data, s, id) {
   const f = data.jobs?.focuses?.find(x => x.id === id);
@@ -855,7 +865,7 @@ export function defaultJob(data, s) {
   const pref = { poor: "beggar", peasant: byRegion[s.life.regionId] || "porter", craft: "stall", noble: "scribe", cultclan: "home" }[s.life.wealthId];
   return list.find(j => j.id === pref) || list.find(j => j.id === "porter") || list[0] || null;
 }
-export function setJob(data, s, id, who = "self") {
+export function setJob(data, s, id, who = "self", rng = Math.random) {
   const job = jobById(data, id); if (!job || !jobEligible(data, s, job, who)) return { ok: false, msg: "Это ремесло здесь не возьмут." };
   if (who === "spouse" && s.life.spouse?.jobId === id) return { ok: true };
   if (who !== "spouse" && s.life.jobId === id) return { ok: true };
@@ -865,8 +875,19 @@ export function setJob(data, s, id, who = "self") {
     const took = s.life.spouse.gender === "m" ? "взял" : "взяла";
     logLine(s, `${s.life.spouse.gender === "m" ? "Супруг" : "Супруга"} ${took} работу: ${job.name}.`, "family");
   } else {
+    // Найм (craft.js → hireInfo): без опыта и навыка берут неохотно. Отказ — снова через год.
+    const hi = CR.hireInfo(data, s, job);
+    if (hi.chance < 1) {
+      if (CR.refusedNow(s, id)) return { ok: false, refused: true, msg: `«${job.name}»: в этом году тебе уже отказали. Попробуй через год.` };
+      if (rng() >= hi.chance) {
+        CR.markRefused(s, id);
+        const why = hi.lv < hi.req ? "сказали, что нужен человек с опытом" : "взяли своего человека";
+        const m = `Тебя не взяли на работу «${job.name}» (шанс был ${Math.round(hi.chance * 100)}%): ${why}. Снова — через год.`;
+        logLine(s, m, "family"); return { ok: false, refused: true, msg: m };
+      }
+    }
     s.life.jobId = id;
-    logLine(s, `Ты взял(а) работу: ${job.name}.`, "family");
+    logLine(s, `Ты взял(а) работу: ${job.name}${hi.chance < 1 ? ` — взяли с ${Math.round(hi.chance * 100)}% шансом` : ""}.`, "family");
   }
   return { ok: true };
 }
@@ -1051,6 +1072,12 @@ function yearPass(data, s, rng) {
   if (J && L.age === J.workAge && !L.jobId) {
     const d = defaultJob(data, s);
     if (d) { L.jobId = d.id; logLine(s, `В ${yearsW(L.age)} ты встал(а) к делу: ${d.name}.`, "family"); }
+  }
+  // Ушёл(ла) из секты, потерял(а) ранг — место при секте больше не твоё.
+  if (J && L.jobId && L.jobId !== "home" && !jobEligible(data, s, jobById(data, L.jobId))) {
+    const was = jobById(data, L.jobId), d = defaultJob(data, s);
+    L.jobId = d?.id || "home";
+    logLine(s, `Место «${was?.name || "работа"}» больше не твоё. Теперь: ${d?.name || "дом и двор"}.`, "family");
   }
   const focus = (J?.focuses || []).find(x => x.id === L.focusId) || J?.focuses?.[0];
   const phyY = by(W.physiques, L.physiqueId), tal = G.talentOf(data, s);

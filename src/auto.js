@@ -29,18 +29,35 @@ const TYPE_VALUE = {
 
 function power(st) { return st.hp * 0.25 + st.atk * 3 + st.def * 2; }
 
+// Склонность к делу: талант с чжуачжоу, родной край, ремесло родителей. Не одна «лучшая» работа на всех,
+// а любая из близких к лучшей (в пределах 20% ценности) — выбор постоянный для этой жизни (по имени).
+const hashStr = t => { let h = 2166136261; for (const c of String(t)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+function jobValue(data, s, j) {
+  const l = s.life, train = l.craft?.appr?.skill || null;
+  const parents = [l.household?.father?.job, l.household?.mother?.job].filter(Boolean);
+  return j.stones * CR.payMul(data, s, j.id) - j.hazard * CR.hazMul(data, s, j.id) * 2000
+    + (l.awakened ? ((j.qiMul || 1) - 1) * 30 : 0)            // на Пути +10% ци ≈ 3 камня в год
+    + (train && data.crafts?.jobSkill?.[j.id]?.[train] ? 1 : 0)  // работа качает навык, которому учимся
+    + (data.crafts?.talentJobs?.[l.talentId]?.includes(j.id) ? 2 : 0)        // к чему тянуло с детства
+    + (j.region ? 1 : 0)                                          // местное ремесло: в родном краю знают
+    + (parents.includes(j.name) ? 1.5 : 0);                       // ремесло родителей
+}
 function pickJob(data, s) {
-  const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self"));
+  const l = s.life;
+  // Куда не возьмут (шанс < 25%) или уже отказали в этом году — туда не идём; ценность × шанс найма.
+  const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self") && (j.id === l.jobId || (!CR.refusedNow(s, j.id) && CR.hireChance(data, s, j) >= 0.25)));
   if (!jobs.length) return;
-  // Мастерство (craft.js): опытное ремесло платит больше — менять его стоит только ради заметной прибавки.
-  const val = j => j.stones * CR.payMul(data, s, j.id) - j.hazard * CR.hazMul(data, s, j.id) * 2000;
-  const best = jobs.reduce((a, b) => (val(b) > val(a) ? b : a));
-  const cur = jobs.find(j => j.id === s.life.jobId);
-  if (best.id !== s.life.jobId && (!cur || val(best) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, best.id, "self");
-  if (s.life.spouse) {
+  const val = j => jobValue(data, s, j) * (j.id === l.jobId ? 1 : 0.5 + 0.5 * CR.hireChance(data, s, j));
+  const top = Math.max(...jobs.map(val));
+  const near = jobs.filter(j => val(j) >= top - Math.max(1, Math.abs(top) * 0.2)).sort((a, b) => a.id < b.id ? -1 : 1);
+  const want = near[hashStr(l.name + (l.generation || 1)) % near.length];
+  const cur = jobs.find(j => j.id === l.jobId);
+  // Опытное ремесло не бросают ради малой прибавки (мастерство, craft.js).
+  if (want.id !== l.jobId && (!cur || val(want) > val(cur) * 1.15 + 0.5)) L.setJob(data, s, want.id, "self");
+  if (l.spouse) {
     const sj = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "spouse"));
     const b2 = sj.reduce((a, b) => (b.stones > a.stones ? b : a), sj[0]);
-    if (b2 && b2.id !== s.life.spouse.jobId) L.setJob(data, s, b2.id, "spouse");
+    if (b2 && b2.id !== l.spouse.jobId) L.setJob(data, s, b2.id, "spouse");
   }
 }
 

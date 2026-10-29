@@ -12,7 +12,8 @@
   "childTasks": [
     { "id": "home", "name": "дом" },
     { "id": "help", "name": "помощь" },
-    { "id": "letters", "name": "грамота" }, { "id": "workshop", "name": "мастерская" }
+    { "id": "letters", "name": "грамота" },
+    { "id": "workshop", "name": "мастерская" }
   ],
   "jobs": [
     { "id": "home", "name": "Дом и двор", "stones": 0, "hazard": 0 },
@@ -26,8 +27,8 @@
     { "id": "herder", "name": "Табунщик", "stones": 3, "hazard": 0.0016, "region": ["hanmu"] },
     { "id": "hunter", "name": "Охотник", "stones": 4, "hazard": 0.0024, "region": ["hanmu", "qinglong", "kunlun", "liangzhou"] },
     { "id": "woodcutter", "name": "Дровосек", "stones": 2, "hazard": 0.0017, "region": ["qinglong"] },
-    { "id": "herb", "name": "Сбор трав", "stones": 3, "hazard": 0.0011, "region": ["qinglong", "penglai", "kunlun"] },
-    { "id": "penglai_keeper", "name": "Сторож тропы", "stones": 3, "hazard": 0.0006, "region": ["penglai"] },
+    { "id": "herb", "name": "Сбор трав", "stones": 3, "hazard": 0.0011, "region": ["qinglong", "penglai", "kunlun"], "hire": {"skill": "alchemy"} },
+    { "id": "penglai_keeper", "name": "Сторож тропы", "stones": 3, "hazard": 0.0006, "region": ["penglai"], "qiMul": 1.08, "hire": {"req": 0} },
     { "id": "capital_runner", "name": "Разносчик в столице", "stones": 3, "hazard": 0.0009, "region": ["yanjing"] },
     { "id": "gate_guard", "name": "Стража городских ворот", "stones": 5, "hazard": 0.002, "region": ["yanjing"] },
     { "id": "camel", "name": "Погонщик верблюдов", "stones": 3, "hazard": 0.0018, "region": ["liangzhou"] },
@@ -38,7 +39,7 @@
     { "id": "gravedigger", "name": "Могильщик", "stones": 2, "hazard": 0.001, "region": ["hedu"] },
     { "id": "weaver", "name": "Ткач", "stones": 3, "hazard": 0.0005, "wealth": ["poor", "peasant", "craft"] },
     { "id": "tailor", "name": "Портной", "stones": 4, "hazard": 0.0003, "wealth": ["craft", "peasant", "noble"] },
-    { "id": "smith", "name": "Кузница", "stones": 5, "hazard": 0.0013, "wealth": ["craft", "peasant"] },
+    { "id": "smith", "name": "Кузница", "stones": 5, "hazard": 0.0013, "wealth": ["craft", "peasant"], "hire": {"skill": "smith", "req": 8} },
     { "id": "cook", "name": "Кухня постоялого", "stones": 3, "hazard": 0.0006 },
     { "id": "inn", "name": "Постоялый двор", "stones": 5, "hazard": 0.0007, "wealth": ["craft", "peasant", "noble"] },
     { "id": "tea", "name": "Чайная", "stones": 4, "hazard": 0.0003, "wealth": ["craft", "noble", "cultclan"] },
@@ -46,14 +47,18 @@
     { "id": "broker", "name": "Маклер", "stones": 7, "hazard": 0.0005, "wealth": ["craft", "noble"] },
     { "id": "caravan", "name": "Караван", "stones": 8, "hazard": 0.0028 },
     { "id": "escort", "name": "Эскортное бюро", "stones": 9, "hazard": 0.0032 },
-    { "id": "physician", "name": "Помощник лекаря", "stones": 5, "hazard": 0.0008 },
+    { "id": "physician", "name": "Помощник лекаря", "stones": 5, "hazard": 0.0008, "hire": {"skill": "alchemy", "req": 12} },
     { "id": "teacher", "name": "Учитель грамоты", "stones": 4, "hazard": 0.0002, "wealth": ["craft", "noble", "cultclan"] },
     { "id": "scribe", "name": "Писец", "stones": 4, "hazard": 0.0002, "wealth": ["craft", "noble", "cultclan"] },
     { "id": "yamen", "name": "Ямынь", "stones": 6, "hazard": 0.0009, "wealth": ["craft", "noble", "cultclan"] },
     { "id": "beggar", "name": "Союз нищих", "stones": 1, "hazard": 0.002, "wealth": ["poor", "peasant"] },
-    { "id": "monk_kitchen", "name": "Храмовая кухня", "stones": 2, "hazard": 0.0004, "region": ["qinglong"] },
-    { "id": "alchemist", "name": "Помощник алхимика", "stones": 6, "hazard": 0.0012, "awakened": true },
-    { "id": "outer_sect", "name": "Внешний двор секты", "stones": 6, "hazard": 0.001, "awakened": true },
-    { "id": "inner_sect", "name": "Внутренний двор", "stones": 10, "hazard": 0.0014, "awakened": true }
+    { "id": "monk_kitchen", "name": "Храмовая кухня", "stones": 2, "hazard": 0.0004, "region": ["qinglong"], "qiMul": 1.05 },
+    { "id": "alchemist", "name": "Помощник алхимика", "stones": 6, "hazard": 0.0012, "awakened": true, "qiMul": 1.05, "hire": {"skill": "alchemy", "req": 15} },
+    { "id": "outer_sect", "name": "Внешний двор секты", "stones": 6, "hazard": 0.001, "awakened": true, "need": {"sect": true}, "qiMul": 1.1, "text": "Караулы, переписка, работа на полях секты. Рядом с наставниками ци идёт лучше.", "hire": {"req": 0} },
+    { "id": "inner_sect", "name": "Внутренний двор", "stones": 8, "hazard": 0.0014, "awakened": true, "need": {"sectRank": 2}, "qiMul": 1.2, "text": "Поручения старших и место у главной жилы горы.", "hire": {"req": 0} },
+    { "id": "beast_hunter", "name": "Охотник на духовных зверей", "stones": 9, "hazard": 0.0028, "awakened": true, "need": {"tier": 1}, "text": "Шкуры, ядра и когти зверей идут к алхимикам и кузнецам." },
+    { "id": "wuguan", "name": "Наставник в школе кулака", "stones": 6, "hazard": 0.0004, "awakened": true, "need": {"tier": 1}, "qiMul": 1.05, "text": "Учишь городских мальчишек стойке. Платят мало, но спокойно." },
+    { "id": "wandering", "name": "Вольный культиватор", "stones": 4, "hazard": 0.0018, "awakened": true, "qiMul": 1.12, "text": "Без хозяина и без жалования: пещеры, тропы, чужие руины.", "hire": {"req": 0} },
+    { "id": "spirit_smith", "name": "Подручный оружейника", "stones": 7, "hazard": 0.0015, "awakened": true, "text": "Раздуваешь горн для духовных клинков.", "hire": {"skill": "smith", "req": 15} }
   ]
 }

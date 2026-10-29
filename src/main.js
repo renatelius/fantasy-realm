@@ -368,8 +368,11 @@ function renderFocus() {
   const f = birthFacts(l);
   const small = l.age < 6;
   const jobs = data.jobs.jobs.filter(j => L.jobEligible(data, s, j, "self"));
+  const lockedJobs = data.jobs.jobs.filter(j => j.need && (!j.awakened || l.awakened) && L.jobEligible(data, s, { ...j, need: null }, "self") && L.jobNeedWhy(data, s, j));
   const jobChips = l.age >= data.jobs.workAge && jobs.length ? `<div class="lbl" style="margin-top:10px">Ремесло</div>
-    <select class="jobsel" data-who="self" ${s.settings.autoPlay ? "disabled" : ""}>${jobs.slice().sort((a, b) => b.stones - a.stones).map(j => `<option value="${j.id}" ${j.id === l.jobId ? "selected" : ""}>${j.name} — ${j.stones} камн./год${j.hazard ? " · риск" : ""}</option>`).join("")}</select>` : "";
+    <select class="jobsel" data-who="self" ${s.settings.autoPlay ? "disabled" : ""}>${jobs.slice().sort((a, b) => b.stones - a.stones).map(j => `<option value="${j.id}" ${j.id === l.jobId ? "selected" : ""}>${j.name} — ${Math.round(j.stones * CR.payMul(data, s, j.id))} камн./год${CR.jobXp(s, j.id) >= 20 ? ` · ${CR.rankOf(data, CR.jobXp(s, j.id)).name.toLowerCase()}` : ""}${l.awakened && j.qiMul ? ` · ци +${Math.round((j.qiMul - 1) * 100)}%` : ""}${j.hazard ? " · риск" : ""}${j.id === l.jobId ? "" : CR.refusedNow(s, j.id) ? " · отказали, снова через год" : (ch => ch < 1 ? ` · шанс ${Math.round(ch * 100)}%` : "")(CR.hireChance(data, s, j))}</option>`).join("")}${lockedJobs.map(j => `<option disabled>${j.name} — ${L.jobNeedWhy(data, s, j)}</option>`).join("")}</select>
+    ${(() => { const cj = L.jobById(data, l.jobId); return cj?.text ? `<div class="dim small" style="margin-top:4px">${cj.text}</div>` : ""; })()}
+    <div class="dim small" style="margin-top:4px">Шанс, что возьмут, растёт с опытом в этом деле (или навыком алхимии и ковки), талантом, ремеслом родителей и связями. Отказали — снова через год.</div>` : "";
   setHTML(el, `<h2>Фокус этого года</h2>
     <div class="dim">${stage(l)[0].toUpperCase() + stage(l).slice(1)} · ${f.region.name} · ${f.era.name}</div>
     ${small ? `<div class="dim" style="margin-top:8px">${jpick(J.baby, l.name + l.age)} С шести лет ты сможешь выбирать, на что тратить год. Этот отрезок можно спокойно пролистать на ×8.</div>` : `
@@ -748,7 +751,7 @@ document.body.addEventListener("click", e => {
   if (d.new) { L.startLife(data, s, "new"); spinState = null; return done(); }
   if (d.copy) { navigator.clipboard?.writeText(summaryText(s.life.legacy)); b.textContent = "Скопировано"; return; }
   if (d.focus) { L.setFocus(data, s, d.focus); return done(); }
-  if (d.job) { const r = L.setJob(data, s, d.job, d.who); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.job) { const r = L.setJob(data, s, d.job, d.who); if (!r.ok && !r.refused) log(r.msg, "info"); return done(); }
   if (d.cr) { const r = d.cr === "make" ? CR.craft(data, s, d.r) : d.cr === "buy" ? CR.buy(data, s, d.r) : CR.apprentice(data, s, d.k); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.child !== undefined) { L.setChildTask(data, s, +d.child, d.task); return done(); }
   if (d.sw) { const r = G.switchPath(data, s, d.sw); log(r.msg, r.ok ? "awaken" : "info"); return done(); }
@@ -765,7 +768,7 @@ document.body.addEventListener("click", e => {
 });
 document.body.addEventListener("change", e => {
   const sel = e.target.closest("select.jobsel"); if (!sel) return;
-  const r = L.setJob(data, s, sel.value, sel.dataset.who); if (!r.ok) log(r.msg, "info"); done();
+  const r = L.setJob(data, s, sel.value, sel.dataset.who); if (!r.ok && !r.refused) log(r.msg, "info"); done();
 });
 $("techs").closest("details").addEventListener("toggle", () => { $("techs")._h = null; render(); });
 
