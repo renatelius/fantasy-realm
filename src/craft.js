@@ -547,8 +547,11 @@ function kidsJobs(data, s, rng) {
 function holdYear(data, s, rng) {
   const L = s.life, job = jobById(data, L.jobId), h = job?.hold;
   if (!h || !job.need?.from || rng() >= h.p) return;
-  const back = job.need.from.jobs.map(id => jobById(data, id)).filter(j => j && jobEligible(data, s, { ...j, need: null }))
-    .sort((a, b) => jobXp(s, b.id) - jobXp(s, a.id))[0];
+  // Назад — на ступень ниже; если её здесь не берут (край, достаток) — на самое опытное из доступных ремёсел, иначе — обычное для семьи.
+  const byXp = (a, b) => jobXp(s, b.id) - jobXp(s, a.id);
+  const back = job.need.from.jobs.map(id => jobById(data, id)).filter(j => j && jobEligible(data, s, { ...j, need: null })).sort(byXp)[0]
+    || data.jobs.jobs.filter(j => j.id !== job.id && j.id !== "home" && jobXp(s, j.id) > 0 && jobEligible(data, s, j)).sort(byXp)[0]
+    || defaultJob(data, s);
   L.flags["lost:" + job.id] = L.age;
   L.jobId = back?.id || "home";
   const why = h.why?.length ? h.why[Math.floor(rng() * h.why.length)] : "место отдали другому";
