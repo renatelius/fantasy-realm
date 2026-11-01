@@ -7,6 +7,7 @@ import * as KF from "./family.js";
 import * as CL from "./clan.js";
 import * as S from "./sect.js";
 import * as CR from "./craft.js";
+import * as JH from "./jianghu.js";
 import { drawScene, drawAvatar, drawYanMap } from "./pixel.js";
 
 const $ = id => document.getElementById(id);
@@ -18,7 +19,7 @@ const n01 = v => Math.max(0, Math.min(100, v));
 const pct = (a, b) => (a / b * 100);
 const yw = n => L.yearsW(n), stw = n => L.stonesW(n);
 
-const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts"];
+const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts", "jianghu"];
 const data = Object.fromEntries(await Promise.all(names.map(async n => [n, await (await fetch(`data/${n}.json`)).json()])));
 const by = (arr, id) => arr.find(x => x.id === id);
 const GRADE = Object.fromEntries(data.techniques.grades.map(g => [g.id, g]));
@@ -261,6 +262,7 @@ function renderPass() {
       ${CL.clanOf(s) ? `<span>Клан</span><b>род ${l.surname} · ${CL.tierName(data, CL.clanOf(s))}</b>` : ""}
       ${l.sect ? `<span>Секта</span><b>${G.sectById(data, l.sect.id)?.name} · ${G.sectRankName(s, data)}</b>` : ""}
       <span>Ремесло</span><b>${L.jobById(data, l.jobId)?.name || (l.age < 6 ? "ещё не учится" : "пока нет")}</b>
+      ${JH.nick(s) ? `<span>Прозвище</span><b>«${JH.nick(s)}»</b>` : ""}
     </div>
     <div class="mrz">${mrz(l)}</div></div>`);
   drawAvatar($("ava"), l, { ...s, tier: l.awakened ? G.tierOf(data, s) : 0 });
@@ -426,6 +428,21 @@ function renderCraft() {
     ${l.age < 10 ? `<div class="dim small" style="margin-top:6px">С 10 лет можно варить и ковать, с ${data.crafts.apprentice.minAge} — идти в ученики. Дети учатся ремеслу родителя в «мастерской».</div>` : `${appr}
     <details id="cr-alch"${crOpen["cr-alch"] ? " open" : ""}><summary>Котёл · ${K.alchemy.name.toLowerCase()}</summary>${list("alchemy")}</details>
     <details id="cr-smith"${crOpen["cr-smith"] ? " open" : ""}><summary>Горн · ${K.smith.name.toLowerCase()}</summary>${list("smith")}</details>`}`);
+}
+
+// ───────── имя в цзянху: слава, прозвище, обиды и долги (jianghu.js) ─────────
+function renderJh() {
+  const l = s.life, el = $("jh");
+  if (!data.jianghu || !l.alive || l.age < 12) { setHTML(el, ""); setHidden(el, true); return; }
+  setHidden(el, false);
+  const j = JH.st(s), f = j.fame, sd = JH.side(data, s);
+  const col = sd === "good" ? "var(--jade)" : sd === "bad" ? "var(--hp)" : "var(--gold)";
+  const ties = j.ties.slice().sort((a, b) => a.since - b.since).map(t => `<div class="row2"><span>${JH.kindName(t.kind)}</span><b>${t.name}<small>${L.gtext(t.who, l.gender)}${t.inherited ? " · по наследству" : ` · с ${yw(t.since)}`}</small></b></div>`).join("");
+  setHTML(el, `<h2>Имя в цзянху</h2>
+    <div class="row2"><span>Прозвище</span><b>${j.nick ? `«${j.nick}»` : `<span class="dim">пока нет — с ${data.jianghu.fame.nickAt} славы</span>`}</b></div>
+    <div class="row2"><span>Слава</span><b>${Math.floor(f)}/100 · ${L.gtext(JH.fameWord(f), l.gender)}<small style="color:${col}">слава ${JH.sideName(data, s)} — по карме</small><div class="track" style="margin-top:4px"><i style="width:${n01(f)}%;background:${col}"></i></div></b></div>
+    ${ties ? `<div class="lbl" style="margin-top:8px">Обиды и долги</div>${ties}` : `<div class="dim small" style="margin-top:6px">Ни кровников, ни должников. Пока.</div>`}
+    <div class="dim small" style="margin-top:6px">Слава растёт от побед, новых ступеней и громких поступков, со временем тает. Помогает при найме и приводит людей. Кровники и долги приходят через годы — и могут перейти детям.</div>`);
 }
 
 // ───────── семья: показатели дома, лента перемен, живые родители, братья и сёстры ─────────
@@ -728,7 +745,7 @@ function render() {
   if (spin === "path") { renderPath(); return; }
   if (spin) { renderSpin(spin); return; }
   if (phase === "cert") { renderCert(); return; }
-  renderHeader(); renderPass(); renderStats(); renderCult(); renderSect(); renderFocus(); renderCraft(); renderFamily(); renderClan(); renderPeers(); renderMap();
+  renderHeader(); renderPass(); renderStats(); renderCult(); renderSect(); renderFocus(); renderCraft(); renderJh(); renderFamily(); renderClan(); renderPeers(); renderMap();
   renderEvent(); renderDeath(); renderTree(); renderTechs();
   const key = [l.age, l.alive, l.spouse?.name, l.children.length, s.realmIndex, l.awakened, l.eraId].join("|");
   if (key !== lastSceneKey) { lastSceneKey = key; drawScene($("scene"), data, { ...s, tier: l.awakened ? G.tierOf(data, s) : 0 }); setHTML($("scene-cap"), sceneCaption(l)); }

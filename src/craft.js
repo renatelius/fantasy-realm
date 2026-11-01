@@ -120,6 +120,7 @@ export function hireInfo(data, s, job) {
   const parents = [L.household?.father?.job, L.household?.mother?.job].filter(Boolean);
   if (parents.includes(job.name)) { lv += H.parents ?? 10; parts.push("ремесло родителей"); }
   const cn = Math.min(H.connCap ?? 10, L.stats?.connections || 0); if (cn > 0) { lv += cn; parts.push(`связи +${cn}`); }
+  const fm = data.jianghu ? (L.jh?.fame || 0) / (data.jianghu.fame.hirePer || 5) : 0; if (fm >= 1) { lv += fm; parts.push(`слава +${Math.floor(fm)}`); } // имя в цзянху (jianghu.js)
   const chance = clamp((H.base ?? 0.75) + (lv - req) / (H.scale ?? 40), H.min ?? 0.08, H.max ?? 0.97);
   return { chance, req, lv, parts };
 }
