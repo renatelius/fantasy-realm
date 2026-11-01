@@ -462,10 +462,11 @@ function renderJh() {
   setHTML(el, `<h2>Имя в цзянху</h2>
     <div class="row2"><span>Прозвище</span><b>${j.nick ? `«${j.nick}»` : `<span class="dim">пока нет — с ${data.jianghu.fame.nickAt} славы</span>`}</b></div>
     <div class="row2"><span>Слава</span><b>${Math.floor(f)}/100 · ${JH.fameWord(f, l.gender)}<small style="color:${col}">слава ${JH.sideName(data, s)} — по карме</small><div class="track" style="margin-top:4px"><i style="width:${n01(f)}%;background:${col}"></i></div></b></div>
+    ${JH.workFame(data, s) >= 0.05 ? `<div class="row2"><span>От работы</span><b>+${JH.workFame(data, s).toFixed(2).replace(".", ",")} в год<small>звание, видное ремесло, алхимия и кузня</small></b></div>` : ""}
     ${JH.wulin(s) ? `<div class="row2"><span>Союз Улинь</span><b style="color:var(--gold)">глава Союза<small>до ${yw(JH.wulin(s).until)} · каждый год камни, слава и люди</small></b></div>` : ""}
     ${ties ? `<div class="lbl" style="margin-top:8px">Обиды и долги</div>${ties}` : `<div class="dim small" style="margin-top:6px">Ни кровников, ни должников. Пока.</div>`}
     ${pupilsHtml()}
-    <div class="dim small" style="margin-top:6px">Слава растёт от побед, новых ступеней и громких поступков, со временем тает. Помогает при найме и приводит людей. Кровники и долги приходят через годы — и могут перейти детям.</div>`);
+    <div class="dim small" style="margin-top:6px">Слава растёт от мастерства в работе, побед, новых ступеней и громких поступков, со временем тает. Помогает при найме и приводит людей. Кровники и долги приходят через годы — и могут перейти детям.</div>`);
 }
 
 function renderSeal() {

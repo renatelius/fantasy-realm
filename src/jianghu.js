@@ -9,6 +9,7 @@
 //     Карточки с requires.tie приходят не раньше чем через minGap лет после завязки. Наследнику переходят с шансом inherit.
 import * as G from "./game.js";
 import * as CB from "./combat.js";
+import * as CR from "./craft.js";
 import * as SE from "./seal.js";
 import { logLine, gtext, lifespan, die } from "./life.js";
 
@@ -44,7 +45,9 @@ export function addFame(data, s, v) {
 function makeNick(data, s, rng) {
   const N = C(data).nick, L = s.life, reg = data.world.regions.find(r => r.id === L.regionId);
   const adj = pick(N.adj[side(data, s)], rng);
-  const noun = L.gear?.weapon && rng() < 0.4 ? pick(N.noun.weapon, rng) : L.awakened ? pick(N.noun[s.pathId || "qi"] || N.noun.qi, rng) : pick(N.noun.mortal, rng);
+  const trade = tradeNoun(data, s), wf = workFame(data, s);
+  const noun = trade && (!L.awakened ? rng() < 0.8 : wf >= 0.3 && rng() < 0.4) ? trade
+    : L.gear?.weapon && rng() < 0.4 ? pick(N.noun.weapon, rng) : L.awakened ? pick(N.noun[s.pathId || "qi"] || N.noun.qi, rng) : pick(N.noun.mortal, rng);
   return `${adj} ${noun} из ${reg?.short || reg?.name || "Янь"}`;
 }
 function checkNick(data, s, rng = Math.random) {
@@ -90,6 +93,7 @@ export function yearJh(data, s, rng = Math.random) {
   }
   if (dw && L.awakened) drainYear(data, s, dw, rng);
   if (L.awakened) { const t = G.maxTier(data, s); if (t > (j.tier || 0)) { addFame(data, s, F.tierFame * t); j.tier = t; } }
+  workYear(data, s);
   retreatYear(data, s, rng);
   wulinYear(data, s, rng);
   pupilsYear(data, s, rng);
@@ -430,4 +434,36 @@ function duel(data, s, opt = {}, rng = Math.random) {
   if (rng() < (D.deathOnLoss ?? 0.02) * Math.pow(1 / (body?.hpMult || 1), 2)) { die(data, s, `Пал(а) в поединке: ${name}`, rng); return; }
   const hurt = rng() < (D.woundChance ?? 0.5); if (hurt) L.ageShift -= 1;
   logLine(s, `Поединок проигран: ${name} оказался сильнее.${opt.tieClose ? " Спор остался открытым." : ""}${hurt ? " Рана отняла год." : ""} Позор заживёт дольше.`, "cult");
+}
+
+// ───────── слава от работы (jianghu.json → work) ─────────
+// Мастера знают по делу: великий лекарь или купец к старости получает прозвище, даже без ци.
+function rankIdx(data, xp) { const R = data.crafts?.ranks || []; let k = 0; R.forEach((r, i) => { if (xp >= r.min) k = i; }); return k; }
+export function workFame(data, s) {
+  const W = C(data)?.work, L = s.life; if (!W || !L?.alive || !data.jobs || L.age < (data.jobs.workAge || 12) || L.retreat) return 0;
+  let v = 0;
+  if (L.jobId && L.jobId !== "home") v += (W.rankFame[rankIdx(data, CR.jobXp(s, L.jobId))] || 0) * (W.renown?.[L.jobId] ?? 1);
+  for (const k of Object.keys(data.crafts?.skills || {})) { let b = 0; for (const [min, f] of W.skillFame || []) if (CR.skill(s, k) >= min) b = f; v += b; }
+  if (L.biz) v += W.bizFame || 0;
+  return v;
+}
+function tradeNoun(data, s) {
+  const W = C(data)?.work, L = s.life; if (!W) return null;
+  const sk = Object.keys(W.skillNoun || {}).filter(k => CR.skill(s, k) >= 55).sort((a, b) => CR.skill(s, b) - CR.skill(s, a))[0];
+  const jobN = L.jobId && CR.jobXp(s, L.jobId) >= 45 ? W.nickNoun?.[L.jobId] : null;
+  return jobN || (sk ? W.skillNoun[sk] : null);
+}
+function workYear(data, s) {
+  const W = C(data)?.work, L = s.life; if (!W) return;
+  const v = workFame(data, s), room = Math.max(0, (W.cap ?? 35) - st(s).fame); if (v > 0 && room > 0) addFame(data, s, Math.min(v, room));
+  if (!L.jobId || L.jobId === "home") return;
+  const j = st(s), k = rankIdx(data, CR.jobXp(s, L.jobId)), seen = (j.workRanks ??= {})[L.jobId] ?? 0;
+  if (k > seen) {
+    j.workRanks[L.jobId] = k;
+    const add = (W.rankUp[k] || 0) * Math.max(0.5, W.renown?.[L.jobId] ?? 1);
+    if (add) addFame(data, s, Math.min(add, Math.max(0, (W.cap ?? 35) + 5 - st(s).fame)));
+    const job = data.jobs.jobs.find(x => x.id === L.jobId)?.name || "Своё дело", big = (W.renown?.[L.jobId] ?? 1) >= 1;
+    if (k >= 3) logLine(s, big ? `«${job}»: тебя зовут великим мастером. Люди едут издалека, чтобы посмотреть, как ты работаешь.` : `«${job}»: в округе знают — лучше тебя это дело никто не делает.`, "luck");
+    else if (k === 2 && big) logLine(s, `«${job}»: в округе тебя зовут мастером и знают по имени.`, "family");
+  }
 }
