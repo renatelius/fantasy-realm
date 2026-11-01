@@ -241,6 +241,68 @@ export function bodyForgeMult(data, s, t) {
   if (!t) return 1;
   return 1.15 * (1 + 1.2 * ((t.hpMult || 1) - 1)) * (techUsable(data, s, t) ? (t.forgeMult || 1) : 1);
 }
+// ───── Совместимость техники (techniques.json → fit, fitCfg) ─────
+// Теги персонажа: стихии корней, телосложение (tags), душа, корень. Техника: fit.good / fit.bad.
+// Счёт = совпадения good − 1,5 × совпадения bad (от −2 до 2); множитель = 1 + k·счёт·(1 + ampPerGrade·ранг), в [min, max].
+// Высокая колесница сильнее и в плюс, и в минус: цзюэсюэ не по телу ломает жилы, мирская — почти безразлична.
+export function lifeTags(data, s) {
+  const L = s.life; if (!L) return new Set();
+  const phy = data.world.physiques?.find(x => x.id === L.physiqueId);
+  return new Set([...(L.elements || []), ...(phy?.tags || []), L.soulId ? "soul:" + L.soulId : null, L.rootId ? "root:" + L.rootId : null].filter(Boolean));
+}
+const fitCfg = data => data.techniques.fitCfg || { k: 0.1, ampPerGrade: 0.25, min: 0.55, max: 1.4, devBase: 0.05, hazPer: 0.06, breakPerGrade: 0.01, tagNames: {} };
+export function techFit(data, s, t) {
+  const F = fitCfg(data), out = { score: 0, mul: 1, good: [], bad: [], amp: 1 };
+  if (!t?.fit || !s.life) return out;
+  const tags = lifeTags(data, s);
+  out.good = t.fit.good.filter(x => tags.has(x)); out.bad = t.fit.bad.filter(x => tags.has(x));
+  out.score = Math.max(-2, Math.min(2, out.good.length - 1.5 * out.bad.length));
+  out.amp = 1 + F.ampPerGrade * gradeRank(data, t);
+  out.mul = Math.max(F.min, Math.min(F.max, 1 + F.k * out.score * out.amp));
+  return out;
+}
+export const fitTagName = (data, tag) => fitCfg(data).tagNames?.[tag] || tag.toLowerCase();
+// Ведущая техника пути: она задаёт скорость (и риски несовместимости).
+export function leadTech(data, s) {
+  const sl = slottedTechs(data, s);
+  return (s.pathId || "qi") === "body" ? sl.body : sl.neigong;
+}
+// Особые эффекты ведущей и боевой техники тела (techniques.json → fx), сложенные.
+export function techFx(data, s) {
+  const out = { breakAdd: 0, devCut: 0, hazardCut: 0, lifeAdd: 0, daoYear: 0, karmaYear: 0, connYear: 0, legendSafe: 0, dark: false };
+  const sl = slottedTechs(data, s);
+  for (const t of [sl.neigong, sl.body]) {
+    if (!t?.fx || !techUsable(data, s, t)) continue;
+    for (const [k, v] of Object.entries(t.fx)) { if (k === "dark") out.dark = out.dark || v; else out[k] = (out[k] || 0) + v; }
+  }
+  out.devCut = Math.min(0.9, out.devCut);
+  return out;
+}
+// Несовместимая ведущая техника: беды чаще (множитель для life.js → hz).
+export function techHazardMul(data, s) {
+  const t = leadTech(data, s), f = techFit(data, s, t), F = fitCfg(data);
+  const bad = f.score < 0 ? 1 + F.hazPer * -f.score * f.amp : 1;
+  return bad * (1 - Math.min(0.3, techFx(data, s).hazardCut));
+}
+// Раз в год (life.js → yearPass): срыв от несовместимой техники и годовые эффекты (дао-сердце, карма, связи).
+export function techYear(data, s, rng = Math.random) {
+  const L = s.life; if (!L?.awakened || !L.alive) return;
+  const F = fitCfg(data), t = leadTech(data, s), f = techFit(data, s, t), fx = techFx(data, s), st = L.stats;
+  const chance = (r, fn) => { const n = Math.floor(Math.abs(r)) + (rng() < Math.abs(r) % 1 ? 1 : 0); if (n) fn(Math.sign(r) * n); };
+  chance(fx.daoYear, d => st.daoHeart = Math.max(-5, Math.min(20, st.daoHeart + d)));
+  chance(fx.karmaYear, d => st.karma = Math.max(-20, Math.min(20, st.karma + d)));
+  chance(fx.connYear, d => st.connections = Math.max(0, Math.min(30, st.connections + d)));
+  if (f.score < 0 && t) {
+    const p = F.devBase * -f.score * f.amp * (1 - fx.devCut);
+    if (rng() < p) {
+      const why = f.bad.map(x => fitTagName(data, x)).join(", ");
+      const heavy = f.amp >= 1.5 && rng() < 0.35;
+      s.qi = Math.floor(s.qi * (heavy ? 0.3 : 0.6));
+      if (heavy) L.ageShift -= 1;
+      L.chronicle && L.chronicle.push({ age: L.age, kind: heavy ? "death" : "cult", msg: `«${t.name}» идёт против тебя (${why}): ци повернула вспять${heavy ? ", жилы надорваны — срок −1 год" : ""}.` });
+    }
+  }
+}
 // Работа культиватора (jobs.json → qiMul): двор секты, скит, вольная тропа — ци идёт быстрее.
 export function jobQiMul(data, s) { const L = s.life, j = L?.awakened && data.jobs?.jobs?.find(x => x.id === L.jobId); return (j && j.qiMul) || 1; }
 export function qiPerSecond(data, s) {
@@ -248,7 +310,7 @@ export function qiPerSecond(data, s) {
   const sl = slottedTechs(data, s);
   const f = focusOf(data, s);
   // Путь тела копит закалку техникой закал тела: 1.15 × (1 + 1.2 × (hpMult − 1)) × forgeMult своей техники.
-  const tech = (s.pathId === "body") ? (sl.body ? bodyForgeMult(data, s, sl.body) : 1.15) : neigongMult(data, s, sl.neigong);
+  const tech = ((s.pathId === "body") ? (sl.body ? bodyForgeMult(data, s, sl.body) : 1.15) : neigongMult(data, s, sl.neigong)) * techFit(data, s, leadTech(data, s)).mul;
   return (m.qiPerSecondBase + m.qiPerSecondPerRealm * tierOf(data, s)) * tech * pathMult(data, s) * (f?.qiMul ?? 1) * jobQiMul(data, s) * pathSpeedMul(data, s) * pathPassives(data, s).qi;
 }
 
@@ -265,6 +327,7 @@ export function breakthroughChance(data, s, usePill = false) {
     + (s.life ? Math.min(0.1 + 0.05 * dm + pathPassives(data, s).breakCap, 0.01 * dm * Math.max(0, daoHeartEff(data, s))) : 0)
     + (physiqueOf(data, s)?.breakAdd || 0)
     + (() => { const n = slottedTechs(data, s).neigong; return n?.path && techUsable(data, s, n) ? (n.breakAdd || 0) : 0; })()
+    + (s.life ? techFx(data, s).breakAdd + (() => { const t = leadTech(data, s), F = fitCfg(data); return t ? F.breakPerGrade * gradeRank(data, t) + Math.min(0, techFit(data, s, t).score) * 0.02 : 0; })() : 0) // колесница и совместимость
     + crossPathBonus(data, s); // слои других путей
   const base = Math.min(0.99, Math.max(b.minChance, c));
   return legendGate(data, s) ? base * (b.legendChanceMul ?? 1) : base;
@@ -301,7 +364,7 @@ export function breakthrough(data, s, usePill = false, rng = Math.random) {
     return { ok: true, msg: `Прорыв удался! ${realms[s.realmIndex].name}, слой ${s.layer}.` };
   }
   const gate = legendGate(data, s), bt = data.realms.breakthrough;
-  if (gate && s.life && rng() < (bt.legendDeathChance || 0)) {
+  if (gate && s.life && rng() < (bt.legendDeathChance || 0) * (1 - Math.min(0.8, techFx(data, s).legendSafe))) {
     die(data, s, "Не пережил(а) прорыв: Печать заметила имя", rng);
     return { ok: false, fatal: true, msg: "Небо над головой потемнело. Печать заметила имя — и забрала его." };
   }

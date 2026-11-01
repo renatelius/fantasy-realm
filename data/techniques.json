@@ -62,7 +62,18 @@
    "qiMultiplier": 1.25,
    "minRealm": 0,
    "text": "Уданский вход: дышать так, чтобы туман не замечал человека.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "Вода",
+     "Дерево",
+     "light"
+    ],
+    "bad": [
+     "Огонь",
+     "yang"
+    ]
+   }
   },
   {
    "id": "village_breath",
@@ -73,7 +84,11 @@
    "qiMultiplier": 1.1,
    "minRealm": 0,
    "text": "Крестьянский счёт на вдохе. Ци почти нет, привычка есть.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [],
+    "bad": []
+   }
   },
   {
    "id": "small_circle",
@@ -84,7 +99,16 @@
    "qiMultiplier": 1.32,
    "minRealm": 0,
    "text": "Ци гоняют по кругу, как воду в ковше.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "balanced",
+     "Земля"
+    ],
+    "bad": [
+     "blocked"
+    ]
+   }
   },
   {
    "id": "jade_flow",
@@ -95,7 +119,18 @@
    "qiMultiplier": 1.6,
    "minRealm": 0,
    "text": "Поток ровный, как нитка нефрита. Школы берегут его для внешних учеников.",
-   "owner": "qinglong"
+   "owner": "qinglong",
+   "fit": {
+    "good": [
+     "Вода",
+     "Металл",
+     "open"
+    ],
+    "bad": [
+     "Огонь",
+     "blocked"
+    ]
+   }
   },
   {
    "id": "wudang_still",
@@ -106,7 +141,21 @@
    "qiMultiplier": 1.55,
    "minRealm": 0,
    "text": "Чем меньше слов, тем ровнее даньтянь.",
-   "owner": "wudang"
+   "owner": "wudang",
+   "fit": {
+    "good": [
+     "Вода",
+     "Земля",
+     "mind"
+    ],
+    "bad": [
+     "yang",
+     "sha"
+    ]
+   },
+   "fx": {
+    "breakAdd": 0.03
+   }
   },
   {
    "id": "emei_compassion",
@@ -117,7 +166,21 @@
    "qiMultiplier": 1.5,
    "minRealm": 0,
    "text": "Дыхание под сострадание. Не быстрее, зато реже срывается.",
-   "owner": "emei"
+   "owner": "emei",
+   "fit": {
+    "good": [
+     "Дерево",
+     "Вода",
+     "yin"
+    ],
+    "bad": [
+     "sha"
+    ]
+   },
+   "fx": {
+    "devCut": 0.5,
+    "karmaYear": 0.1
+   }
   },
   {
    "id": "hua_violet",
@@ -128,7 +191,19 @@
    "qiMultiplier": 1.85,
    "minRealm": 1,
    "text": "Искра в даньтяне. Красиво и опасно, если торопиться.",
-   "owner": "huashan"
+   "owner": "huashan",
+   "fit": {
+    "good": [
+     "Металл",
+     "Огонь",
+     "yang"
+    ],
+    "bad": [
+     "Вода",
+     "yin",
+     "frail"
+    ]
+   }
   },
   {
    "id": "kunlun_snow",
@@ -139,7 +214,21 @@
    "qiMultiplier": 1.9,
    "minRealm": 1,
    "text": "Ци остывает и твердеет. Годы уходят в тишину.",
-   "owner": "kunlun"
+   "owner": "kunlun",
+   "fit": {
+    "good": [
+     "Вода",
+     "Металл",
+     "yin"
+    ],
+    "bad": [
+     "Огонь",
+     "yang"
+    ]
+   },
+   "fx": {
+    "lifeAdd": 6
+   }
   },
   {
    "id": "first_scribe_breath",
@@ -150,7 +239,21 @@
    "qiMultiplier": 2.15,
    "minRealm": 2,
    "text": "Не обещает бессмертия. Учит не отдавать имя зря.",
-   "owner": "wudang"
+   "owner": "wudang",
+   "fit": {
+    "good": [
+     "Металл",
+     "Земля",
+     "mind"
+    ],
+    "bad": [
+     "sha"
+    ]
+   },
+   "fx": {
+    "daoYear": 0.15,
+    "legendSafe": 0.5
+   }
   },
   {
    "id": "farm_hands",
@@ -162,7 +265,11 @@
    "defMult": 1.05,
    "minRealm": 0,
    "text": "Тело пахаря. Удары жизни уже знакомы.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [],
+    "bad": []
+   }
   },
   {
    "id": "iron_cloth",
@@ -174,7 +281,15 @@
    "defMult": 1.18,
    "minRealm": 0,
    "text": "Внешняя работа: держать удар, не хвастаясь.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "heavy"
+    ],
+    "bad": [
+     "frail"
+    ]
+   }
   },
   {
    "id": "yijin",
@@ -186,7 +301,19 @@
    "defMult": 1.22,
    "minRealm": 0,
    "text": "Шаолиньская закалка жил. Медленно, честно.",
-   "owner": "shaolin"
+   "owner": "shaolin",
+   "fit": {
+    "good": [
+     "balanced",
+     "open"
+    ],
+    "bad": [
+     "blocked"
+    ]
+   },
+   "fx": {
+    "devCut": 0.4
+   }
   },
   {
    "id": "arhat_body",
@@ -198,7 +325,16 @@
    "defMult": 1.28,
    "minRealm": 0,
    "text": "Стойка как колокол. Шаг тяжёлый.",
-   "owner": "shaolin"
+   "owner": "shaolin",
+   "fit": {
+    "good": [
+     "heavy"
+    ],
+    "bad": [
+     "light",
+     "frail"
+    ]
+   }
   },
   {
    "id": "golden_bell",
@@ -210,7 +346,20 @@
    "defMult": 1.4,
    "minRealm": 1,
    "text": "Удар встречают рёбрами, как стенкой храма.",
-   "owner": "shaolin"
+   "owner": "shaolin",
+   "fit": {
+    "good": [
+     "heavy",
+     "yang"
+    ],
+    "bad": [
+     "frail",
+     "light"
+    ]
+   },
+   "fx": {
+    "hazardCut": 0.06
+   }
   },
   {
    "id": "cotton_body",
@@ -222,7 +371,21 @@
    "defMult": 1.5,
    "minRealm": 1,
    "text": "Мягкость принимает силу и возвращает её в землю.",
-   "owner": "emei"
+   "owner": "emei",
+   "fit": {
+    "good": [
+     "light",
+     "yin",
+     "Вода"
+    ],
+    "bad": [
+     "heavy",
+     "yang"
+    ]
+   },
+   "fx": {
+    "devCut": 0.5
+   }
   },
   {
    "id": "seal_bone",
@@ -234,7 +397,19 @@
    "defMult": 1.6,
    "minRealm": 2,
    "text": "Тело помнит обет. Не путать с бессмертием.",
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "mind",
+     "balanced"
+    ],
+    "bad": [
+     "sha"
+    ]
+   },
+   "fx": {
+    "lifeAdd": 10
+   }
   },
   {
    "id": "stick_form",
@@ -411,7 +586,16 @@
    "qiMultiplier": 1.18,
    "minRealm": 0,
    "text": "Спят где придётся. Ци всё равно идёт.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "frail",
+     "light"
+    ],
+    "bad": [
+     "heavy"
+    ]
+   }
   },
   {
    "id": "inn_breath",
@@ -422,7 +606,11 @@
    "qiMultiplier": 1.08,
    "minRealm": 0,
    "text": "Вдох на каждого гостя. Школа чайных, не сект.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [],
+    "bad": []
+   }
   },
   {
    "id": "nine_turns",
@@ -433,7 +621,17 @@
    "qiMultiplier": 1.58,
    "minRealm": 0,
    "text": "Долго и скучно. Зато редко срывается.",
-   "owner": "crane"
+   "owner": "crane",
+   "fit": {
+    "good": [
+     "Земля",
+     "balanced"
+    ],
+    "bad": []
+   },
+   "fx": {
+    "devCut": 0.6
+   }
   },
   {
    "id": "xiantian",
@@ -444,7 +642,19 @@
    "qiMultiplier": 2.0,
    "minRealm": 1,
    "text": "Классика уся: ци старше ученика. Не путать с бессмертием.",
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "open",
+     "balanced"
+    ],
+    "bad": [
+     "blocked"
+    ]
+   },
+   "fx": {
+    "lifeAdd": 8
+   }
   },
   {
    "id": "star_absorb",
@@ -455,7 +665,20 @@
    "qiMultiplier": 2.3,
    "minRealm": 2,
    "text": "Берут чужое дыхание. Удан это запрещает. Канцелярия — записывает.",
-   "owner": "luck"
+   "owner": "luck",
+   "fit": {
+    "good": [
+     "sha",
+     "yin"
+    ],
+    "bad": [
+     "pure"
+    ]
+   },
+   "fx": {
+    "dark": true,
+    "karmaYear": -0.25
+   }
   },
   {
    "id": "sandbag",
@@ -467,7 +690,11 @@
    "defMult": 1.04,
    "minRealm": 0,
    "text": "Двор, забор, сто ударов в день.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [],
+    "bad": []
+   }
   },
   {
    "id": "drunk_mill",
@@ -479,7 +706,15 @@
    "defMult": 1.12,
    "minRealm": 0,
    "text": "Качаться, чтобы удар прошёл мимо.",
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "light"
+    ],
+    "bad": [
+     "heavy"
+    ]
+   }
   },
   {
    "id": "copper_bone",
@@ -491,7 +726,16 @@
    "defMult": 1.25,
    "minRealm": 0,
    "text": "Степная закалка. Ломаются реже, чем кажется.",
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "heavy",
+     "Металл"
+    ],
+    "bad": [
+     "frail"
+    ]
+   }
   },
   {
    "id": "toad",
@@ -503,7 +747,19 @@
    "atkMult": 1.1,
    "minRealm": 0,
    "text": "Некрасиво. Держит. Секты морщатся.",
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "poison",
+     "heavy"
+    ],
+    "bad": [
+     "pure"
+    ]
+   },
+   "fx": {
+    "hazardCut": 0.08
+   }
   },
   {
    "id": "thirteen_guards",
@@ -515,7 +771,16 @@
    "defMult": 1.38,
    "minRealm": 1,
    "text": "Внешняя работа ямыня: тело как дверь.",
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "balanced",
+     "heavy"
+    ],
+    "bad": [
+     "frail"
+    ]
+   }
   },
   {
    "id": "marrow_wash",
@@ -527,7 +792,21 @@
    "defMult": 1.55,
    "minRealm": 2,
    "text": "Шаолиньская вершина внешней работы. Годы, не вспышка.",
-   "owner": "shaolin"
+   "owner": "shaolin",
+   "fit": {
+    "good": [
+     "open",
+     "balanced",
+     "pure"
+    ],
+    "bad": [
+     "blocked"
+    ]
+   },
+   "fx": {
+    "lifeAdd": 8,
+    "breakAdd": 0.03
+   }
   },
   {
    "id": "taiji_sword",
@@ -782,7 +1061,11 @@
    "path": "spirit",
    "text": "Смотреть на тени от свечи, пока они не начнут смотреть в ответ.",
    "qiMultiplier": 1.12,
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [],
+    "bad": []
+   }
   },
   {
    "id": "empty_mirror",
@@ -795,7 +1078,17 @@
    "text": "Душа как вода в чаше: перестанешь дрожать — увидишь дно.",
    "qiMultiplier": 1.35,
    "breakAdd": 0.02,
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "soul:clear",
+     "Вода",
+     "mind"
+    ],
+    "bad": [
+     "sha"
+    ]
+   }
   },
   {
    "id": "udan_night_scroll",
@@ -808,7 +1101,20 @@
    "text": "Писцы читают его в темноте. Глазами там читать нечего.",
    "qiMultiplier": 1.6,
    "breakAdd": 0.03,
-   "owner": "wudang"
+   "owner": "wudang",
+   "fit": {
+    "good": [
+     "soul:bright",
+     "mind",
+     "yin"
+    ],
+    "bad": [
+     "yang"
+    ]
+   },
+   "fx": {
+    "breakAdd": 0.02
+   }
   },
   {
    "id": "diviner_eye",
@@ -821,7 +1127,20 @@
    "text": "Видеть восемь знаков человека раньше, чем он откроет рот. Друзей становится меньше.",
    "qiMultiplier": 1.55,
    "breakAdd": 0.04,
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "soul:heaven_eye",
+     "soul:bright"
+    ],
+    "bad": [
+     "heavy"
+    ]
+   },
+   "fx": {
+    "daoYear": 0.1,
+    "connYear": -0.15
+   }
   },
   {
    "id": "shadowless_roam",
@@ -834,7 +1153,18 @@
    "text": "Душа выходит погулять, тело сидит. Главное — помнить дорогу назад.",
    "qiMultiplier": 1.95,
    "breakAdd": 0.04,
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "soul:heaven_eye",
+     "light",
+     "mind"
+    ],
+    "bad": [
+     "heavy",
+     "frail"
+    ]
+   }
   },
   {
    "id": "unsurrendered_name",
@@ -847,7 +1177,19 @@
    "text": "Первый Писец отдал имя. Эта техника учит, как этого не делать. Канцелярия её ищет.",
    "qiMultiplier": 2.25,
    "breakAdd": 0.05,
-   "owner": "luck"
+   "owner": "luck",
+   "fit": {
+    "good": [
+     "mind",
+     "soul:bright",
+     "soul:heaven_eye"
+    ],
+    "bad": []
+   },
+   "fx": {
+    "legendSafe": 0.6,
+    "daoYear": 0.1
+   }
   },
   {
    "id": "post_strikes",
@@ -861,7 +1203,16 @@
    "hpMult": 1.15,
    "defMult": 1.1,
    "forgeMult": 1.1,
-   "owner": "market"
+   "owner": "market",
+   "fit": {
+    "good": [
+     "heavy",
+     "yang"
+    ],
+    "bad": [
+     "frail"
+    ]
+   }
   },
   {
    "id": "hanmu_bull_hide",
@@ -875,7 +1226,16 @@
    "hpMult": 1.32,
    "defMult": 1.25,
    "forgeMult": 1.15,
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "heavy",
+     "Земля"
+    ],
+    "bad": [
+     "light"
+    ]
+   }
   },
   {
    "id": "bronze_bell_robe",
@@ -890,7 +1250,17 @@
    "defMult": 1.3,
    "atkMult": 1.05,
    "forgeMult": 1.15,
-   "owner": "shaolin"
+   "owner": "shaolin",
+   "fit": {
+    "good": [
+     "heavy",
+     "yang"
+    ],
+    "bad": [
+     "frail",
+     "yin"
+    ]
+   }
   },
   {
    "id": "millstone_fist",
@@ -905,7 +1275,18 @@
    "defMult": 1.35,
    "atkMult": 1.15,
    "forgeMult": 1.2,
-   "owner": "clan"
+   "owner": "clan",
+   "fit": {
+    "good": [
+     "heavy",
+     "yang",
+     "Земля"
+    ],
+    "bad": [
+     "light",
+     "frail"
+    ]
+   }
   },
   {
    "id": "zhao_remembering_body",
@@ -919,7 +1300,19 @@
    "hpMult": 1.75,
    "defMult": 1.6,
    "forgeMult": 1.25,
-   "owner": "sunmoon"
+   "owner": "sunmoon",
+   "fit": {
+    "good": [
+     "sha",
+     "yin"
+    ],
+    "bad": [
+     "pure"
+    ]
+   },
+   "fx": {
+    "legendSafe": 0.4
+   }
   },
   {
    "id": "five_elements_return",
@@ -932,7 +1325,18 @@
    "text": "Ци тянут через свои стихии, а не через всё подряд. Чем меньше корней, тем ровнее поток.",
    "qiMultiplier": 1.65,
    "breakAdd": 0.02,
-   "owner": "qinglong"
+   "owner": "qinglong",
+   "fit": {
+    "good": [
+     "root:single",
+     "root:dual",
+     "root:mutant"
+    ],
+    "bad": [
+     "root:pseudo",
+     "root:four"
+    ]
+   }
   },
   {
    "id": "heaven_earth_breath",
@@ -945,8 +1349,57 @@
    "text": "Секта Цинлун даёт его только внутренним ученикам. Остальным — рассказывает.",
    "qiMultiplier": 2.0,
    "breakAdd": 0.03,
-   "owner": "qinglong"
+   "owner": "qinglong",
+   "fit": {
+    "good": [
+     "open",
+     "Земля",
+     "Дерево"
+    ],
+    "bad": [
+     "blocked"
+    ]
+   }
   }
  ],
- "_note": "path: техника только своего пути. owner: market — мирские/нижняя колесница, продаются (×1.5); id секты — тайна секты; clan — тайна кланов (род, друзья, удача); luck — только находка. forgeMult — закалка пути тела, breakAdd — к прорыву."
+ "_note": "path: техника только своего пути. owner: market — мирские/нижняя колесница, продаются (×1.5); id секты — тайна секты; clan — тайна кланов (род, друзья, удача); luck — только находка. forgeMult — закалка пути тела, breakAdd — к прорыву.",
+ "fitCfg": {
+  "_note": "Совместимость (game.js → techFit). Счёт = совпадений из good − 1,5 × совпадений из bad, от −2 до 2. Множитель скорости = 1 + k × счёт × (1 + ampPerGrade × ранг колесницы), в пределах [min, max]: мирская техника почти нейтральна, цзюэсюэ — вдвое сильнее и в плюс, и в минус. Неподходящая техника, которая ведёт путь (внутренняя работа на пути ци и духа, закал тела на пути тела): риск бед × (1 + hazPer × |счёт| × усиление), раз в год шанс срыва devBase × |счёт| × усиление × (1 − devCut). Колесница сама по себе: прорыв +breakPerGrade за ранг.",
+  "k": 0.1,
+  "ampPerGrade": 0.25,
+  "min": 0.55,
+  "max": 1.4,
+  "devBase": 0.05,
+  "hazPer": 0.06,
+  "breakPerGrade": 0.01,
+  "tagNames": {
+   "Металл": "металл",
+   "Дерево": "дерево",
+   "Вода": "вода",
+   "Огонь": "огонь",
+   "Земля": "земля",
+   "yin": "иньское тело",
+   "yang": "янское тело",
+   "heavy": "тяжёлое тело",
+   "light": "лёгкое тело",
+   "frail": "хрупкое тело",
+   "balanced": "ровное тело",
+   "blocked": "закупоренные жилы",
+   "open": "открытые жилы",
+   "pure": "чистое тело",
+   "sha": "тело беды",
+   "poison": "тело, что держит яд",
+   "mind": "цепкая память",
+   "soul:dull": "тусклая душа",
+   "soul:clear": "ясная душа",
+   "soul:bright": "светлый дух",
+   "soul:heaven_eye": "небесное око",
+   "root:single": "небесный корень",
+   "root:dual": "двойной корень",
+   "root:mutant": "мутировавший корень",
+   "root:pseudo": "пять корней",
+   "root:four": "четыре корня",
+   "root:three": "три корня"
+  }
+ }
 }

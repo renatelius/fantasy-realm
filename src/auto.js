@@ -125,8 +125,10 @@ function pickTechniques(data, s, say) {
     const cur = G.slottedTechs(data, s)[type.id];
     // Ценность с учётом пути: внутренняя работа — по реальной силе на этом пути и прорыву; закал тела на пути тела — ещё и закалка.
     const base = TYPE_VALUE[type.id] || (() => 0);
-    const val = type.id === "neigong" ? (t => G.neigongMult(data, s, t) * 10 + (t.path ? (t.breakAdd || 0) * 50 : 0))
-      : type.id === "body" && s.pathId === "body" ? (t => base(t) + G.bodyForgeMult(data, s, t) * 8) : base;
+    // Совместимость (game.js → techFit): неподходящая техника медленнее и срывает ци — берут только то, что по телу.
+    const fit = t => G.techFit(data, s, t), fx = t => (t.fx?.breakAdd || 0) * 50 + (t.fx?.lifeAdd || 0) * 0.3 + (t.fx?.devCut || 0) * 2 - (t.fx?.dark ? 4 : 0);
+    const val = type.id === "neigong" ? (t => G.neigongMult(data, s, t) * fit(t).mul * 10 + (t.path ? (t.breakAdd || 0) * 50 : 0) + fx(t) + Math.min(0, fit(t).score) * 3)
+      : type.id === "body" && s.pathId === "body" ? (t => base(t) + G.bodyForgeMult(data, s, t) * fit(t).mul * 8 + fx(t) + Math.min(0, fit(t).score) * 3) : base;
     const curV = cur ? val(cur) : -1;
     const cands = data.techniques.techniques
       .filter(t => t.type === type.id && G.techUsable(data, s, t) && (t.minRealm || 0) <= G.tierOf(data, s) && val(t) > curV + 1e-9)

@@ -689,10 +689,18 @@ function techLine(t) {
     t.qiMultiplier ? `ци ×${t.qiMultiplier}${eff}` : "", t.breakAdd ? `прорыв +${Math.round(t.breakAdd * 100)}%` : "", t.forgeMult ? `закалка ×${t.forgeMult}` : "", t.hpMult ? `тело ×${t.hpMult}` : "", t.atkMult ? `удар ×${t.atkMult}` : "", t.defMult ? `защита ×${t.defMult}` : "", t.critAdd ? `крит +${Math.round(t.critAdd * 100)}%` : "", t.hazardCut ? `риск −${Math.round(t.hazardCut * 100)}%` : "", t.pillMul ? `пилюля ×${t.pillMul}` : ""].filter(Boolean).join(" · ");
   const needRealm = !own && (t.minRealm || 0) > G.tierOf(data, s);
   const acc = G.techAccess(data, s, t), cost = G.techCost(data, s, t);
+  // Совместимость с телом, корнями и душой (game.js → techFit) и особые эффекты (fx).
+  const fit = s.life.awakened && t.fit ? G.techFit(data, s, t) : null, tn = x => G.fitTagName(data, x);
+  const fitChip = !fit ? "" : fit.score > 0 ? `<span class="fx">подходит: ${fit.good.map(tn).join(", ")} · скорость ×${fit.mul.toFixed(2)}</span>`
+    : fit.score < 0 ? `<span class="fx bad">не по тебе: ${fit.bad.map(tn).join(", ")} · скорость ×${fit.mul.toFixed(2)} · риск срыва</span>`
+    : (t.fit.good.length || t.fit.bad.length) ? `<span class="fx" style="opacity:.7">нейтрально · лучше всего: ${t.fit.good.map(tn).join(", ") || "—"}</span>` : "";
+  const F = t.fx || {}, fxBits = [F.breakAdd ? `прорыв +${Math.round(F.breakAdd * 100)}%` : "", F.devCut ? `срывов −${Math.round(F.devCut * 100)}%` : "", F.hazardCut ? `беды −${Math.round(F.hazardCut * 100)}%` : "",
+    F.lifeAdd ? `срок +${F.lifeAdd} лет` : "", F.daoYear ? "дао-сердце растёт" : "", F.karmaYear > 0 ? "карма растёт" : "", F.karmaYear < 0 ? "карма падает" : "", F.connYear < 0 ? "друзей меньше" : "", F.legendSafe ? "Печать реже замечает" : "", F.dark ? "тёмная техника" : ""].filter(Boolean);
+  const fxChip = fxBits.length ? `<span class="fx ${F.dark ? "bad" : ""}">${fxBits.join(" · ")}</span>` : "";
   const SRC = { family: "из родовой библиотеки · бесплатно", market: `рынок · ${stw(cost)}`, sect: `секта · ${stw(cost)} или ${S.contribCost(data, s, t)} вклада` };
   const st = own ? (act ? "в работе" : "изучена") : acc.ok ? SRC[acc.src] : `🔒 ${acc.why}`;
   const dis = !s.life.alive || !!s.life.pending || act || needRealm || !s.life.awakened || !G.techUsable(data, s, t) || !acc.ok;
-  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.name.toLowerCase()} · ${st}${needRealm ? ` · нужна ступень «${G.realmForTier(data, s, t.minRealm).name}»` : ""}<small>${bits}. ${t.text}</small></button>`;
+  return `<button class="tech g-${t.grade}" data-t="${t.id}" ${dis ? "disabled" : ""}><b>${t.name}</b> · ${gr.name.toLowerCase()} · ${st}${needRealm ? ` · нужна ступень «${G.realmForTier(data, s, t.minRealm).name}»` : ""}<small>${bits}. ${t.text}</small>${fitChip || fxChip ? `<small>${fitChip}${fxChip}</small>` : ""}</button>`;
 }
 function renderTechs() {
   const det = $("techs").closest("details"); if (!det.open) return;

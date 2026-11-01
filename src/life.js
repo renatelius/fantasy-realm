@@ -344,8 +344,9 @@ export function lifespan(data, s) {
     base = Math.round(L.baseLife + gains[0] + (data.realms.crossPath?.otherLifeShare ?? 0) * gains.slice(1).reduce((t, x) => t + x, 0));
   }
   const phy = by(data.world.physiques, L.physiqueId);
+  const tl = L.awakened ? G.techFx(data, s).lifeAdd : 0; // техники долголетия (Врождённое дыхание, Кость печати…)
   if (phy?.capAge && !capLifted(data, s, phy)) return Math.min(base, phy.capAge) + L.ageShift;
-  return base + L.ageShift;
+  return base + tl + L.ageShift;
 }
 // Эффекты телосложения человеческим языком: [{t, good}]
 export function physiqueEffects(p) {
@@ -544,7 +545,7 @@ function familyBest(data, s, cs) {
   const ids = new Set([...(s.familyTechs || []), ...(s.ownedTechniques || [])]);
   const pool = [...ids].map(id => G.techById(data, id)).filter(t => t && G.techUsable(data, cs, t) && (t.minRealm || 0) <= G.tierOf(data, cs));
   const best = (type, f) => pool.filter(t => t.type === type).sort((a, b) => f(b) - f(a))[0]?.id || null;
-  return { neigong: best("neigong", t => G.neigongMult(data, cs, t)), body: best("body", t => t.hpMult || 1), martial: null, qinggong: null, yishu: null, anqi: null };
+  return { neigong: best("neigong", t => G.neigongMult(data, cs, t) * G.techFit(data, cs, t).mul), body: best("body", t => (t.hpMult || 1) * G.techFit(data, cs, t).mul), martial: null, qinggong: null, yishu: null, anqi: null };
 }
 export function childState(data, s, c) {
   const L = s.life, W = data.world;
@@ -1096,6 +1097,7 @@ function yearPass(data, s, rng) {
     if (pay && L.age % 5 === 0) logLine(s, `Год работы (${focus?.name || "дом"}): ${stonesW(pay)}.`, "family");
   }
   CR.yearCraft(data, s, rng);
+  G.techYear(data, s, rng);
   for (const c of L.children) {
     if (c.alive && c.task === "letters" && childAge(s, c) >= 6 && rng() < 0.12 * CL.lettersMul(data, s)) {
       L.stats.connections = clamp(L.stats.connections + 1, 0, 30);
@@ -1135,7 +1137,7 @@ function yearPass(data, s, rng) {
   const yishu = G.slottedTechs(data, s).yishu;
   const phy = by(W.physiques, L.physiqueId);
   let hz = (wealth.hazard + jobHaz) * by(W.regions, L.regionId).hazardMult * by(W.eras, L.eraId).hazardMult * (focus?.hazardMul ?? 1) * (phy?.hazard || 1) * (tal?.hazard || 1) * (1 - (yishu?.hazardCut || 0))
-    * KF.hazardMul(data, s) * CL.feudHazardMul(data, s) * S.hazardMul(data, s) * CR.hazardMul(data, s);
+    * KF.hazardMul(data, s) * CL.feudHazardMul(data, s) * S.hazardMul(data, s) * CR.hazardMul(data, s) * G.techHazardMul(data, s);
   if (L.awakened) hz *= wl.awakenedHazardMult * Math.pow(wl.realmHazardDecay ?? 0.5, G.maxTier(data, s)) * (G.pathOf(data, s).hazardMul ?? 1);
   if (L.age < 5) hz *= wl.infantHazardMult;
   const span = lifespan(data, s);
