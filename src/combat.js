@@ -55,11 +55,22 @@ export function fight(data, s, e, rng = Math.random) {
 }
 
 // Оценка для интерфейса: шанс победы (враг случайный) и шанс гибели за один поход.
+// Враги края (enemies.json → regions, minTier, weight): степь — налётчики, Куньлунь — снежные обезьяны, тракт — разбойники.
+export function enemyPool(data, s) {
+  const L = s.life, tier = L?.awakened ? tierOf(data, s) : 0;
+  const list = data.enemies.enemies.filter(e => (!e.regions || !L || e.regions.includes(L.regionId)) && (e.minTier ?? 0) <= tier);
+  return list.length ? list : data.enemies.enemies;
+}
+export function pickEnemy(data, s, rng = Math.random) {
+  const pool = enemyPool(data, s), tot = pool.reduce((a, e) => a + (e.weight ?? 2), 0);
+  let x = rng() * tot; for (const e of pool) { x -= e.weight ?? 2; if (x <= 0) return e; }
+  return pool[pool.length - 1];
+}
 export function adventureOdds(data, s, n = 30, rng = Math.random) {
-  const list = data.enemies.enemies, cfg = data.enemies.adventure;
-  let wins = 0;
-  for (const e of list) for (let i = 0; i < n; i++) if (fight(data, s, e, rng).win) wins++;
-  const win = wins / (list.length * n);
+  const list = enemyPool(data, s), cfg = data.enemies.adventure;
+  let wins = 0, tot = 0;
+  for (const e of list) { const w = e.weight ?? 2; for (let i = 0; i < n; i++) { tot += w; if (fight(data, s, e, rng).win) wins += w; } }
+  const win = wins / tot;
   const body = s.life && data.world.physiques?.find(x => x.id === s.life.physiqueId);
   const flee = slottedTechs(data, s).qinggong ? 0.7 : 1;
   const death = (1 - win) * (cfg.deathOnLoss || 0) * Math.pow(1 / (body?.hpMult || 1), 2) * flee;
@@ -83,8 +94,8 @@ export function adventure(data, s, now = Date.now(), rng = Math.random) {
   if (s.life && !s.life.awakened) return { ok: false, msg: "Корни не проверены: путь культивации ещё закрыт." };
   if (s.life?.retreat) return { ok: false, msg: "Ты в затворе: в цзянху не выйти, пока не разберут камни у входа." };
   if (!adventureReady(s, now)) return { ok: false, msg: "Ты ещё восстанавливаешь силы." };
-  const cfg = data.enemies.adventure, list = data.enemies.enemies;
-  const e = list[Math.floor(rng() * list.length)];
+  const cfg = data.enemies.adventure;
+  const e = pickEnemy(data, s, rng);
   const r = fight(data, s, e, rng);
   const et = enemyTech(data, s, e), with_ = et ? ` («${et.name}»)` : "";
   if (!r.win) {

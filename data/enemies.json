@@ -48,7 +48,8 @@
      "hpMult": 1.3,
      "defMult": 1.2
     }
-   ]
+   ],
+   "weight": 2
   },
   {
    "id": "rogue_cultivator",
@@ -80,7 +81,8 @@
      "hpMult": 1.275,
      "defMult": 1.225
     }
-   ]
+   ],
+   "weight": 2
   },
   {
    "id": "mountain_wraith",
@@ -112,7 +114,410 @@
      "hpMult": 1.35,
      "defMult": 1.25
     }
+   ],
+   "weight": 2
+  },
+  {
+   "id": "road_bandit",
+   "name": "Разбойник с тракта",
+   "levelOffset": 0,
+   "hpMult": 1.1,
+   "atkMult": 0.85,
+   "defMult": 0.75,
+   "stones": 5,
+   "weight": 3,
+   "techniques": [
+    {
+     "name": "Удар из-за повозки",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Шайка с трёх сторон",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Атаман без лица",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "assassin",
+   "name": "Наёмный убийца",
+   "levelOffset": 1,
+   "hpMult": 0.8,
+   "atkMult": 0.85,
+   "defMult": 0.6,
+   "stones": 9,
+   "weight": 1,
+   "regions": [
+    "yanjing",
+    "liangzhou",
+    "haiyun"
+   ],
+   "techniques": [
+    {
+     "name": "Игла в рукаве",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Шаг без звука",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Тень за спиной",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "dark_cultist",
+   "name": "Адепт тёмной секты",
+   "levelOffset": 1,
+   "hpMult": 0.9,
+   "atkMult": 0.72,
+   "defMult": 0.7,
+   "stones": 8,
+   "weight": 1,
+   "minTier": 1,
+   "techniques": [
+    {
+     "name": "Красная ладонь",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Пьющая ци",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Солнце в полночь",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "sand_scorpion",
+   "name": "Песчаный скорпион",
+   "levelOffset": 0,
+   "hpMult": 1.0,
+   "atkMult": 0.95,
+   "defMult": 0.95,
+   "stones": 4,
+   "weight": 3,
+   "regions": [
+    "liangzhou"
+   ],
+   "techniques": [
+    {
+     "name": "Жало в песке",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Яд трёх дней",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Царь барханов",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "snow_ape",
+   "name": "Снежная обезьяна",
+   "levelOffset": 1,
+   "hpMult": 1.1,
+   "atkMult": 0.65,
+   "defMult": 0.8,
+   "stones": 7,
+   "weight": 3,
+   "regions": [
+    "kunlun"
+   ],
+   "techniques": [
+    {
+     "name": "Лавина кулаков",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Рёв над ледником",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Старейшина снегов",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "sea_pirate",
+   "name": "Морской пират",
+   "levelOffset": 0,
+   "hpMult": 1.05,
+   "atkMult": 0.85,
+   "defMult": 0.75,
+   "stones": 7,
+   "weight": 3,
+   "regions": [
+    "haiyun",
+    "penglai"
+   ],
+   "techniques": [
+    {
+     "name": "Крюк с борта",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Абордаж в тумане",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Флаг без страны",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "ash_ghoul",
+   "name": "Пепельный упырь",
+   "levelOffset": 1,
+   "hpMult": 0.9,
+   "atkMult": 0.7,
+   "defMult": 0.95,
+   "stones": 6,
+   "weight": 3,
+   "regions": [
+    "hedu"
+   ],
+   "techniques": [
+    {
+     "name": "Пепел в глаза",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Голод сожжённых",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Король пепелища",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "steppe_rider",
+   "name": "Степной налётчик",
+   "levelOffset": 0,
+   "hpMult": 1.1,
+   "atkMult": 0.9,
+   "defMult": 0.7,
+   "stones": 5,
+   "weight": 3,
+   "regions": [
+    "hanmu"
+   ],
+   "techniques": [
+    {
+     "name": "Аркан на скаку",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Стрела с седла",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Буря копыт",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "river_serpent",
+   "name": "Речной змей",
+   "levelOffset": 1,
+   "hpMult": 1.15,
+   "atkMult": 0.6,
+   "defMult": 0.8,
+   "stones": 6,
+   "weight": 3,
+   "regions": [
+    "huangfeng"
+   ],
+   "techniques": [
+    {
+     "name": "Кольцо в мутной воде",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Хвост половодья",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Владыка русла",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "tiger_spirit",
+   "name": "Дух горного тигра",
+   "levelOffset": 1,
+   "hpMult": 0.95,
+   "atkMult": 0.72,
+   "defMult": 0.75,
+   "stones": 7,
+   "weight": 3,
+   "regions": [
+    "qinglong"
+   ],
+   "techniques": [
+    {
+     "name": "Прыжок из бамбука",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Полоса на лбу",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Царь гор",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
+   ]
+  },
+  {
+   "id": "palace_guard",
+   "name": "Дворцовый страж-отступник",
+   "levelOffset": 1,
+   "hpMult": 1.0,
+   "atkMult": 0.7,
+   "defMult": 0.8,
+   "stones": 8,
+   "weight": 3,
+   "regions": [
+    "yanjing"
+   ],
+   "techniques": [
+    {
+     "name": "Копьё в переулке",
+     "fromLevel": 3,
+     "atkMult": 1.1,
+     "hpMult": 1.05,
+     "defMult": 1.04
+    },
+    {
+     "name": "Строй девяти",
+     "fromLevel": 12,
+     "atkMult": 1.22,
+     "hpMult": 1.17,
+     "defMult": 1.1
+    },
+    {
+     "name": "Клинок канцелярии",
+     "fromLevel": 24,
+     "atkMult": 1.37,
+     "hpMult": 1.3,
+     "defMult": 1.2
+    }
    ]
   }
- ]
+ ],
+ "duel": {
+  "_note": "Поединок по имени (jianghu.js → duel): соперник — мастер твоего уровня, его сила = твоя × (1 + perLvl × lvl) × разброс от 1 − spread/2 до 1 + spread/2. Победа: fame (и stones); поражение: famePerLoss славы, рана с шансом woundChance (срок −1), гибель deathOnLoss × (1/тело)².",
+  "perLvl": 0.12,
+  "spread": 0.35,
+  "woundChance": 0.5,
+  "deathOnLoss": 0.02,
+  "famePerLoss": -4
+ }
 }

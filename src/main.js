@@ -287,7 +287,7 @@ function advOdds() {
 // Подсказка новичку: шанс победы низкий → какие техники есть у врагов и что выучить.
 function newbieHint(o) {
   if (s.settings.autoPlay || o.win >= 0.6) return "";
-  const techs = [...new Set(data.enemies.enemies.map(e => C.enemyTech(data, s, e)).filter(Boolean).map(t => `«${t.name}»`))];
+  const techs = [...new Set(C.enemyPool(data, s).map(e => C.enemyTech(data, s, e)).filter(Boolean).map(t => `«${t.name}»`))];
   const h = C.combatHint(data, s, t => G.techCost(data, s, t));
   const type = h.tech && data.techniques.types.find(x => x.id === h.tech.type);
   const what = h.tech ? `Выучи «${h.tech.name}» (${type.name.toLowerCase()}) за ${stw(h.cost)}${s.spiritStones < h.cost ? ` — не хватает ${h.cost - s.spiritStones}: поработай год-другой` : " — хватает уже сейчас"}.` : "Подходящих техник на этой ступени нет: копи камни на пилюлю и прорвись.";

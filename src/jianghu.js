@@ -9,7 +9,7 @@
 //     Карточки с requires.tie приходят не раньше чем через minGap лет после завязки. Наследнику переходят с шансом inherit.
 import * as G from "./game.js";
 import * as CB from "./combat.js";
-import { logLine, gtext, lifespan } from "./life.js";
+import { logLine, gtext, lifespan, die } from "./life.js";
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const C = data => data.jianghu || null;
@@ -109,6 +109,7 @@ export function applyEffects(data, s, ef = {}, rng = Math.random) {
   if (ef.wulin === "end") wulinEnd(data, s, "Ты сам(а) передал(а) место главы молодым. Цзянху поклонился.");
   if (ef.pupil) addPupil(data, s, rng, typeof ef.pupil === "string" ? ef.pupil : null);
   if (ef.pupilLoss) losePupil(data, s, rng);
+  if (ef.duel) duel(data, s, ef.duel === true ? {} : ef.duel, rng);
   if (ef.forgetDark) forgetDark(data, s);
   if (ef.retreatEnd && s.life.retreat) endRetreat(data, s, true);
   if (ef.tieTurn) { const t = oldestTie(data, s, ef.tieTurn, false); if (t) { t.kind = "grudge"; t.since = s.life.age; logLine(s, `${t.name} не простит отказа. Был долг — стала обида.`, "death"); } }
@@ -138,7 +139,7 @@ export function matches(data, s, r = {}) {
 }
 export function scoreFx(ef = {}) {
   return (ef.fame || 0) * 0.3 + (ef.grudge ? -6 : 0) + (ef.debt ? 4 : 0) + (ef.owe ? -2 : 0)
-    + (ef.darkTech ? -6 : 0) + (ef.manualTech ? 50 : 0) + ([].concat(ef.flag || []).includes("manual") ? 6 : 0) + (ef.wulin === "fight" ? 5 : ef.wulin === "defend" ? 2 : ef.wulin === "end" ? -3 : 0) + (ef.pupil ? 4 : 0) + (ef.pupilLoss ? -4 : 0) + (ef.forgetDark ? -2 : 0) + (ef.retreatEnd ? -8 : 0)
+    + (ef.darkTech ? -6 : 0) + (ef.manualTech ? 50 : 0) + ([].concat(ef.flag || []).includes("manual") ? 6 : 0) + (ef.wulin === "fight" ? 5 : ef.wulin === "defend" ? 2 : ef.wulin === "end" ? -3 : 0) + (ef.pupil ? 4 : 0) + (ef.pupilLoss ? -4 : 0) + (ef.duel ? 2 - 2 * (ef.duel.lvl ?? 0) + (ef.duel.fame ?? 5) * 0.15 : 0) + (ef.forgetDark ? -2 : 0) + (ef.retreatEnd ? -8 : 0)
     + (ef.tieClose === "grudge" ? 6 : ef.tieClose === "owe" ? 2 : ef.tieClose === "debt" ? -1 : 0) + (ef.tieTurn ? -5 : 0);
 }
 // Подстановки в тексты карточек (life.js → fmt): {grudge}, {grudgeWho}, {debtor}, {debtorWho}, {creditor}, {creditorWho}, {nick}.
@@ -385,4 +386,46 @@ export function autoPupils(data, s, rng = Math.random) {
   if (pupils(s).length < 2 && canAskPupil(data, s).ok && rng() < 0.15) askPupil(data, s, rng);
   const t = G.leadTech(data, s);
   if (t) pupils(s).forEach((p, i) => { if (p.tech !== t.id) teachPupil(data, s, i); });
+}
+
+// ───────── поединок по имени (enemies.json → duel) ─────────
+// Соперник — мастер твоего уровня: его сила = твоя × (1 + perLvl × lvl) × разброс (spread). lvl от −2 до +3.
+// Так поединок остаётся поединком и в 300 лет: шанс при lvl 0 — около половины, при +2 — заметно хуже.
+// opt: { lvl, fame, name, kill (победа убивает: кровник), stones, tieClose ("grudge" — бой с кровником решает дело) }.
+function duelFight(data, s, lvl, rng) {
+  const D = data.enemies.duel || {}, cfg = data.enemies.player, P = CB.playerStats(data, s);
+  const sp = D.spread ?? 0.35, m = (1 + (D.perLvl ?? 0.12) * lvl) * (1 - sp / 2 + sp * rng());
+  let ph = P.hp, eh = P.hp * m, r = 0;
+  const hit = (atk, def) => Math.max(1, atk * (0.9 + 0.2 * rng()) - def * 0.5);
+  while (ph > 0 && eh > 0 && r < (data.enemies.adventure.maxRounds || 40)) {
+    r++;
+    eh -= hit(P.atk, P.def * m) * (rng() < (P.crit ?? cfg.critChance) ? cfg.critMult : 1);
+    if (eh <= 0) break;
+    ph -= hit(P.atk * m, P.def) * (rng() < cfg.critChance ? cfg.critMult : 1);
+  }
+  return { win: eh <= 0, rounds: r };
+}
+export function duelChance(data, s, lvl = 0, n = 40, rng = Math.random) {
+  if (!s.life?.awakened) return 0;
+  let w = 0; for (let i = 0; i < n; i++) if (duelFight(data, s, lvl, rng).win) w++; return w / n;
+}
+function duel(data, s, opt = {}, rng = Math.random) {
+  const L = s.life; if (!L?.alive) return;
+  const D = data.enemies.duel || {}, name = opt.name || "соперник";
+  if (!L.awakened) { addFame(data, s, -1); if (rng() < 0.5) L.ageShift -= 1; logLine(s, "Без ци против мастера — это не бой, а урок. Тебя проучили при всех.", "cult"); return; }
+  const r = duelFight(data, s, opt.lvl ?? 0, rng);
+  if (r.win) {
+    addFame(data, s, opt.fame ?? 5);
+    if (opt.stones) s.spiritStones += opt.stones;
+    if (opt.tieClose) { const t = closeTie(data, s, opt.tieClose); if (t) logLine(s, `Бой решил давний спор: ${t.name} больше не придёт.`, "family"); }
+    if (opt.kill) addTie(data, s, "grudge", typeof opt.kill === "string" ? opt.kill : null, rng);
+    const w = r.rounds % 10 === 1 && r.rounds % 100 !== 11 ? "сход" : [2, 3, 4].includes(r.rounds % 10) && ![12, 13, 14].includes(r.rounds % 100) ? "схода" : "сходов";
+    logLine(s, `Поединок: ${name} повержен за ${r.rounds} ${w}. Свидетели разнесут по краю.`, "adv");
+    return;
+  }
+  addFame(data, s, D.famePerLoss ?? -4);
+  const body = data.world.physiques?.find(x => x.id === L.physiqueId);
+  if (rng() < (D.deathOnLoss ?? 0.02) * Math.pow(1 / (body?.hpMult || 1), 2)) { die(data, s, `Пал(а) в поединке: ${name}`, rng); return; }
+  const hurt = rng() < (D.woundChance ?? 0.5); if (hurt) L.ageShift -= 1;
+  logLine(s, `Поединок проигран: ${name} оказался сильнее.${opt.tieClose ? " Спор остался открытым." : ""}${hurt ? " Рана отняла год." : ""} Позор заживёт дольше.`, "cult");
 }
