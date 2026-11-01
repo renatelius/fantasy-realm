@@ -1360,6 +1360,101 @@
      "blocked"
     ]
    }
+  },
+  {
+   "id": "qi_drinking_palm",
+   "name": "Ладонь, пьющая ци",
+   "type": "neigong",
+   "grade": "shang",
+   "cost": 1100,
+   "qiMultiplier": 2.1,
+   "minRealm": 1,
+   "path": "qi",
+   "owner": "dark",
+   "text": "Ци берут не у неба, а у того, кто лежит перед тобой. Праведные школы за это убивают.",
+   "fit": {
+    "good": [
+     "sha",
+     "yin"
+    ],
+    "bad": [
+     "pure"
+    ]
+   },
+   "fx": {
+    "dark": true,
+    "karmaYear": -0.3,
+    "drain": 0.05
+   }
+  },
+  {
+   "id": "blood_forge",
+   "name": "Кровавый закал",
+   "type": "body",
+   "grade": "shang",
+   "cost": 1100,
+   "hpMult": 1.5,
+   "defMult": 1.3,
+   "atkMult": 1.15,
+   "forgeMult": 1.3,
+   "minRealm": 1,
+   "path": "body",
+   "owner": "dark",
+   "text": "Тело закаляют чужой кровью. Быстро. Годы уходят вместе с ней.",
+   "fit": {
+    "good": [
+     "sha",
+     "heavy"
+    ],
+    "bad": [
+     "pure"
+    ]
+   },
+   "fx": {
+    "dark": true,
+    "karmaYear": -0.3,
+    "lifeAdd": -6,
+    "drain": 0.03
+   }
+  },
+  {
+   "id": "dream_eater",
+   "name": "Пожиратель снов",
+   "type": "neigong",
+   "grade": "shang",
+   "cost": 1100,
+   "qiMultiplier": 2.05,
+   "minRealm": 1,
+   "path": "spirit",
+   "owner": "dark",
+   "text": "Душа ходит по чужим снам и уносит оттуда то, что плохо лежит.",
+   "fit": {
+    "good": [
+     "soul:heaven_eye",
+     "yin"
+    ],
+    "bad": [
+     "pure"
+    ]
+   },
+   "fx": {
+    "dark": true,
+    "karmaYear": -0.3,
+    "connYear": -0.2,
+    "drain": 0.04
+   }
+  },
+  {
+   "id": "blood_shadow_palm",
+   "name": "Ладонь кровавой тени",
+   "type": "martial",
+   "grade": "zhong",
+   "cost": 500,
+   "atkMult": 1.38,
+   "critAdd": 0.04,
+   "minRealm": 0,
+   "owner": "dark",
+   "text": "Удар оставляет на коже красный след в пять пальцев. Его узнают во всех уездах."
   }
  ],
  "_note": "path: техника только своего пути. owner: market — мирские/нижняя колесница, продаются (×1.5); id секты — тайна секты; clan — тайна кланов (род, друзья, удача); luck — только находка. forgeMult — закалка пути тела, breakAdd — к прорыву.",

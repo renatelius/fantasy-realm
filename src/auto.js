@@ -17,6 +17,7 @@ import * as L from "./life.js";
 import * as S from "./sect.js";
 import * as CL from "./clan.js";
 import * as CR from "./craft.js";
+import * as JH from "./jianghu.js";
 
 const TYPE_VALUE = {
   neigong: t => (t.qiMultiplier || 1) * 10,
@@ -85,6 +86,7 @@ function pickSpouseJob(data, s) {
 
 function pickFocus(data, s) {
   const l = s.life;
+  if (l.retreat) return; // в затворе фокус не меняют
   let want = "family";
   if (l.awakened) {
     const kids = l.children.filter(c => c.alive).length;
@@ -196,7 +198,7 @@ function doBreakthroughs(data, s, say, rng) {
 }
 
 function doAdventure(data, s, say, rng) {
-  if (!C.adventureReady(s, s.clockMs)) return;
+  if (s.life.retreat || !C.adventureReady(s, s.clockMs)) return;
   // Приключения опасны (рана, шанс гибели), враги с техниками. Авто идёт, когда победа вероятнее 55%.
   if (winChance(data, s) < 0.55) return;
   const before = s.spiritStones;
@@ -220,6 +222,7 @@ export function autoYear(data, s, rng = Math.random) {
   pickJob(data, s); pickChildren(data, s); pickFocus(data, s);
   CL.autoClan(data, s, rng);
   CR.autoCraft(data, s, rng);
+  JH.autoRetreat(data, s, rng);
   if ((l.sect?.standing ?? 100) < 35) S.giveAlms(data, s);
   if (!l.awakened) return;
   pickPath(data, s, say);

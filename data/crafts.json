@@ -8,7 +8,7 @@
   ],
   "gain": {
     "base": 4, "cap": 100, "soft": 115, "floor": 0.25,
-    "focus": { "work": 1.6, "family": 0.8, "practice": 0.4, "rest": 0.3, "sect": 0.3 },
+    "focus": { "work": 1.6, "family": 0.8, "practice": 0.4, "rest": 0.3, "sect": 0.3, "retreat": 0 },
     "workshopChild": 3, "workshopCap": 30, "heirShare": 0.25,
     "brewXp": 2, "failXp": 1.5
   },

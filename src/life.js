@@ -517,6 +517,7 @@ function matches(data, s, r = {}) {
 }
 function eligible(data, s, e) {
   const L = s.life;
+  if (L.retreat && !e.requires?.inRetreat) return false; // в затворе мир стучится только бедой
   return !e.scripted && L.age >= e.minAge && L.age <= e.maxAge && !L.usedEvents.includes(e.id) && matches(data, s, e.requires) && !sectBlocked(data, s, e);
 }
 // Секта с ограничением путей (sects.json → paths) не зовёт того, чей путь она не учит.
@@ -526,6 +527,8 @@ function sectBlocked(data, s, e) {
   return e.choices.some(c => { const id = c.effects?.sect; if (!id || id === "random") return false; const sd = G.sectById(data, id); return banned.includes(id) || (!!sd?.paths && !sd.paths.includes(s.pathId || "qi")); });
 }
 export function drawEvent(data, s, rng = Math.random) {
+  // В затворе мир стучится редко (jianghu.json → retreat.cardChance).
+  if (s.life.retreat && rng() > (data.jianghu?.retreat?.cardChance ?? 0.25)) return null;
   const list = data.events.events.filter(e => eligible(data, s, e));
   return list.length ? wpick(list, rng) : null;
 }
@@ -849,6 +852,8 @@ export function jobNeedWhy(data, s, job) {
 export function setFocus(data, s, id) {
   const f = data.jobs?.focuses?.find(x => x.id === id);
   if (!f) return { ok: false, msg: "Нет такого фокуса." };
+  if (s.life.retreat) return { ok: false, msg: "Ты в затворе: фокус года — тишина." };
+  if (f.retreat) return { ok: false, msg: "В затвор уходят на годы — кнопками ниже." };
   if (s.life.focusId === id) return { ok: true };
   s.life.focusId = id;
   logLine(s, `Этот год: ${f.name}. ${f.text}`, "family");

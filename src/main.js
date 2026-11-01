@@ -362,6 +362,14 @@ function sceneCaption(l) {
   return `${f.region.name} · ${h?.house || "дом"} ${fam.length ? "· " + fam.join(", ") : ""}<div class="dim small" style="margin-top:4px">${joke}</div>`;
 }
 
+// Затвор (jianghu.js): уйти на 3 / 10 / 30 лет или выйти раньше.
+function retreatHtml() {
+  const l = s.life, Rc = data.jianghu?.retreat; if (!Rc || !l.awakened) return "";
+  if (l.retreat) return `<div class="note" style="border-color:var(--gold);background:#d9b45a12">В затворе с ${yw(l.retreat.from)} · ещё ${yw(Math.max(0, l.retreat.to - l.age))} · ци быстрее, чем в цзянху · прорывы идут сами · мир живёт без тебя, карточки — только бедой.<br>
+    <button data-rt="end" style="margin-top:6px" ${s.settings.autoPlay ? "disabled" : ""}>Выйти раньше · часть ци рассеется</button></div>`;
+  const bt = Rc.options.map(y => { const c = JH.canRetreat(data, s, y); return `<button data-rt="${y}" ${c.ok && !s.settings.autoPlay ? "" : "disabled"} title="${c.ok ? "" : c.why}">${y} ${y === 3 ? "года" : "лет"}${c.ok ? "" : `<small class="fxh">${c.why}</small>`}</button>`; }).join("");
+  return `<div class="lbl" style="margin-top:10px">Затвор</div><div class="chips">${bt}</div><div class="dim small">Ци быстрее, чем в цзянху, прорывы — сами (пилюли бери с собой). Камней почти нет, детей и приключений — нет. Срыв в пещере опасен, особенно с неподходящей или тёмной техникой.</div>`;
+}
 function renderFocus() {
   const l = s.life, el = $("focus");
   if (!l.alive) { setHTML(el, ""); setHidden(el, true); return; }
@@ -379,8 +387,8 @@ function renderFocus() {
   setHTML(el, `<h2>Фокус этого года</h2>
     <div class="dim">${stage(l)[0].toUpperCase() + stage(l).slice(1)} · ${f.region.name} · ${f.era.name}</div>
     ${small ? `<div class="dim" style="margin-top:8px">${jpick(J.baby, l.name + l.age)} С шести лет ты сможешь выбирать, на что тратить год. Этот отрезок можно спокойно пролистать на ×8.</div>` : `
-    <div class="chips">${data.jobs.focuses.filter(x => !x.inSect || l.sect).map(x => `<button class="${x.id === foc.id ? "on" : ""}" data-focus="${x.id}">${x.name}${x.fx ? `<small class="fxh">${x.fx}</small>` : ""}</button>`).join("")}</div>
-    <div class="dim">${foc.text}</div>${jobChips}`}
+    <div class="chips"${l.retreat ? " hidden" : ""}>${data.jobs.focuses.filter(x => (!x.inSect || l.sect) && !x.retreat).map(x => `<button class="${x.id === foc.id ? "on" : ""}" data-focus="${x.id}">${x.name}${x.fx ? `<small class="fxh">${x.fx}</small>` : ""}</button>`).join("")}</div>
+    <div class="dim">${foc.text}</div>${l.retreat ? "" : jobChips}${retreatHtml()}`}
     ${s.settings.autoPlay && !small ? `<div class="note">Авторежим: фокус, ремесло и дела детей выбираются сами.</div>` : ""}`);
 }
 
@@ -783,7 +791,8 @@ document.body.addEventListener("click", e => {
   if (d.heir !== undefined) { L.startLife(data, s, "heir", Math.random, +d.heir); return done(); }
   if (d.new) { L.startLife(data, s, "new"); spinState = null; return done(); }
   if (d.copy) { navigator.clipboard?.writeText(summaryText(s.life.legacy)); b.textContent = "Скопировано"; return; }
-  if (d.focus) { L.setFocus(data, s, d.focus); return done(); }
+  if (d.focus) { const r = L.setFocus(data, s, d.focus); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.rt) { const r = d.rt === "end" ? (JH.endRetreat(data, s, true), { ok: true }) : JH.startRetreat(data, s, +d.rt); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.job) { const r = L.setJob(data, s, d.job, d.who); if (!r.ok && !r.refused) log(r.msg, "info"); return done(); }
   if (d.cr) {
     if (d.cr === "bizsell" && !confirm("Продать своё дело? Наследнику оно не достанется.")) return;

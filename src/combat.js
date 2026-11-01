@@ -81,6 +81,7 @@ export function adventureReady(s, now = Date.now()) { return now >= s.adventureR
 
 export function adventure(data, s, now = Date.now(), rng = Math.random) {
   if (s.life && !s.life.awakened) return { ok: false, msg: "Корни не проверены: путь культивации ещё закрыт." };
+  if (s.life?.retreat) return { ok: false, msg: "Ты в затворе: в цзянху не выйти, пока не разберут камни у входа." };
   if (!adventureReady(s, now)) return { ok: false, msg: "Ты ещё восстанавливаешь силы." };
   const cfg = data.enemies.adventure, list = data.enemies.enemies;
   const e = list[Math.floor(rng() * list.length)];
