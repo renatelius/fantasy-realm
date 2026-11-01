@@ -9,6 +9,7 @@
 //     Карточки с requires.tie приходят не раньше чем через minGap лет после завязки. Наследнику переходят с шансом inherit.
 import * as G from "./game.js";
 import * as CB from "./combat.js";
+import * as SE from "./seal.js";
 import { logLine, gtext, lifespan, die } from "./life.js";
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -419,6 +420,7 @@ function duel(data, s, opt = {}, rng = Math.random) {
     if (opt.stones) s.spiritStones += opt.stones;
     if (opt.tieClose) { const t = closeTie(data, s, opt.tieClose); if (t) logLine(s, `Бой решил давний спор: ${t.name} больше не придёт.`, "family"); }
     if (opt.kill) addTie(data, s, "grudge", typeof opt.kill === "string" ? opt.kill : null, rng);
+    if (opt.onWin) SE.applyEffects(data, s, opt.onWin, rng);
     const w = r.rounds % 10 === 1 && r.rounds % 100 !== 11 ? "сход" : [2, 3, 4].includes(r.rounds % 10) && ![12, 13, 14].includes(r.rounds % 100) ? "схода" : "сходов";
     logLine(s, `Поединок: ${name} повержен за ${r.rounds} ${w}. Свидетели разнесут по краю.`, "adv");
     return;

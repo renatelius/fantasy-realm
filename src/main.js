@@ -8,6 +8,7 @@ import * as CL from "./clan.js";
 import * as S from "./sect.js";
 import * as CR from "./craft.js";
 import * as JH from "./jianghu.js";
+import * as SE from "./seal.js";
 import { drawScene, drawAvatar, drawYanMap } from "./pixel.js";
 
 const $ = id => document.getElementById(id);
@@ -19,7 +20,7 @@ const n01 = v => Math.max(0, Math.min(100, v));
 const pct = (a, b) => (a / b * 100);
 const yw = n => L.yearsW(n), stw = n => L.stonesW(n);
 
-const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts", "jianghu"];
+const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts", "jianghu", "seal"];
 const data = Object.fromEntries(await Promise.all(names.map(async n => [n, await (await fetch(`data/${n}.json`)).json()])));
 const by = (arr, id) => arr.find(x => x.id === id);
 const GRADE = Object.fromEntries(data.techniques.grades.map(g => [g.id, g]));
@@ -456,7 +457,7 @@ function renderJh() {
   if (!data.jianghu || !l.alive || l.age < 12) { setHTML(el, ""); setHidden(el, true); return; }
   setHidden(el, false);
   const j = JH.st(s), f = j.fame, sd = JH.side(data, s);
-  const col = sd === "good" ? "var(--jade)" : sd === "bad" ? "var(--hp)" : "var(--gold)";
+  const col = sd === "good" ? "var(--jade)" : sd === "bad" ? "var(--red)" : "var(--gold)";
   const ties = j.ties.slice().sort((a, b) => a.since - b.since).map(t => `<div class="row2"><span>${JH.kindName(t.kind)}</span><b>${t.name}<small>${L.gtext(t.who, l.gender)}${t.inherited ? " · по наследству" : ` · с ${yw(t.since)}`}</small></b></div>`).join("");
   setHTML(el, `<h2>Имя в цзянху</h2>
     <div class="row2"><span>Прозвище</span><b>${j.nick ? `«${j.nick}»` : `<span class="dim">пока нет — с ${data.jianghu.fame.nickAt} славы</span>`}</b></div>
@@ -465,6 +466,25 @@ function renderJh() {
     ${ties ? `<div class="lbl" style="margin-top:8px">Обиды и долги</div>${ties}` : `<div class="dim small" style="margin-top:6px">Ни кровников, ни должников. Пока.</div>`}
     ${pupilsHtml()}
     <div class="dim small" style="margin-top:6px">Слава растёт от побед, новых ступеней и громких поступков, со временем тает. Помогает при найме и приводит людей. Кровники и долги приходят через годы — и могут перейти детям.</div>`);
+}
+
+function renderSeal() {
+  const l = s.life, el = $("seal");
+  if (!data.seal || !l.alive || !SE.visible(s)) { setHTML(el, ""); setHidden(el, true); return; }
+  setHidden(el, false);
+  const x = SE.st(s), sh = SE.shards(data, s), h = Math.round(x.heat);
+  const hcol = h < 15 ? "var(--jade)" : h < 35 ? "var(--gold)" : "var(--red)";
+  const bar = (label, sub, v) => `<div class="row2"><span>${label}</span><b>${v}%${v >= 100 ? " · собран" : ""}<small>${sub}</small><div class="track" style="margin-top:4px"><i style="width:${n01(v)}%;background:${v >= 100 ? "var(--gold)" : "var(--jade)"}"></i></div></b></div>`;
+  const hidden = l.children.filter(c => c.sealHidden).map(c => c.name), tallied = l.children.filter(c => c.sealTallied).map(c => c.name);
+  const end = x.end ? `<div class="row2"><span>Род решил</span><b style="color:var(--gold)">${{ gave: "имя отдано Печати", spoke: "имя Чжао сказано вслух", sold: "осколки у канцелярии" }[x.end]}<small>${data.seal.ends?.[x.end] || ""}</small></b></div>` : "";
+  setHTML(el, `<h2>Печать и стёртые имена</h2>
+    <div class="row2"><span>Родовая книга</span><b>${SE.namesW(x.names)} из стёртых</b></div>
+    ${end}
+    ${x.end ? "" : bar("Осколок Человека", "имена, которые кто-то ещё произносит", sh.man) + bar("Осколок Земли", "русло, лёд Куньлуня, подвал Хэду", sh.earth) + bar("Осколок Неба", "обет Первого Писца в Цинлуне", sh.sky)}
+    <div class="row2"><span>Канцелярия</span><b style="color:${hcol}">${SE.heatWord(h)}<small>внимание ${h}/100 · тает со временем</small><div class="track" style="margin-top:4px"><i style="width:${n01(h)}%;background:${hcol}"></i></div></b></div>
+    ${hidden.length ? `<div class="row2"><span>У Эмэй</span><b>${hidden.join(", ")}<small>записаны умершими в детстве</small></b></div>` : ""}
+    ${tallied.length ? `<div class="row2"><span>В книге талантов</span><b>${tallied.join(", ")}</b></div>` : ""}
+    <div class="dim small" style="margin-top:6px">Печать держится на забвении. Каждое сохранённое имя приближает осколок Человека и привлекает людей в сером. Книга и осколки переходят детям. Когда все три осколка собраны, роду придётся решить, чьё имя возьмёт Печать. Бессмертия они не дают.</div>`);
 }
 
 // ───────── семья: показатели дома, лента перемен, живые родители, братья и сёстры ─────────
@@ -767,7 +787,7 @@ function render() {
   if (spin === "path") { renderPath(); return; }
   if (spin) { renderSpin(spin); return; }
   if (phase === "cert") { renderCert(); return; }
-  renderHeader(); renderPass(); renderStats(); renderCult(); renderSect(); renderFocus(); renderCraft(); renderJh(); renderFamily(); renderClan(); renderPeers(); renderMap();
+  renderHeader(); renderPass(); renderStats(); renderCult(); renderSect(); renderFocus(); renderCraft(); renderJh(); renderSeal(); renderFamily(); renderClan(); renderPeers(); renderMap();
   renderEvent(); renderDeath(); renderTree(); renderTechs();
   const key = [l.age, l.alive, l.spouse?.name, l.children.length, s.realmIndex, l.awakened, l.eraId].join("|");
   if (key !== lastSceneKey) { lastSceneKey = key; drawScene($("scene"), data, { ...s, tier: l.awakened ? G.tierOf(data, s) : 0 }); setHTML($("scene-cap"), sceneCaption(l)); }

@@ -15,6 +15,7 @@ import * as CL from "./clan.js";
 import * as S from "./sect.js";
 import * as CR from "./craft.js";
 import * as JH from "./jianghu.js";
+import * as SE from "./seal.js";
 
 const pick = (a, rng) => a[Math.floor(rng() * a.length)];
 // Число + слово в нужной форме: 1 год / 2 года / 5 лет, 1 камень / 2 камня / 5 камней.
@@ -134,6 +135,7 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
     }
     CR.inherit(data, s, prev, child, cand.kind === "child");
     JH.inherit(data, s, prev, cand.kind === "child", rng);
+    SE.inherit(data, s, prev, child, cand.kind === "child");
     if (L.awakened) {
       if (!L.soulId) L.soulId = rollSoul(data, rng)?.id || null;
       // Ребёнок жил своей жизнью, пока ты играл(а) за родителя: путь, ступень, секта — его.
@@ -464,7 +466,7 @@ function epitaph(data, s) {
   const a = st.karma >= 6 ? "Добром поминали и через поколения." : st.karma <= -6 ? (L.gender === "m" ? "О нём" : "О ней") + " вспоминали с опаской." : "Прожил(а) жизнь, не веря ни славе, ни позору.";
   const b = L.awakened ? `Дошёл(ла) до ступени «${r.name}», слой ${s.layer}.` : "Так и не ступил(а) на Путь.";
   const c = st.connections >= 8 ? " Провожали сотни людей." : st.daoHeart >= 6 ? " Сердце было твёрже нефрита." : "";
-  return fmt(s, `${a} ${b}${c}${JH.epitaphBit(s)}`);
+  return fmt(s, `${a} ${b}${c}${JH.epitaphBit(s)}${SE.epitaphBit(s)}`);
 }
 
 export function die(data, s, cause, rng = Math.random) {
@@ -486,7 +488,7 @@ export function die(data, s, cause, rng = Math.random) {
     kinTree: snapKin(s), sectSucc: S.deathSuccession(data, s),
     epitaph: epitaph(data, s), words: finalWords(data, s, rng),
     familyTechs: [...new Set([...(s.familyTechs || []), ...s.ownedTechniques])],
-    craft: CR.snapshot(s), gear: L.gear ? { ...L.gear } : null, biz: L.biz ? { ...L.biz, years: L.age - L.biz.since } : null, jh: JH.snapshot(s), nick: JH.nick(s),
+    craft: CR.snapshot(s), gear: L.gear ? { ...L.gear } : null, biz: L.biz ? { ...L.biz, years: L.age - L.biz.since } : null, jh: JH.snapshot(s), seal: SE.snapshot(s), nick: JH.nick(s),
   };
   try { entry.report = deathReport(data, s, entry); } catch (e) { entry.report = null; }
   L.legacy = entry; s.lineage.push(entry);
@@ -514,6 +516,7 @@ function matches(data, s, r = {}) {
   if (r.elder && L.age < 0.7 * lifespan(data, s)) return false;
   if (!CR.matches(data, s, r)) return false;
   if (!JH.matches(data, s, r)) return false;
+  if (!SE.matches(data, s, r)) return false;
   return KF.matches(data, s, r) && CL.matches(data, s, r) && S.matches(data, s, r);
 }
 function eligible(data, s, e) {
@@ -970,6 +973,7 @@ function applyEffects(data, s, ef = {}, rng = Math.random) {
   CL.applyEffects(data, s, ef, rng);
   CR.applyEffects(data, s, ef, rng);
   JH.applyEffects(data, s, ef, rng);
+  SE.applyEffects(data, s, ef, rng);
   if (ef.sect && !L.sect && L.awakened) S.joinSect(data, s, ef.sect, ef.sectRank ?? 1, rng);
   if (ef.scroll && L.awakened) { const t = G.luckyScroll(data, s, rng); logLine(s, t ? `Свиток в руках: «${t.name}». Теперь он и в родовой библиотеке.` : "Свиток оказался пустым: всё это ты уже знаешь.", "luck"); }
   if (ef.sectTech && L.sect) {
@@ -1029,7 +1033,7 @@ export function chooseOption(data, s, idx, rng = Math.random) {
   if (c.risk && L.alive && rng() < c.risk.p) { parts.push(c.risk.text); applyEffects(data, s, c.risk.effects, rng); }
   // Испытания секты (scripted) не занимают место обычной карточки: пауза между карточками не сбрасывается.
   L.usedEvents.push(e.id); if (!e.scripted) L.lastEventAge = L.age; L.pending = null; L.autoHold = false; L.autoPick = null;
-  const out = `«${fmt(s, e.title)}» — ${c.label.toLowerCase()}. ${parts.join(" ")}`;
+  const out = `«${fmt(s, e.title)}» — ${c.label.charAt(0).toLowerCase() + c.label.slice(1)}. ${parts.join(" ")}`;
   if (L.alive) logLine(s, out, "event");
   return { ok: true, msg: fmt(s, out), died: !L.alive };
 }
@@ -1050,7 +1054,7 @@ const KIN_W = ef => (ef.harmony || 0) * 0.3 + (ef.famWealth || 0) * 0.4 + (ef.re
   + (ef.sectTreasury || 0) * 0.03 + (ef.sectFortify ? 3 : 0) + (ef.sectDeclareWar ? -2 : 0) + (ef.sectTruce ? 2 : 0) + (ef.sectAlly ? 5 : 0) + (ef.discipleNew ? 4 : 0) + (ef.discipleTrain ? 3 : 0)
   + (ef.discipleLoss ? -4 : 0) + (ef.sectGrudge || 0) * -4 + (ef.sectGrudgeClear ? 4 : 0);
 function choiceScore(c, mode) {
-  const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef) + CR.scoreFx(ef) + JH.scoreFx(ef);
+  const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef) + CR.scoreFx(ef) + JH.scoreFx(ef) + SE.scoreFx(ef);
   const riskN = (mode === "safe" || mode === "best") ? 3 : 1;
   return f(c.effects || {}) + (c.bonus ? c.bonus.p * f(c.bonus.effects) : 0) + (c.risk ? c.risk.p * f(c.risk.effects) * riskN : 0);
 }
@@ -1109,6 +1113,7 @@ function yearPass(data, s, rng) {
   CR.yearCraft(data, s, rng);
   G.techYear(data, s, rng);
   JH.yearJh(data, s, rng);
+  SE.yearSeal(data, s, rng);
   for (const c of L.children) {
     if (c.alive && c.task === "letters" && childAge(s, c) >= 6 && rng() < 0.12 * CL.lettersMul(data, s)) {
       L.stats.connections = clamp(L.stats.connections + 1, 0, 30);
