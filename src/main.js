@@ -439,6 +439,18 @@ function renderCraft() {
 }
 
 // ───────── имя в цзянху: слава, прозвище, обиды и долги (jianghu.js) ─────────
+// Свои ученики (jianghu.js): взять, передать ведущую технику, отпустить.
+function pupilsHtml() {
+  const l = s.life; if (!data.jianghu?.pupils || !l.awakened) return "";
+  const lead = G.leadTech(data, s), ask = JH.canAskPupil(data, s), auto = s.settings.autoPlay;
+  const rows = JH.pupils(s).map((p, i) => { const t = p.tech && G.techById(data, p.tech);
+    const f = p.g === "f", lw = p.loyalty >= 70 ? (f ? "предана" : "предан") : p.loyalty >= 45 ? (f ? "верна" : "верен") : p.loyalty >= 25 ? "колеблется" : "смотрит на сторону";
+    return `<div class="row2"><span>${p.g === "m" ? "Ученик" : "Ученица"}</span><b>${p.name}<small>${yw(p.age0 + l.age - p.since)} · мастерство ${Math.floor(p.lvl)}/100 · ${lw}${t ? ` · учится «${t.name}»` : ""}</small>
+      <span class="chips" style="justify-content:flex-end;margin:4px 0 0">${lead && p.tech !== lead.id ? `<button data-jp="teach" data-i="${i}" ${auto ? "disabled" : ""}>Передать «${lead.name}»</button>` : ""}<button data-jp="free" data-i="${i}" ${auto ? "disabled" : ""}>Отпустить</button></span></b></div>`; }).join("");
+  return `<div class="lbl" style="margin-top:8px">Ученики</div>${rows || `<div class="dim small">Своих учеников нет.</div>`}
+    <div class="chips"><button data-jp="ask" ${ask.ok && !auto ? "" : "disabled"}>Взять ученика${ask.ok ? "" : `<small class="fxh">${ask.why}</small>`}</button></div>
+    <div class="dim small">Ученик растёт вместе с тобой и быстрее — с переданной техникой. Верный — прославит и вернёт долг, обиженный — уйдёт к врагам. Дурная карма и долгий затвор подтачивают верность.</div>`;
+}
 function renderJh() {
   const l = s.life, el = $("jh");
   if (!data.jianghu || !l.alive || l.age < 12) { setHTML(el, ""); setHidden(el, true); return; }
@@ -448,8 +460,10 @@ function renderJh() {
   const ties = j.ties.slice().sort((a, b) => a.since - b.since).map(t => `<div class="row2"><span>${JH.kindName(t.kind)}</span><b>${t.name}<small>${L.gtext(t.who, l.gender)}${t.inherited ? " · по наследству" : ` · с ${yw(t.since)}`}</small></b></div>`).join("");
   setHTML(el, `<h2>Имя в цзянху</h2>
     <div class="row2"><span>Прозвище</span><b>${j.nick ? `«${j.nick}»` : `<span class="dim">пока нет — с ${data.jianghu.fame.nickAt} славы</span>`}</b></div>
-    <div class="row2"><span>Слава</span><b>${Math.floor(f)}/100 · ${L.gtext(JH.fameWord(f), l.gender)}<small style="color:${col}">слава ${JH.sideName(data, s)} — по карме</small><div class="track" style="margin-top:4px"><i style="width:${n01(f)}%;background:${col}"></i></div></b></div>
+    <div class="row2"><span>Слава</span><b>${Math.floor(f)}/100 · ${JH.fameWord(f, l.gender)}<small style="color:${col}">слава ${JH.sideName(data, s)} — по карме</small><div class="track" style="margin-top:4px"><i style="width:${n01(f)}%;background:${col}"></i></div></b></div>
+    ${JH.wulin(s) ? `<div class="row2"><span>Союз Улинь</span><b style="color:var(--gold)">глава Союза<small>до ${yw(JH.wulin(s).until)} · каждый год камни, слава и люди</small></b></div>` : ""}
     ${ties ? `<div class="lbl" style="margin-top:8px">Обиды и долги</div>${ties}` : `<div class="dim small" style="margin-top:6px">Ни кровников, ни должников. Пока.</div>`}
+    ${pupilsHtml()}
     <div class="dim small" style="margin-top:6px">Слава растёт от побед, новых ступеней и громких поступков, со временем тает. Помогает при найме и приводит людей. Кровники и долги приходят через годы — и могут перейти детям.</div>`);
 }
 
@@ -792,6 +806,7 @@ document.body.addEventListener("click", e => {
   if (d.new) { L.startLife(data, s, "new"); spinState = null; return done(); }
   if (d.copy) { navigator.clipboard?.writeText(summaryText(s.life.legacy)); b.textContent = "Скопировано"; return; }
   if (d.focus) { const r = L.setFocus(data, s, d.focus); if (!r.ok) log(r.msg, "info"); return done(); }
+  if (d.jp) { const r = d.jp === "ask" ? JH.askPupil(data, s) : d.jp === "teach" ? JH.teachPupil(data, s, +d.i) : (confirm("Отпустить ученика?") ? JH.freePupil(data, s, +d.i) : { ok: true }); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.rt) { const r = d.rt === "end" ? (JH.endRetreat(data, s, true), { ok: true }) : JH.startRetreat(data, s, +d.rt); if (!r.ok) log(r.msg, "info"); return done(); }
   if (d.job) { const r = L.setJob(data, s, d.job, d.who); if (!r.ok && !r.refused) log(r.msg, "info"); return done(); }
   if (d.cr) {

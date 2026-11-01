@@ -31,5 +31,14 @@
   "retreat": {
     "_note": "Затвор (闭关): фокус «retreat» в jobs.json на years лет. Ци × focus.qiMul, заработок × payMul, детей нет, приключений нет, карточки — только с requires.inRetreat и с шансом cardChance на каждый случай карточки. Каждый год — ещё qiShareYear ци до слоя (озарение тишины; заменяет ци, что вне пещеры дают бои), затем до tries попыток прорыва (пилюли с собой тратятся при шансе ниже 60%). Шанс срыва devPerYear × (1 − devCut техник) × (1 + 0,5 × несовместимость ведущей техники); из срывов heavyShare — тяжёлые: срок −1 и выход из затвора. Авторежим уходит в затвор с шансом autoChance в год, если нет детей младше kidsAge и до конца срока хватает лет.",
     "options": [3, 10, 30], "qiShareYear": 0.7, "cardChance": 0.25, "devPerYear": 0.025, "heavyShare": 0.25, "tries": 4, "earlyQiLoss": 0.3, "autoChance": 0.03, "autoYears": 10, "kidsAge": 12, "minAge": 20
+  },
+  "wulin": {
+    "_note": "Собрание героев (武林大会): карточка wulin_call раз в gap лет (requires.notRecent). effects.wulin = \"fight\" — rounds боёв, шанс каждого = base + perTier × ярус + славa / fameDiv + (шанс победы в приключениях − 0,5) × oddsK, в [min, max]. Все победы — глава Союза Улинь на termYears лет: каждый год +stonesYear камней, +famePerYear славы, шанс connYear на связь. Карточки главы — с requires.wulinLeader.",
+    "gap": 40, "rounds": 3, "base": 0.3, "perTier": 0.07, "fameDiv": 300, "oddsK": 0.3, "min": 0.08, "max": 0.85, "termYears": 20, "stonesYear": 15, "famePerYear": 1, "connYear": 0.3
+  },
+  "pupils": {
+    "_note": "Свои ученики (师徒), вне секты. Взять — кнопкой (с minTier ступени и minFame славы, раз в askGap лет, шанс = слава / askFameDiv в пределах [0,15; 0,9]) или карточкой (effects.pupil). Не больше max. Каждый год: рост = дар × (ярус + 1) × growth (× techMul, если передана техника); верность ± (карма ≥ 0: +1, иначе −2); смерть deathYear. Верность < betrayAt — уход с шансом betrayChance: кровник (и слава −3, если унёс технику). Рост ≥ gradAt и годы ≥ gradYears — выпуск с шансом gradChance: должник, слава +gradFame. Учитель получает teachFame славы в год за каждого. Верные (≥ heirLoyal) переходят наследнику должниками.",
+    "max": 3, "minTier": 1, "minFame": 10, "askGap": 5, "askFameDiv": 60, "growth": 1.2, "techMul": 1.5, "deathYear": 0.008,
+    "betrayAt": 25, "betrayChance": 0.15, "gradAt": 50, "gradYears": 15, "gradChance": 0.2, "gradFame": 4, "teachFame": 0.15, "heirLoyal": 50
   }
 }

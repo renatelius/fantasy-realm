@@ -38,6 +38,7 @@ export function gtext(t, gender) {
     if (gender === "m") return base;
     if ((grp === "ой" || grp === "ей") && /(ым|им)$/.test(base)) return base.slice(0, -2) + grp; // живым(ой) → живой, вмёрзшим(ей) → вмёрзшей
     if (grp === "ла" && /[её]л$/.test(base)) return base.slice(0, -2) + grp;   // ушёл → ушла, вышел → вышла
+    if (grp === "на" && /ен$/.test(base)) return base.slice(0, -2) + grp;   // благодарен → благодарна, должен → должна
     if (grp.startsWith("л") && base.endsWith("лся")) return base.slice(0, -3) + grp;
     if (grp === "ась" && base.endsWith("ся")) return base.slice(0, -2) + grp;
     return base + grp;

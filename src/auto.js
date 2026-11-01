@@ -223,6 +223,7 @@ export function autoYear(data, s, rng = Math.random) {
   CL.autoClan(data, s, rng);
   CR.autoCraft(data, s, rng);
   JH.autoRetreat(data, s, rng);
+  JH.autoPupils(data, s, rng);
   if ((l.sect?.standing ?? 100) < 35) S.giveAlms(data, s);
   if (!l.awakened) return;
   pickPath(data, s, say);

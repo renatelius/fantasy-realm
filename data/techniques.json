@@ -1455,6 +1455,87 @@
    "minRealm": 0,
    "owner": "dark",
    "text": "Удар оставляет на коже красный след в пять пальцев. Его узнают во всех уездах."
+  },
+  {
+   "id": "earth_shard_treatise",
+   "name": "Трактат осколка Земли",
+   "type": "neigong",
+   "grade": "jue",
+   "cost": 2600,
+   "qiMultiplier": 2.35,
+   "minRealm": 1,
+   "path": "qi",
+   "owner": "manual",
+   "text": "Куньлунь говорит, что хранит его. Удан говорит, что его не существует. Он существует.",
+   "fit": {
+    "good": [
+     "Земля",
+     "balanced",
+     "open"
+    ],
+    "bad": [
+     "blocked"
+    ]
+   },
+   "fx": {
+    "breakAdd": 0.03,
+    "lifeAdd": 6
+   }
+  },
+  {
+   "id": "sky_holding_bones",
+   "name": "Кости, что держат небо",
+   "type": "body",
+   "grade": "jue",
+   "cost": 2600,
+   "hpMult": 1.8,
+   "defMult": 1.65,
+   "atkMult": 1.1,
+   "forgeMult": 1.3,
+   "minRealm": 1,
+   "path": "body",
+   "owner": "manual",
+   "text": "Монах, написавший его, сто лет стоял под водопадом. Водопад высох раньше.",
+   "fit": {
+    "good": [
+     "heavy",
+     "yang",
+     "balanced"
+    ],
+    "bad": [
+     "frail"
+    ]
+   },
+   "fx": {
+    "hazardCut": 0.08,
+    "lifeAdd": 6
+   }
+  },
+  {
+   "id": "first_scribe_dream",
+   "name": "Сон Первого Писца",
+   "type": "neigong",
+   "grade": "jue",
+   "cost": 2600,
+   "qiMultiplier": 2.3,
+   "minRealm": 1,
+   "path": "spirit",
+   "owner": "manual",
+   "text": "Тот, кто дочитает, видит во сне, как Первый Писец отдаёт своё имя. И почему.",
+   "fit": {
+    "good": [
+     "mind",
+     "soul:bright",
+     "soul:heaven_eye"
+    ],
+    "bad": [
+     "sha"
+    ]
+   },
+   "fx": {
+    "legendSafe": 0.5,
+    "daoYear": 0.15
+   }
   }
  ],
  "_note": "path: техника только своего пути. owner: market — мирские/нижняя колесница, продаются (×1.5); id секты — тайна секты; clan — тайна кланов (род, друзья, удача); luck — только находка. forgeMult — закалка пути тела, breakAdd — к прорыву.",
