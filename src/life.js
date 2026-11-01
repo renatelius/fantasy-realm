@@ -16,6 +16,7 @@ import * as S from "./sect.js";
 import * as CR from "./craft.js";
 import * as JH from "./jianghu.js";
 import * as SE from "./seal.js";
+import * as HT from "./heart.js";
 
 const pick = (a, rng) => a[Math.floor(rng() * a.length)];
 // Число + слово в нужной форме: 1 год / 2 года / 5 лет, 1 камень / 2 камня / 5 камней.
@@ -136,6 +137,7 @@ export function startLife(data, s, mode = "new", rng = Math.random, childIdx = 0
     CR.inherit(data, s, prev, child, cand.kind === "child");
     JH.inherit(data, s, prev, cand.kind === "child", rng);
     SE.inherit(data, s, prev, child, cand.kind === "child");
+    HT.inherit(data, s, prev, cand.kind === "child");
     if (L.awakened) {
       if (!L.soulId) L.soulId = rollSoul(data, rng)?.id || null;
       // Ребёнок жил своей жизнью, пока ты играл(а) за родителя: путь, ступень, секта — его.
@@ -517,6 +519,7 @@ function matches(data, s, r = {}) {
   if (!CR.matches(data, s, r)) return false;
   if (!JH.matches(data, s, r)) return false;
   if (!SE.matches(data, s, r)) return false;
+  if (!HT.matches(data, s, r)) return false;
   return KF.matches(data, s, r) && CL.matches(data, s, r) && S.matches(data, s, r);
 }
 function eligible(data, s, e) {
@@ -1054,7 +1057,7 @@ const KIN_W = ef => (ef.harmony || 0) * 0.3 + (ef.famWealth || 0) * 0.4 + (ef.re
   + (ef.sectTreasury || 0) * 0.03 + (ef.sectFortify ? 3 : 0) + (ef.sectDeclareWar ? -2 : 0) + (ef.sectTruce ? 2 : 0) + (ef.sectAlly ? 5 : 0) + (ef.discipleNew ? 4 : 0) + (ef.discipleTrain ? 3 : 0)
   + (ef.discipleLoss ? -4 : 0) + (ef.sectGrudge || 0) * -4 + (ef.sectGrudgeClear ? 4 : 0);
 function choiceScore(c, mode) {
-  const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef) + CR.scoreFx(ef) + JH.scoreFx(ef) + SE.scoreFx(ef);
+  const base = WEIGHTS[mode], f = ef => base(ef) + KIN_W(ef) + CR.scoreFx(ef) + JH.scoreFx(ef) + SE.scoreFx(ef) + HT.scoreFx(ef);
   const riskN = (mode === "safe" || mode === "best") ? 3 : 1;
   return f(c.effects || {}) + (c.bonus ? c.bonus.p * f(c.bonus.effects) : 0) + (c.risk ? c.risk.p * f(c.risk.effects) * riskN : 0);
 }
@@ -1114,6 +1117,8 @@ function yearPass(data, s, rng) {
   G.techYear(data, s, rng);
   JH.yearJh(data, s, rng);
   SE.yearSeal(data, s, rng);
+  HT.yearHeart(data, s, rng);
+  if (!L.alive) return;
   for (const c of L.children) {
     if (c.alive && c.task === "letters" && childAge(s, c) >= 6 && rng() < 0.12 * CL.lettersMul(data, s)) {
       L.stats.connections = clamp(L.stats.connections + 1, 0, 30);
@@ -1153,18 +1158,18 @@ function yearPass(data, s, rng) {
   const yishu = G.slottedTechs(data, s).yishu;
   const phy = by(W.physiques, L.physiqueId);
   let hz = (wealth.hazard + jobHaz) * by(W.regions, L.regionId).hazardMult * by(W.eras, L.eraId).hazardMult * (focus?.hazardMul ?? 1) * (phy?.hazard || 1) * (tal?.hazard || 1) * (1 - (yishu?.hazardCut || 0))
-    * KF.hazardMul(data, s) * CL.feudHazardMul(data, s) * S.hazardMul(data, s) * CR.hazardMul(data, s) * G.techHazardMul(data, s);
+    * KF.hazardMul(data, s) * CL.feudHazardMul(data, s) * S.hazardMul(data, s) * CR.hazardMul(data, s) * G.techHazardMul(data, s) * HT.hazardMul(data, s);
   if (L.awakened) hz *= wl.awakenedHazardMult * Math.pow(wl.realmHazardDecay ?? 0.5, G.maxTier(data, s)) * (G.pathOf(data, s).hazardMul ?? 1);
   if (L.age < 5) hz *= wl.infantHazardMult;
   const span = lifespan(data, s);
   if (L.age >= span) return die(data, s, "Дожил(а) отведённый срок", rng);
   if (rng() < hz) {
     if (L.mercy && !L.awakened) logLine(s, "Беда прошла мимо: небо хранит тебя.", "luck");
-    else return die(data, s, pick(W.deathCauses[L.age < T.awakeningAge ? "child" : "adult"], rng), rng);
+    else if (!HT.saved(data, s, rng)) return die(data, s, pick(W.deathCauses[L.age < T.awakeningAge ? "child" : "adult"], rng), rng);
   }
   // Старость: с oldAgeStart срока риск растёт квадратично — смерть размазана, а не «все в последний год».
   const old = (L.age / span - wl.oldAgeStart) / (1 - wl.oldAgeStart);
-  if (old >= 0 && rng() < (wl.oldAgeBase ?? 0) + wl.oldAgeHazard * old * old) return die(data, s, "Ушёл(ла) от старости", rng);
+  if (old >= 0 && rng() < ((wl.oldAgeBase ?? 0) + wl.oldAgeHazard * old * old) * HT.oldMul(data, s)) return die(data, s, "Ушёл(ла) от старости", rng);
   if (rng() < T.chronicleChance) flavor(data, s, rng);
   milestone(data, s);
   if (L.age === 1 && !L.zz) { L.zz = true; if (by(data.events.events, "zhuazhou")) { L.pending = "zhuazhou"; return; } }

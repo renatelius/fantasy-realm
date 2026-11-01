@@ -11,6 +11,7 @@ import * as G from "./game.js";
 import * as CB from "./combat.js";
 import * as CR from "./craft.js";
 import * as SE from "./seal.js";
+import * as HT from "./heart.js";
 import { logLine, gtext, lifespan, die } from "./life.js";
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -247,7 +248,7 @@ function retreatYear(data, s, rng) {
   if (L.focusId !== "retreat") L.focusId = "retreat";
   // Срыв в затворе: несовместимая техника и тёмные свитки — опаснее.
   const fx = G.techFx(data, s), fit = G.techFit(data, s, G.leadTech(data, s));
-  const p = (Rc.devPerYear ?? 0.025) * (1 - (fx.devCut || 0)) * (1 + 0.5 * Math.max(0, -fit.score)) * (fx.dark ? 1.5 : 1);
+  const p = (Rc.devPerYear ?? 0.025) * (1 - (fx.devCut || 0)) * (1 + 0.5 * Math.max(0, -fit.score)) * (fx.dark ? 1.5 : 1) * HT.slipMul(data, s);
   if (rng() < p) {
     r.dev++;
     const heavy = rng() < (Rc.heavyShare ?? 0.25);

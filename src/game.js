@@ -7,6 +7,7 @@
 import { die } from "./life.js";
 import * as CL from "./clan.js";
 import * as S from "./sect.js";
+import * as HT from "./heart.js";
 
 // Путь развития: ци / тело / дух. У каждого свои ступени (data.realms.paths[].realms).
 export function pathOf(data, s) {
@@ -311,7 +312,7 @@ export function qiPerSecond(data, s) {
   const f = focusOf(data, s);
   // Путь тела копит закалку техникой закал тела: 1.15 × (1 + 1.2 × (hpMult − 1)) × forgeMult своей техники.
   const tech = ((s.pathId === "body") ? (sl.body ? bodyForgeMult(data, s, sl.body) : 1.15) : neigongMult(data, s, sl.neigong)) * techFit(data, s, leadTech(data, s)).mul;
-  return (m.qiPerSecondBase + m.qiPerSecondPerRealm * tierOf(data, s)) * tech * pathMult(data, s) * (f?.qiMul ?? 1) * jobQiMul(data, s) * pathSpeedMul(data, s) * pathPassives(data, s).qi;
+  return (m.qiPerSecondBase + m.qiPerSecondPerRealm * tierOf(data, s)) * tech * pathMult(data, s) * (f?.qiMul ?? 1) * jobQiMul(data, s) * pathSpeedMul(data, s) * pathPassives(data, s).qi * HT.qiMul(data, s);
 }
 
 // Порог легенды: переход из 9-го слоя в ступень с legend. Шанс ×legendChanceMul,
@@ -328,7 +329,8 @@ export function breakthroughChance(data, s, usePill = false) {
     + (physiqueOf(data, s)?.breakAdd || 0)
     + (() => { const n = slottedTechs(data, s).neigong; return n?.path && techUsable(data, s, n) ? (n.breakAdd || 0) : 0; })()
     + (s.life ? techFx(data, s).breakAdd + (() => { const t = leadTech(data, s), F = fitCfg(data); return t ? F.breakPerGrade * gradeRank(data, t) + Math.min(0, techFit(data, s, t).score) * 0.02 : 0; })() : 0) // колесница и совместимость
-    + crossPathBonus(data, s); // слои других путей
+    + crossPathBonus(data, s) // слои других путей
+    + HT.breakAdd(data, s); // дурная карма: небесный гнев
   const base = Math.min(0.99, Math.max(b.minChance, c));
   return legendGate(data, s) ? base * (b.legendChanceMul ?? 1) : base;
 }
@@ -364,7 +366,7 @@ export function breakthrough(data, s, usePill = false, rng = Math.random) {
     return { ok: true, msg: `Прорыв удался! ${realms[s.realmIndex].name}, слой ${s.layer}.` };
   }
   const gate = legendGate(data, s), bt = data.realms.breakthrough;
-  if (gate && s.life && rng() < (bt.legendDeathChance || 0) * (1 - Math.min(0.8, techFx(data, s).legendSafe))) {
+  if (gate && s.life && rng() < (bt.legendDeathChance || 0) * (1 - Math.min(0.8, techFx(data, s).legendSafe)) * HT.legendMul(data, s)) {
     die(data, s, "Не пережил(а) прорыв: Печать заметила имя", rng);
     return { ok: false, fatal: true, msg: "Небо над головой потемнело. Печать заметила имя — и забрала его." };
   }

@@ -9,6 +9,7 @@ import * as S from "./sect.js";
 import * as CR from "./craft.js";
 import * as JH from "./jianghu.js";
 import * as SE from "./seal.js";
+import * as HT from "./heart.js";
 import { drawScene, drawAvatar, drawYanMap } from "./pixel.js";
 
 const $ = id => document.getElementById(id);
@@ -20,7 +21,7 @@ const n01 = v => Math.max(0, Math.min(100, v));
 const pct = (a, b) => (a / b * 100);
 const yw = n => L.yearsW(n), stw = n => L.stonesW(n);
 
-const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts", "jianghu", "seal"];
+const names = ["realms", "techniques", "enemies", "world", "events", "chronicle", "jobs", "jokes", "sects", "kin", "crafts", "jianghu", "seal", "heart"];
 const data = Object.fromEntries(await Promise.all(names.map(async n => [n, await (await fetch(`data/${n}.json`)).json()])));
 const by = (arr, id) => arr.find(x => x.id === id);
 const GRADE = Object.fromEntries(data.techniques.grades.map(g => [g.id, g]));
@@ -274,9 +275,15 @@ function renderStats() {
   const bar = (n, k, c) => `<div class="stat"><span>${n}</span><div class="track"><i style="width:${v[k]}%;background:${c}"></i></div><b>${Math.round(v[k])}</b></div>`;
   setHTML($("stats"), `<h2>Состояние <small>0–100</small></h2>
     ${bar("Здоровье", "health", "var(--hp)")}${bar("Покой", "joy", "var(--joy)")}${bar("Путь", "mind", "var(--mind)")}${bar("Связи", "bonds", "var(--bond)")}
-    <details><summary>Что значат эти показатели?</summary><div class="dim small" style="margin-top:6px">Здоровье падает с годами и злыми делами. Покой — карма, супруг, дети. Путь — дао-сердце и ступень. Связи — люди, которые придут на похороны.</div></details>
+    <details><summary>Что значат эти показатели?</summary><div class="dim small" style="margin-top:6px">Здоровье падает с годами и злыми делами. Покой — карма, супруг, дети. Путь — дао-сердце и ступень. Связи — люди, которые придут на похороны. Карма решает, как к тебе относятся люди и небо: добрых спасают в беде, злых настигает возмездие, и детям достаётся часть твоего имени. Дао-сердце — как ты держишь себя сам: спокойное ускоряет ци и бережёт от срывов и старости, смятенное зовёт сердечных демонов.</div></details>
     <div class="mini"><div>Духовные камни<b>${s.spiritStones}</b></div><div>Пилюли<b>${s.pills}</b></div>
-      <div>Дао-сердце<b>${st.daoHeart}${(() => { const d = l.awakened ? G.pathPassives(data, s).dao : 0; return d >= 0.1 ? ` <small style="color:var(--jade)">+${d.toFixed(1)}</small>` : ""; })()}</b></div><div>Карма<b>${st.karma > 0 ? "+" : ""}${st.karma}</b></div></div>`);
+      <div>Дао-сердце<b>${st.daoHeart}${(() => { const d = l.awakened ? G.pathPassives(data, s).dao : 0; return d >= 0.1 ? ` <small style="color:var(--jade)">+${d.toFixed(1)}</small>` : ""; })()}</b></div><div>Карма<b>${st.karma > 0 ? "+" : ""}${st.karma}</b></div></div>
+    ${heartHtml()}`);
+}
+function heartHtml() {
+  const h = HT.summary(data, s); if (!h || s.life.age < 12) return "";
+  const row = (n, x) => `<div class="row2"><span>${n}</span><b>${x.word}<small>${x.fx.length ? x.fx.join(", ") : "без последствий"}</small></b></div>`;
+  return `<div style="margin-top:8px">${row("Карма", h.karma)}${row("Дао-сердце", h.dao)}</div>`;
 }
 
 let oddsKey = "", oddsVal = null;
